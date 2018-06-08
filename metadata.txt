@@ -1,0 +1,39 @@
+# This file contains metadata for your plugin. Since 
+# version 2.0 of QGIS this is the proper way to supply 
+# information about a plugin. The old method of 
+# embedding metadata in __init__.py will 
+# is no longer supported since version 2.0.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=CityJSON Loader
+qgisMinimumVersion=3.0
+description=This plugin allows for CityJSON files to be loaded in QGIS
+version=0.1
+author=3D Geoinformation
+email=s.vitalis@tudelft.nl
+
+about=This plugin allows QGIS to load CityJSON datasets. Data are loaded in respective tables and all information are loaded superbly!
+
+tracker=https://github.com/tudelft3d/cityjson-qgis-plugin/issues
+repository=https://github.com/tudelft3d/cityjson-qgis-plugin
+# End of mandatory metadata
+
+# Recommended items:
+
+# Uncomment the following line and add your changelog:
+# changelog=
+
+# Tags are comma separated with spaces allowed
+tags=python, cityjson, 3d
+
+homepage=https://github.com/tudelft3d/cityjson-qgis-plugin
+category=Vector
+icon=icon.png
+# experimental flag
+experimental=True
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
