@@ -204,7 +204,8 @@ class CityJsonLoader:
         file = open(filename)
         city_model = cityjson.CityJSON(file)
 
-        vl.setCrs(QgsCoordinateReferenceSystem(city_model.j["metadata"]["crs"]["epsg"]))
+        if "crs" in city_model.j["metadata"]:
+            vl.setCrs(QgsCoordinateReferenceSystem(city_model.j["metadata"]["crs"]["epsg"]))
 
         verts = city_model.j["vertices"]
         points = []
