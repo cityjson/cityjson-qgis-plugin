@@ -195,8 +195,6 @@ class CityJsonLoader:
         pr.addAttributes([QgsField("uid", QVariant.String), QgsField("type", QVariant.String)])
         vl.updateFields()
 
-        QgsProject.instance().addMapLayer(vl)
-
         file = open(filename)
         city_model = cityjson.CityJSON(file)
 
@@ -232,6 +230,8 @@ class CityJsonLoader:
                     geoms.addGeometry(g)
             fet.setGeometry(QgsGeometry(geoms))
             pr.addFeature(fet)
+
+        QgsProject.instance().addMapLayer(vl)
 
     def run(self):
         """Run method that performs all the real work"""
