@@ -30,7 +30,7 @@ tags=python, cityjson, 3d
 
 homepage=https://github.com/tudelft3d/cityjson-qgis-plugin
 category=Vector
-icon=icon.png
+icon=cityjson_logo_big.png
 # experimental flag
 experimental=True
 

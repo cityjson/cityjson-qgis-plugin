@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/plugins/cityjson_loader" >
         <file>icon.png</file>
+	<file>cityjson_logo.png</file>
     </qresource>
 </RCC>
