@@ -192,10 +192,9 @@ class CityJsonLoader:
         vl = QgsVectorLayer("MultiPolygon", "city_objects", "memory")
         pr = vl.dataProvider()
 
-        pr.addAttributes([QgsField("uid", QVariant.String)])
+        pr.addAttributes([QgsField("uid", QVariant.String), QgsField("type", QVariant.String)])
         vl.updateFields()
 
-        QgsProject.instance().removeAllMapLayers()
         QgsProject.instance().addMapLayer(vl)
 
         file = open(filename)
@@ -211,7 +210,7 @@ class CityJsonLoader:
         city_objects = city_model.j["CityObjects"]
         for key, obj in city_objects.items():
             fet = QgsFeature()
-            fet.setAttributes([key])
+            fet.setAttributes([key, obj["type"]])
             geoms = QgsMultiPolygon()
             for geom in obj["geometry"]:
                 for boundary in geom["boundaries"]:
