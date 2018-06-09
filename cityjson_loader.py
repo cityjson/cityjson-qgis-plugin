@@ -77,6 +77,12 @@ class CityJsonLoader:
     def select_cityjson_file(self):
         filename, _ = QFileDialog.getOpenFileName(self.dlg, "Select CityJSON file", "", "*.json")
         self.dlg.cityjsonPathLineEdit.setText(filename)
+        try:
+            fstream = open(filename)
+            model = cityjson.CityJSON(fstream)
+            self.dlg.metadataInfoBox.setPlainText(model.get_info())
+        except:
+            self.dlg.metadataInfoBox.setPlainText("File could not be loaded")
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
