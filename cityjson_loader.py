@@ -213,6 +213,8 @@ class CityJsonLoader:
             fet.setAttributes([key, obj["type"]])
             geoms = QgsMultiPolygon()
             for geom in obj["geometry"]:
+                if "Surface" not in geom["type"]:
+                    continue
                 for boundary in geom["boundaries"]:
                     g = QgsPolygon()
                     i = 0
