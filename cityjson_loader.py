@@ -170,7 +170,7 @@ class CityJsonLoader:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/plugins/cityjson_loader/icon.png'
+        icon_path = ':/plugins/cityjson_loader/cityjson_logo.png'
         self.add_action(
             icon_path,
             text=self.tr(u'Load CityJSON...'),
@@ -200,6 +200,8 @@ class CityJsonLoader:
 
         file = open(filename)
         city_model = cityjson.CityJSON(file)
+
+        vl.setCrs(QgsCoordinateReferenceSystem(city_model.j["metadata"]["crs"]["epsg"]))
 
         verts = city_model.j["vertices"]
         points = []
