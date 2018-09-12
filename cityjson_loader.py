@@ -195,17 +195,18 @@ class CityJsonLoader:
         del self.toolbar
 
     def load_cityjson(self, filename):
-        vl = QgsVectorLayer("MultiPolygon", "city_objects", "memory")
+        file = open(filename)
+        city_model = cityjson.CityJSON(file)
+
+        geom_type = "MultiPolygon"
+        if "crs" in city_model.j["metadata"]:
+            geom_type = "{}?crs=EPSG:{}".format(geom_type, city_model.j["metadata"]["crs"]["epsg"])
+        
+        vl = QgsVectorLayer(geom_type, "city_objects", "memory")
         pr = vl.dataProvider()
 
         pr.addAttributes([QgsField("uid", QVariant.String), QgsField("type", QVariant.String)])
         vl.updateFields()
-
-        file = open(filename)
-        city_model = cityjson.CityJSON(file)
-
-        if "crs" in city_model.j["metadata"]:
-            vl.setCrs(QgsCoordinateReferenceSystem(city_model.j["metadata"]["crs"]["epsg"]))
 
         verts = city_model.j["vertices"]
         points = []
