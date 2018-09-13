@@ -236,7 +236,6 @@ class CityJsonLoader:
 
         for key, obj in city_objects.items():
             fet = QgsFeature(pr.fields())
-            # fet.setAttributes([key, obj["type"]])
             fet["uid"] = key
             fet["type"] = obj["type"]
 
