@@ -37,6 +37,13 @@
       <widget class="QPlainTextEdit" name="metadataInfoBox"/>
      </item>
      <item>
+      <widget class="QCheckBox" name="splitByTypeCheckBox">
+       <property name="text">
+        <string>Split layers according to object type</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QDialogButtonBox" name="button_box">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>

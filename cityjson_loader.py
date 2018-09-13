@@ -216,25 +216,48 @@ class CityJsonLoader:
         if "crs" in city_model.j["metadata"]:
             geom_type = "{}?crs=EPSG:{}".format(geom_type, city_model.j["metadata"]["crs"]["epsg"])
         
-        vl = QgsVectorLayer(geom_type, filename, "memory")
-        pr = vl.dataProvider()
+        multilayer = self.dlg.splitByTypeCheckBox.isChecked()
 
-        pr.addAttributes([QgsField("uid", QVariant.String), QgsField("type", QVariant.String)])
+        city_objects = city_model.j["CityObjects"]
+
+        # Setup the layer(s)
+        vls = dict()
+        if multilayer:
+            # Identify object types present in the file
+            types = set()
+            for key, obj in city_objects.items():
+                types.add(city_objects[key]['type'])
+
+            for t in types:
+                vl = QgsVectorLayer(geom_type, "{} - {}".format(filename, t), "memory")
+                vls[t] = vl
+        else:
+            vls["all"] = QgsVectorLayer(geom_type, filename, "memory")
+
+        # Identify attributes present in the file
+        att_keys = self.get_attribute_keys(city_objects)
+
+        fields = [QgsField("uid", QVariant.String), QgsField("type", QVariant.String)]
+
+        for att in att_keys:
+            fields.append(QgsField("attribute.{}".format(att), QVariant.String))
+
+        for vl_key, vl in vls.items():
+            pr = vl.dataProvider()
+            pr.addAttributes(fields)
+            vl.updateFields()
 
         verts = city_model.j["vertices"]
         points = []
         for v in verts:
             points.append(QgsPoint(v[0], v[1], v[2]))
 
-        city_objects = city_model.j["CityObjects"]
-
-        att_keys = self.get_attribute_keys(city_objects)
-        print (att_keys)
-        for att in att_keys:
-            pr.addAttributes([QgsField("attribute.{}".format(att), QVariant.String)])
-        vl.updateFields()
-
         for key, obj in city_objects.items():
+            if multilayer:
+                pr = vls[obj["type"]].dataProvider()
+            else:
+                pr = vls["all"].dataProvider()
+
             fet = QgsFeature(pr.fields())
             fet["uid"] = key
             fet["type"] = obj["type"]
@@ -265,7 +288,8 @@ class CityJsonLoader:
             fet.setGeometry(QgsGeometry(geoms))
             pr.addFeature(fet)
 
-        QgsProject.instance().addMapLayer(vl)
+        for vl_key, vl in vls.items():
+            QgsProject.instance().addMapLayer(vl)
 
     def run(self):
         """Run method that performs all the real work"""
