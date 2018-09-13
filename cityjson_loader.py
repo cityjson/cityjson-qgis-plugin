@@ -194,19 +194,32 @@ class CityJsonLoader:
         # remove the toolbar
         del self.toolbar
 
-    def load_cityjson(self, filename):
-        file = open(filename)
+    def get_attribute_keys(self, objs):
+        atts = []
+
+        for key, obj in objs.items():
+            if "attributes" in obj:
+                for att_key, att_value in obj["attributes"].items():
+                    if not att_key in atts:
+                        atts.append(att_key)
+        
+        return atts
+
+    def load_cityjson(self, filepath):
+        file = open(filepath)
         city_model = cityjson.CityJSON(file)
+
+        filename_with_ext = os.path.basename(filepath)
+        filename, file_extension = os.path.splitext(filename_with_ext)
 
         geom_type = "MultiPolygon"
         if "crs" in city_model.j["metadata"]:
             geom_type = "{}?crs=EPSG:{}".format(geom_type, city_model.j["metadata"]["crs"]["epsg"])
         
-        vl = QgsVectorLayer(geom_type, "city_objects", "memory")
+        vl = QgsVectorLayer(geom_type, filename, "memory")
         pr = vl.dataProvider()
 
         pr.addAttributes([QgsField("uid", QVariant.String), QgsField("type", QVariant.String)])
-        vl.updateFields()
 
         verts = city_model.j["vertices"]
         points = []
@@ -214,9 +227,23 @@ class CityJsonLoader:
             points.append(QgsPoint(v[0], v[1], v[2]))
 
         city_objects = city_model.j["CityObjects"]
+
+        att_keys = self.get_attribute_keys(city_objects)
+        print (att_keys)
+        for att in att_keys:
+            pr.addAttributes([QgsField("attribute.{}".format(att), QVariant.String)])
+        vl.updateFields()
+
         for key, obj in city_objects.items():
-            fet = QgsFeature()
-            fet.setAttributes([key, obj["type"]])
+            fet = QgsFeature(pr.fields())
+            # fet.setAttributes([key, obj["type"]])
+            fet["uid"] = key
+            fet["type"] = obj["type"]
+
+            if "attributes" in obj:
+                for att_key, att_value in obj["attributes"].items():
+                    fet["attribute.{}".format(att_key)] = att_value
+
             geoms = QgsMultiPolygon()
             for geom in obj["geometry"]:
                 if "Surface" not in geom["type"]:
@@ -249,5 +276,5 @@ class CityJsonLoader:
         result = self.dlg.exec_()
         # See if OK was pressed
         if result:
-            filename = self.dlg.cityjsonPathLineEdit.text()
-            self.load_cityjson(filename)
+            filepath = self.dlg.cityjsonPathLineEdit.text()
+            self.load_cityjson(filepath)
