@@ -259,17 +259,22 @@ class CityJsonLoader:
         for att in att_keys:
             fields.append(QgsField("attribute.{}".format(att), QVariant.String))
 
+        # Setup attributes on the datasource(s)
         for vl_key, vl in vls.items():
             pr = vl.dataProvider()
             pr.addAttributes(fields)
             vl.updateFields()
 
+        # Load the vertices list
         verts = city_model.j["vertices"]
         points = []
         for v in verts:
             points.append(QgsPoint(v[0], v[1], v[2]))
 
+        # A simple count of the skipped geometries
         skipped_geometries = 0
+
+        # Iterate through the city objects
         for key, obj in city_objects.items():
             if multilayer:
                 pr = vls[obj["type"]].dataProvider()
@@ -280,10 +285,12 @@ class CityJsonLoader:
             fet["uid"] = key
             fet["type"] = obj["type"]
 
+            # Load the attributes
             if "attributes" in obj:
                 for att_key, att_value in obj["attributes"].items():
                     fet["attribute.{}".format(att_key)] = att_value
 
+            # Load the geometries (only surfaces and solids, for now)
             geoms = QgsMultiPolygon()
             for geom in obj["geometry"]:
                 if "Surface" in geom["type"]:
@@ -299,11 +306,15 @@ class CityJsonLoader:
                     continue
                 skipped_geometries += 1
             fet.setGeometry(QgsGeometry(geoms))
+
+            # Add feature to the provider
             pr.addFeature(fet)
 
+        # Add the layer(s) to the project
         for vl_key, vl in vls.items():
             QgsProject.instance().addMapLayer(vl)
         
+        # Show a message with the outcome of the loading process
         msg = QMessageBox()
         if skipped_geometries > 0:
             msg.setIcon(QMessageBox.Warning)
