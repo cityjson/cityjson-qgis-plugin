@@ -205,6 +205,23 @@ class CityJsonLoader:
         
         return atts
 
+    def read_boundary(self, boundary, points):
+        g = QgsPolygon()
+        i = 0
+        for ring in boundary:
+            poly = []
+            for index in ring:
+                poly.append(points[index])
+            
+            r = QgsLineString(poly)
+            if i == 0:
+                g.setExteriorRing(r)
+            else:
+                g.addInteriorRing(r)
+            i = 1
+        
+        return g
+
     def load_cityjson(self, filepath):
         file = open(filepath)
         city_model = cityjson.CityJSON(file)
@@ -269,24 +286,18 @@ class CityJsonLoader:
 
             geoms = QgsMultiPolygon()
             for geom in obj["geometry"]:
-                if "Surface" not in geom["type"]:
-                    skipped_geometries += 1
+                if "Surface" in geom["type"]:
+                    for boundary in geom["boundaries"]:
+                        g = self.read_boundary(boundary, points)
+                        geoms.addGeometry(g)
                     continue
-                for boundary in geom["boundaries"]:
-                    g = QgsPolygon()
-                    i = 0
-                    for ring in boundary:
-                        poly = []
-                        for index in ring:
-                            poly.append(points[index])
-                        
-                        r = QgsLineString(poly)
-                        if i == 0:
-                            g.setExteriorRing(r)
-                        else:
-                            g.addInteriorRing(r)
-                        i = 1
-                    geoms.addGeometry(g)
+                if geom["type"] == "Solid":
+                    for boundary in geom["boundaries"]:
+                        for solid in boundary:
+                            g = self.read_boundary(solid, points)
+                            geoms.addGeometry(g)
+                    continue
+                skipped_geometries += 1
             fet.setGeometry(QgsGeometry(geoms))
             pr.addFeature(fet)
 
@@ -298,7 +309,7 @@ class CityJsonLoader:
             msg.setIcon(QMessageBox.Warning)
             msg.setText("CityJSON loaded with issues.")
             msg.setInformativeText("Some geometries were skipped.")
-            msg.setDetailedText("{} geometries were not surfaces, so could not be loaded.".format(skipped_geometries))
+            msg.setDetailedText("{} geometries were not surfaces or solids, so could not be loaded.".format(skipped_geometries))
         else:
             msg.setIcon(QMessageBox.Information)
             msg.setText("CityJSON loaded successfully.")
