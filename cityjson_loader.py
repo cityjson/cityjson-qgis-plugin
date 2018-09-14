@@ -252,6 +252,7 @@ class CityJsonLoader:
         for v in verts:
             points.append(QgsPoint(v[0], v[1], v[2]))
 
+        skipped_geometries = 0
         for key, obj in city_objects.items():
             if multilayer:
                 pr = vls[obj["type"]].dataProvider()
@@ -269,6 +270,7 @@ class CityJsonLoader:
             geoms = QgsMultiPolygon()
             for geom in obj["geometry"]:
                 if "Surface" not in geom["type"]:
+                    skipped_geometries += 1
                     continue
                 for boundary in geom["boundaries"]:
                     g = QgsPolygon()
@@ -290,6 +292,20 @@ class CityJsonLoader:
 
         for vl_key, vl in vls.items():
             QgsProject.instance().addMapLayer(vl)
+        
+        msg = QMessageBox()
+        if skipped_geometries > 0:
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("CityJSON loaded with issues.")
+            msg.setInformativeText("Some geometries were skipped.")
+            msg.setDetailedText("{} geometries were not surfaces, so could not be loaded.".format(skipped_geometries))
+        else:
+            msg.setIcon(QMessageBox.Information)
+            msg.setText("CityJSON loaded successfully.")
+        
+        msg.setWindowTitle("CityJSON loading finished")
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
 
     def run(self):
         """Run method that performs all the real work"""
