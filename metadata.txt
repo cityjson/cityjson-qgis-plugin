@@ -11,10 +11,10 @@ name=CityJSON Loader
 qgisMinimumVersion=3.0
 description=This plugin allows for CityJSON files to be loaded in QGIS
 version=0.1
-author=3D Geoinformation
+author=3d geoinformation group (TU Delft)
 email=s.vitalis@tudelft.nl
 
-about=This plugin allows QGIS to load CityJSON datasets. Data are loaded in respective tables and all information are loaded superbly!
+about=This plugin allows QGIS to load CityJSON datasets. Data are loaded in respective tables and all information are loaded.
 
 tracker=https://github.com/tudelft3d/cityjson-qgis-plugin/issues
 repository=https://github.com/tudelft3d/cityjson-qgis-plugin
