@@ -31,7 +31,7 @@ from .resources import *
 # Import the code for the dialog
 from .cityjson_loader_dialog import CityJsonLoaderDialog
 import os.path
-from cjio import cityjson
+from .cjio import cityjson
 
 class CityJsonLoader:
     """QGIS Plugin Implementation."""
