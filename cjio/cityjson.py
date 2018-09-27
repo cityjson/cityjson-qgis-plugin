@@ -6,7 +6,6 @@ import shutil
 
 import json
 import collections
-import jsonref
 import urllib
 from pkg_resources import resource_filename
 import copy
@@ -21,10 +20,10 @@ try:
 except ModuleNotFoundError as e:
     MODULE_EARCUT_AVAILABLE = False
 
-from . import validation
 from . import subset
 from . import geom_help
 from . import errors
+from . import validation
 from .errors import InvalidOperation
 
 
@@ -161,80 +160,6 @@ class CityJSON:
         else:
             self.j = {}
             raise ValueError("Not a CityJSON file")
-
-            
-    def fetch_schema(self, folder_schemas=None):
-        if folder_schemas is None:
-            #-- fetch proper schema from the stored ones 
-            v = self.j["version"].replace('.', '')
-            try:
-                schema = resource_filename(__name__, '/schemas/v%s/cityjson.json' % (v))
-            except:
-                return (False, None)
-        else:
-            schema = os.path.join(folder_schemas, 'cityjson.json')  
-        #-- open the schema
-        try:
-            fins = open(schema)
-        except: 
-            return (False, None)
-        abs_path = os.path.abspath(os.path.dirname(schema))
-        base_uri = 'file://{}/'.format(abs_path)
-        js = jsonref.loads(fins.read(), jsonschema=True, base_uri=base_uri)
-        return (True, js)
-
-
-    def fetch_schema_cityobjects(self, folder_schemas=None):
-        if folder_schemas is None:
-            #-- fetch proper schema from the stored ones 
-            v = self.j["version"].replace('.', '')
-            try:
-                schema = resource_filename(__name__, '/schemas/v%s/cityjson.json' % (v))
-            except:
-                return (False, None)
-        else:
-            schema = os.path.join(folder_schemas, 'cityjson.json')  
-        sco_path = os.path.abspath(os.path.dirname(schema))
-        sco_path += '/cityobjects.json'
-        jsco = json.loads(open(sco_path).read())
-        return (True, jsco)
-
-
-    def validate_extensions(self, folder_schemas=None):
-        print ('-- Validating the extensions')
-        if "extensions" not in self.j:
-            print ("---No extensions in the file.")
-            return (True, "")
-        isValid = True
-        es = ""
-        for theid in self.j["CityObjects"]:
-                if ( (self.j["CityObjects"][theid]["type"][0] == "+") and
-                     (self.j["CityObjects"][theid]["type"] not in self.j["extensions"]) ):
-                    isValid = False
-                    s = self.j["CityObjects"][theid]["type"] + " has no schema provided."
-                    es += s
-        folder_schemas = os.path.abspath(folder_schemas)
-        for ext in self.j["extensions"]:
-            print ('  %s' % (ext))
-            s = self.j["extensions"][ext]
-            s = s[s.rfind('/') + 1:]
-            schema = os.path.join(folder_schemas, "extensions")
-            schema = os.path.join(schema, s)
-            jeval = {}
-            jeval["$schema"] = "http://json-schema.org/draft-04/schema#"
-            jeval["type"] = "object"
-            jeval["$ref"] = "file://"
-            jeval["$ref"] += schema 
-            jeval["$ref"] += "#/%s" % (ext)
-            for theid in self.j["CityObjects"]:
-                if self.j["CityObjects"][theid]["type"] == ext:
-                    oneco = self.j["CityObjects"][theid]
-                    try:
-                        validation.validate_against_schema(oneco, jeval)
-                    except Exception as e:
-                        es += str(e)
-                        isValid = False
-        return (isValid, es)
 
 
     def update_bbox(self):

@@ -1,7 +1,6 @@
 
 import os
 import json
-import jsonschema
 
 #-- ERRORS
  # validate_against_schema
@@ -320,21 +319,3 @@ def metadata(j, js):
                 isValid = False
                 ws += "WARNING: Metadata '" + each + "' not in CityJSON schema.\n"
     return (isValid, ws)
-
-
-def validate_against_schema(j, js):
-    isValid = True
-    #-- load the schema for the cityobjects.json
-    # sco_path = os.path.abspath(os.path.dirname(schema))
-    # sco_path += '/cityobjects.json'
-    # jsco = json.loads(open(sco_path).read())
-    #-- validate the file against the schema
-    try:
-        jsonschema.validate(j, js)
-    except jsonschema.ValidationError as e:
-        raise Exception(e.message)
-        return False
-    except jsonschema.SchemaError as e:
-        raise Exception(e.message)
-        return False
-    return isValid
