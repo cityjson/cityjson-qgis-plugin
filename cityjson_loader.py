@@ -265,11 +265,19 @@ class CityJsonLoader:
             pr.addAttributes(fields)
             vl.updateFields()
 
+        # Prepare transformation parameters
+        scale = (1, 1, 1)
+        translate = (0, 0, 0)
+
+        if "transform" in city_model.j:
+            scale = city_model.j["transform"]["scale"]
+            translate = city_model.j["transform"]["translate"]
+
         # Load the vertices list
         verts = city_model.j["vertices"]
         points = []
         for v in verts:
-            points.append(QgsPoint(v[0], v[1], v[2]))
+            points.append(QgsPoint(v[0] * scale[0] + translate[0], v[1] * scale[1] + translate[1], v[2] * scale[2] + translate[2]))
 
         # A simple count of the skipped geometries
         skipped_geometries = 0
