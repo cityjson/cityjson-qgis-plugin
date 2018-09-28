@@ -10,8 +10,6 @@ This is a Python plugin for QGIS 3 which adds support for [CityJSON](http://www.
 * In the `Settings` panel enable the `Show also experimental plugins`.
 * In the `All` panel select the `CityJSON Loader` plugin from the list.
 
-*You should enable *
-
 ## Use
 
 After the installation, there must be a new submenu under the `Vector` menu. Select `CityJSON Loader`->`Load CityJSON...` in order to open the CityJSON dialog window. You can select a dataset and add it from there.
