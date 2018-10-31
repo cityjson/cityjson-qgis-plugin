@@ -22,9 +22,14 @@
  ***************************************************************************/
 """
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVariant
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
 from qgis.core import *
+try:
+    from qgis._3d import *
+    with_3d = True
+except ImportError:
+    with_3d = False
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -321,6 +326,20 @@ class CityJsonLoader:
         # Add the layer(s) to the project
         for vl_key, vl in vls.items():
             QgsProject.instance().addMapLayer(vl)
+            
+            if with_3d:
+                # Add the 3D symbol to the renderer
+                material = QgsPhongMaterialSettings()
+                material.setDiffuse(vl.renderer().symbol().color())
+                
+                symbol = QgsPolygon3DSymbol()
+                symbol.setMaterial(material)
+
+                renderer = QgsVectorLayer3DRenderer()
+                renderer.setLayer(vl)
+                renderer.setSymbol(symbol)
+                vl.setRenderer3D(renderer)
+
         
         # Show a message with the outcome of the loading process
         msg = QMessageBox()
