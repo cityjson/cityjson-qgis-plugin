@@ -312,9 +312,9 @@ class CityJsonLoader:
                         geoms.addGeometry(g)
                     continue
                 if geom["type"] == "Solid":
-                    for boundary in geom["boundaries"]:
-                        for solid in boundary:
-                            g = self.read_boundary(solid, points)
+                    for solid in geom["boundaries"]:
+                        for boundary in solid:
+                            g = self.read_boundary(boundary, points)
                             geoms.addGeometry(g)
                     continue
                 skipped_geometries += 1
