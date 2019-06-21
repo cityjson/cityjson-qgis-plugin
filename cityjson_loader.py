@@ -85,9 +85,16 @@ class CityJsonLoader:
         try:
             fstream = open(filename)
             model = cityjson.CityJSON(fstream)
-            self.dlg.metadataInfoBox.setPlainText(model.get_info())
-        except:
-            self.dlg.metadataInfoBox.setPlainText("File could not be loaded")
+            self.dlg.cityjsonVersionLineEdit.setText(model.get_version())
+            self.dlg.compressedLineEdit.setText("Yes" if "transform" in model.j else "No")
+            if "crs" in model.j["metadata"]:
+                self.dlg.crsLineEdit.setText(str(model.j["metadata"]["crs"]["epsg"]))
+            else:
+                self.dlg.crsLineEdit.setText("None")
+            self.dlg.metadataPlainTextEdit.setPlainText(model.get_info())
+        except Exception as error:
+            self.dlg.metadataPlainTextEdit.setPlainText("File could not be loaded")
+            raise error
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
