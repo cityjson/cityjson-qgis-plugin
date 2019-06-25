@@ -25,6 +25,7 @@ from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVa
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
 from qgis.core import *
+from .loader.layer_manager import BasicLayerManager, ObjectTypeLayerManager
 try:
     from qgis._3d import *
     with_3d = True
@@ -240,42 +241,17 @@ class CityJsonLoader:
 
         filename_with_ext = os.path.basename(filepath)
         filename, file_extension = os.path.splitext(filename_with_ext)
-
-        geom_type = "MultiPolygon"
-        if "crs" in city_model.j["metadata"]:
-            geom_type = "{}?crs=EPSG:{}".format(geom_type, city_model.j["metadata"]["crs"]["epsg"])
         
         multilayer = self.dlg.splitByTypeCheckBox.isChecked()
 
         city_objects = city_model.j["CityObjects"]
 
-        # Setup the layer(s)
-        vls = dict()
         if multilayer:
-            # Identify object types present in the file
-            types = set()
-            for key, obj in city_objects.items():
-                types.add(city_objects[key]['type'])
-
-            for t in types:
-                vl = QgsVectorLayer(geom_type, "{} - {}".format(filename, t), "memory")
-                vls[t] = vl
+            layer_manager = ObjectTypeLayerManager(city_model.j, filename)
         else:
-            vls["all"] = QgsVectorLayer(geom_type, filename, "memory")
+            layer_manager = BasicLayerManager(city_model.j, filename)
 
-        # Identify attributes present in the file
-        att_keys = self.get_attribute_keys(city_objects)
-
-        fields = [QgsField("uid", QVariant.String), QgsField("type", QVariant.String)]
-
-        for att in att_keys:
-            fields.append(QgsField("attribute.{}".format(att), QVariant.String))
-
-        # Setup attributes on the datasource(s)
-        for vl_key, vl in vls.items():
-            pr = vl.dataProvider()
-            pr.addAttributes(fields)
-            vl.updateFields()
+        layer_manager.prepare_attributes()
 
         # Prepare transformation parameters
         scale = (1, 1, 1)
@@ -296,11 +272,8 @@ class CityJsonLoader:
 
         # Iterate through the city objects
         for key, obj in city_objects.items():
-            if multilayer:
-                pr = vls[obj["type"]].dataProvider()
-            else:
-                pr = vls["all"].dataProvider()
-
+            pr = layer_manager.get_object_layer(obj).dataProvider()
+            
             fet = QgsFeature(pr.fields())
             fet["uid"] = key
             fet["type"] = obj["type"]
@@ -331,7 +304,7 @@ class CityJsonLoader:
             pr.addFeature(fet)
 
         # Add the layer(s) to the project
-        for vl_key, vl in vls.items():
+        for vl in layer_manager.get_all_layers():
             QgsProject.instance().addMapLayer(vl)
             
             if with_3d:
