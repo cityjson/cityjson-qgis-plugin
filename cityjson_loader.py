@@ -25,7 +25,8 @@ from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVa
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
 from qgis.core import *
-from .loader.layer_manager import BasicLayerManager, ObjectTypeLayerManager
+from .loader.layers import BasicLayerManager, ObjectTypeLayerManager
+from .loader.geometry import VerticesCache, GeometryReader
 try:
     from qgis._3d import *
     with_3d = True
@@ -218,23 +219,6 @@ class CityJsonLoader:
         
         return atts
 
-    def read_boundary(self, boundary, points):
-        g = QgsPolygon()
-        i = 0
-        for ring in boundary:
-            poly = []
-            for index in ring:
-                poly.append(points[index])
-            
-            r = QgsLineString(poly)
-            if i == 0:
-                g.setExteriorRing(r)
-            else:
-                g.addInteriorRing(r)
-            i = 1
-        
-        return g
-
     def load_cityjson(self, filepath):
         file = open(filepath)
         city_model = cityjson.CityJSON(file)
@@ -253,22 +237,18 @@ class CityJsonLoader:
 
         layer_manager.prepare_attributes()
 
-        # Prepare transformation parameters
-        scale = (1, 1, 1)
-        translate = (0, 0, 0)
+        vertices_cache = VerticesCache()
 
         if "transform" in city_model.j:
-            scale = city_model.j["transform"]["scale"]
-            translate = city_model.j["transform"]["translate"]
+            vertices_cache.set_scale(city_model.j["transform"]["scale"])
+            vertices_cache.set_translation(city_model.j["transform"]["translate"])
 
         # Load the vertices list
         verts = city_model.j["vertices"]
-        points = []
         for v in verts:
-            points.append(QgsPoint(v[0] * scale[0] + translate[0], v[1] * scale[1] + translate[1], v[2] * scale[2] + translate[2]))
+            vertices_cache.add_vertex(v)
 
-        # A simple count of the skipped geometries
-        skipped_geometries = 0
+        geometry_reader = GeometryReader(vertices_cache)
 
         # Iterate through the city objects
         for key, obj in city_objects.items():
@@ -283,22 +263,8 @@ class CityJsonLoader:
                 for att_key, att_value in obj["attributes"].items():
                     fet["attribute.{}".format(att_key)] = att_value
 
-            # Load the geometries (only surfaces and solids, for now)
-            geoms = QgsMultiPolygon()
-            for geom in obj["geometry"]:
-                if "Surface" in geom["type"]:
-                    for boundary in geom["boundaries"]:
-                        g = self.read_boundary(boundary, points)
-                        geoms.addGeometry(g)
-                    continue
-                if geom["type"] == "Solid":
-                    for solid in geom["boundaries"]:
-                        for boundary in solid:
-                            g = self.read_boundary(boundary, points)
-                            geoms.addGeometry(g)
-                    continue
-                skipped_geometries += 1
-            fet.setGeometry(QgsGeometry(geoms))
+            geom = geometry_reader.read_geometry(obj["geometry"])
+            fet.setGeometry(geom)
 
             # Add feature to the provider
             pr.addFeature(fet)
@@ -323,11 +289,11 @@ class CityJsonLoader:
         
         # Show a message with the outcome of the loading process
         msg = QMessageBox()
-        if skipped_geometries > 0:
+        if geometry_reader.skipped_geometries() > 0:
             msg.setIcon(QMessageBox.Warning)
             msg.setText("CityJSON loaded with issues.")
             msg.setInformativeText("Some geometries were skipped.")
-            msg.setDetailedText("{} geometries were not surfaces or solids, so could not be loaded.".format(skipped_geometries))
+            msg.setDetailedText("{} geometries were not surfaces or solids, so could not be loaded.".format(geometry_reader.skipped_geometries()))
         else:
             msg.setIcon(QMessageBox.Information)
             msg.setText("CityJSON loaded successfully.")
