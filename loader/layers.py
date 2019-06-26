@@ -1,5 +1,7 @@
 """A module to manage the vector layers as they are going to be loaded in QGIS"""
 
+import abc
+
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVariant
 from qgis.core import QgsFeature, QgsField, QgsVectorLayer
 
@@ -12,6 +14,24 @@ class BaseLayerManager:
         self._geom_type = "MultiPolygon"
         if "crs" in self._citymodel["metadata"]:
             self._geom_type = "{}?crs=EPSG:{}".format(self._geom_type, self._citymodel["metadata"]["crs"]["epsg"])
+    
+    def prepare_attributes(self):
+        """Prepares the attributes of the vector layer."""
+        # Identify attributes present in the file
+        att_keys = get_attribute_keys(self._citymodel["CityObjects"])
+
+        fields = create_fields(att_keys)
+
+        # Setup attributes on the datasource(s)
+        for vl in self.get_all_layers():
+            pr = vl.dataProvider()
+            pr.addAttributes(fields)
+            vl.updateFields()
+    
+    @abc.abstractmethod
+    def get_all_layers(self):
+        """Returns all vector layers of the manager"""
+        return
 
 class SingleLayerManager(BaseLayerManager):
     """A class that create a simple layer for all city objects"""
@@ -20,18 +40,6 @@ class SingleLayerManager(BaseLayerManager):
         super(SingleLayerManager, self).__init__(citymodel, filename, geometry_reader)
 
         self._vectorlayer = QgsVectorLayer(self._geom_type, filename, "memory")
-
-    def prepare_attributes(self):
-        """Prepares the attributes of the vector layer."""
-        # Identify attributes present in the file
-        att_keys = get_attribute_keys(self._citymodel["CityObjects"])
-
-        fields = create_fields(att_keys)
-
-        # Setup attributes on the datasource
-        pr = self._vectorlayer.dataProvider()
-        pr.addAttributes(fields)
-        self._vectorlayer.updateFields()
 
     def add_object(self, object_key, cityobject):
         """Adds a cityobject in the respective vector layer"""
@@ -58,27 +66,12 @@ class ObjectTypeLayerManager(BaseLayerManager):
         super(ObjectTypeLayerManager, self).__init__(citymodel, filename, geometry_reader)
 
         # Identify object types present in the file
-        types = set()
-        for key, obj in self._citymodel["CityObjects"].items():
-            types.add(self._citymodel["CityObjects"][key]['type'])
+        types = set([obj["type"] for obj in self._citymodel["CityObjects"].values()])
 
         self._vectorlayers = dict()
         for t in types:
             vl = QgsVectorLayer(self._geom_type, "{} - {}".format(filename, t), "memory")
             self._vectorlayers[t] = vl
-
-    def prepare_attributes(self):
-        """Prepares the attributes of the vector layer."""
-        # Identify attributes present in the file
-        att_keys = get_attribute_keys(self._citymodel["CityObjects"])
-
-        fields = create_fields(att_keys)
-
-        # Setup attributes on the datasource(s)
-        for vl_key, vl in self._vectorlayers.items():
-            pr = vl.dataProvider()
-            pr.addAttributes(fields)
-            vl.updateFields()
 
     def add_object(self, object_key, cityobject):
         """Adds a cityobject in the respective vector layer"""
@@ -104,7 +97,7 @@ def get_attribute_keys(objs):
 
     for key, obj in objs.items():
         if "attributes" in obj:
-            for att_key, att_value in obj["attributes"].items():
+            for att_key in obj["attributes"]:
                 if not att_key in atts:
                     atts.append(att_key)
 
