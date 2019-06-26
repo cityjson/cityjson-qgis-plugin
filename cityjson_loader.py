@@ -25,7 +25,7 @@ from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVa
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
 from qgis.core import *
-from .loader.layers import BasicLayerManager, ObjectTypeLayerManager
+from .loader.layers import SingleLayerManager, ObjectTypeLayerManager
 from .loader.geometry import VerticesCache, GeometryReader
 try:
     from qgis._3d import *
@@ -230,13 +230,6 @@ class CityJsonLoader:
 
         city_objects = city_model.j["CityObjects"]
 
-        if multilayer:
-            layer_manager = ObjectTypeLayerManager(city_model.j, filename)
-        else:
-            layer_manager = BasicLayerManager(city_model.j, filename)
-
-        layer_manager.prepare_attributes()
-
         vertices_cache = VerticesCache()
 
         if "transform" in city_model.j:
@@ -250,18 +243,16 @@ class CityJsonLoader:
 
         geometry_reader = GeometryReader(vertices_cache)
 
+        if multilayer:
+            layer_manager = ObjectTypeLayerManager(city_model.j, filename, geometry_reader)
+        else:
+            layer_manager = SingleLayerManager(city_model.j, filename, geometry_reader)
+
+        layer_manager.prepare_attributes()
+
         # Iterate through the city objects
         for key, obj in city_objects.items():
-            pr = layer_manager.get_object_layer(obj).dataProvider()
-            
-            fet = QgsFeature(pr.fields())
-            fet["uid"] = key
-            fet["type"] = obj["type"]
-
-            # Load the attributes
-            if "attributes" in obj:
-                for att_key, att_value in obj["attributes"].items():
-                    fet["attribute.{}".format(att_key)] = att_value
+            pr, fet = layer_manager.add_object(key, obj)
 
             geom = geometry_reader.read_geometry(obj["geometry"])
             fet.setGeometry(geom)
