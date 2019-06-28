@@ -25,7 +25,7 @@ from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVa
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
 from qgis.core import *
-from .loader.layers import SingleLayerManager, ObjectTypeLayerManager
+from .loader.layers import DynamicLayerManager, BaseFieldsBuilder, AttributeFieldsDecorator, LodFieldsDecorator, SemanticSurfaceFieldsDecorator, TypeNamingIterator, BaseNamingIterator
 from .loader.geometry import VerticesCache, GeometryReader
 try:
     from qgis._3d import *
@@ -243,11 +243,15 @@ class CityJsonLoader:
 
         geometry_reader = GeometryReader(vertices_cache)
 
-        if multilayer:
-            layer_manager = ObjectTypeLayerManager(city_model.j, filename, geometry_reader)
-        else:
-            layer_manager = SingleLayerManager(city_model.j, filename, geometry_reader)
+        builder = AttributeFieldsDecorator(BaseFieldsBuilder(), city_model.j)
 
+        if multilayer:
+            naming_iterator = TypeNamingIterator(filename, city_model.j)
+        else:
+            naming_iterator = BaseNamingIterator(filename)
+        
+        layer_manager = DynamicLayerManager(city_model.j, geometry_reader, naming_iterator, builder)
+        
         layer_manager.prepare_attributes()
 
         # Iterate through the city objects
