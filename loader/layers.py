@@ -8,10 +8,9 @@ from qgis.core import QgsFeature, QgsField, QgsFields, QgsVectorLayer
 class BaseLayerManager:
     """A base layer manager for the common functionality between current ones"""
 
-    def __init__(self, citymodel, fields_builder, geometry_reader):
+    def __init__(self, citymodel, fields_builder):
         self._citymodel = citymodel
         self._fields_builder = fields_builder
-        self._geometry_reader = geometry_reader
         self._geom_type = "MultiPolygon"
         self._fields = QgsFields()
         if "crs" in self._citymodel["metadata"]:
@@ -35,11 +34,11 @@ class BaseLayerManager:
 class DynamicLayerManager(BaseLayerManager):
     """A class that create a simple layer for all city objects"""
 
-    def __init__(self, citymodel, geometry_reader, layer_iterator, fields_builder):
+    def __init__(self, citymodel, feature_builder, layer_iterator, fields_builder):
         super(DynamicLayerManager, self).__init__(citymodel,
-                                                  fields_builder,
-                                                  geometry_reader)
+                                                  fields_builder)
 
+        self._feature_builder = feature_builder
         self._layer_iterator = layer_iterator
         self._vectorlayers = dict()
         for name in self._layer_iterator.all_layers():
@@ -48,16 +47,12 @@ class DynamicLayerManager(BaseLayerManager):
 
     def add_object(self, object_key, cityobject):
         """Adds a cityobject in the respective vector layer"""
-        new_feature = create_feature(self._fields, object_key, cityobject)
+        new_features = self._feature_builder.create_features(self._fields, object_key, cityobject)
 
-        geom = self._geometry_reader.read_geometry(cityobject["geometry"])
-        new_feature.setGeometry(geom)
-
-        layer_name = self._layer_iterator.get_feature_layer(new_feature)
-        provider = self._vectorlayers[layer_name].dataProvider()
-        provider.addFeature(new_feature)
-
-        return provider, new_feature
+        for feature in new_features:
+            layer_name = self._layer_iterator.get_feature_layer(feature)
+            provider = self._vectorlayers[layer_name].dataProvider()
+            provider.addFeature(feature)
 
     def get_all_layers(self):
         """Returns all the vector layers from this manager."""
@@ -112,6 +107,11 @@ class LodNamingDecorator:
         for lod in self._lods:
             for layer in self._decorated.all_layers():
                 yield "{} [LoD{}]".format(layer, str(lod))
+    
+    def get_feature_layer(self, feature):
+        """Returns the layer name for the given city object"""
+        layer = self._decorated.get_feature_layer(feature)
+        return "{} [LoD{}]".format(layer, feature["lod"])
 
 class BaseFieldsBuilder:
     """A class that create the basic fields of city objects (uid and type)"""
@@ -138,11 +138,23 @@ class AttributeFieldsDecorator:
         self._decorated = decorated
         self._citymodel = citymodel
 
+    def get_attribute_keys(self, objs):
+        """Returns the list of (unique) attributes found in all city objects."""
+        atts = []
+
+        for obj in objs.values():
+            if "attributes" in obj:
+                for att_key in obj["attributes"]:
+                    if not att_key in atts:
+                        atts.append(att_key)
+
+        return atts
+
     def get_fields(self):
         """Create and returns fields"""
         fields = self._decorated.get_fields()
 
-        attributes = get_attribute_keys(self._citymodel["CityObjects"])
+        attributes = self.get_attribute_keys(self._citymodel["CityObjects"])
 
         for att in attributes:
             fields.append(QgsField("attribute.{}".format(att),
@@ -178,27 +190,54 @@ class SemanticSurfaceFieldsDecorator:
 
         return fields
 
-def get_attribute_keys(objs):
-    """Returns the list of (unique) attributes found in all city objects."""
-    atts = []
+class SimpleFeatureBuilder:
+    """A class that create features according to their attributes"""
 
-    for obj in objs.values():
-        if "attributes" in obj:
-            for att_key in obj["attributes"]:
-                if not att_key in atts:
-                    atts.append(att_key)
+    def __init__(self, geometry_reader):
+        self._geometry_reader = geometry_reader
 
-    return atts
+    def create_features(self, fields, object_key, cityobject):
+        """Creates a feature based on the city object's semantics"""
+        new_feature = QgsFeature(fields)
+        new_feature["uid"] = object_key
+        new_feature["type"] = cityobject["type"]
 
-def create_feature(fields, object_key, cityobject):
-    """Creates a feature based on the city object's semantics"""
-    fet = QgsFeature(fields)
-    fet["uid"] = object_key
-    fet["type"] = cityobject["type"]
+        # Load the attributes
+        if "attributes" in cityobject:
+            for att_key, att_value in cityobject["attributes"].items():
+                new_feature["attribute.{}".format(att_key)] = att_value
 
-    # Load the attributes
-    if "attributes" in cityobject:
-        for att_key, att_value in cityobject["attributes"].items():
-            fet["attribute.{}".format(att_key)] = att_value
+        geom = self._geometry_reader.read_geometry(cityobject["geometry"])
+        new_feature.setGeometry(geom)
 
-    return fet
+        return [new_feature]
+
+class LodFeatureDecorator:
+    """A class that decorates feature with lod information and geometries"""
+
+    def __init__(self, decorated, geometry_reader):
+        self._decorated = decorated
+        self._geometry_reader = geometry_reader
+
+    def create_features(self, fields, object_key, cityobject):
+        """Creates features per LoD in the geometry"""
+        # TODO: This has to get the geometries as divided and provided it again
+        # as input to other decorators
+        features = self._decorated.create_features(fields,
+                                                   object_key,
+                                                   cityobject)
+        return_features = []
+
+        lods = [geom["lod"] for geom in cityobject["geometry"]]
+
+        for lod in lods:
+            for feature in features:
+                new_feature = QgsFeature(feature)
+
+                new_feature["lod"] = lod
+                geometry = self._geometry_reader.read_geometry(cityobject["geometry"], lod)
+                new_feature.setGeometry(geometry)
+
+                return_features.append(new_feature)
+
+        return return_features

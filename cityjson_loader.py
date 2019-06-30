@@ -25,7 +25,7 @@ from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVa
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
 from qgis.core import *
-from .loader.layers import DynamicLayerManager, BaseFieldsBuilder, AttributeFieldsDecorator, LodFieldsDecorator, SemanticSurfaceFieldsDecorator, TypeNamingIterator, BaseNamingIterator
+from .loader.layers import DynamicLayerManager, BaseFieldsBuilder, AttributeFieldsDecorator, LodFieldsDecorator, SemanticSurfaceFieldsDecorator, TypeNamingIterator, BaseNamingIterator, LodNamingDecorator, SimpleFeatureBuilder, LodFeatureDecorator
 from .loader.geometry import VerticesCache, GeometryReader
 try:
     from qgis._3d import *
@@ -243,26 +243,27 @@ class CityJsonLoader:
 
         geometry_reader = GeometryReader(vertices_cache)
 
-        builder = AttributeFieldsDecorator(BaseFieldsBuilder(), city_model.j)
+        fields_builder = AttributeFieldsDecorator(BaseFieldsBuilder(), city_model.j)
+        fields_builder = LodFieldsDecorator(fields_builder)
+
+        feature_builder = SimpleFeatureBuilder(geometry_reader)
+        feature_builder = LodFeatureDecorator(feature_builder, geometry_reader)
 
         if multilayer:
             naming_iterator = TypeNamingIterator(filename, city_model.j)
         else:
             naming_iterator = BaseNamingIterator(filename)
-        
-        layer_manager = DynamicLayerManager(city_model.j, geometry_reader, naming_iterator, builder)
-        
+        naming_iterator = LodNamingDecorator(naming_iterator,
+                                                filename,
+                                                city_model.j)
+
+        layer_manager = DynamicLayerManager(city_model.j, feature_builder, naming_iterator, fields_builder)
+
         layer_manager.prepare_attributes()
 
         # Iterate through the city objects
         for key, obj in city_objects.items():
-            pr, fet = layer_manager.add_object(key, obj)
-
-            geom = geometry_reader.read_geometry(obj["geometry"])
-            fet.setGeometry(geom)
-
-            # Add feature to the provider
-            pr.addFeature(fet)
+            layer_manager.add_object(key, obj)
 
         # Add the layer(s) to the project
         for vl in layer_manager.get_all_layers():
