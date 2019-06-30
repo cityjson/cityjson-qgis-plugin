@@ -244,20 +244,24 @@ class CityJsonLoader:
         geometry_reader = GeometryReader(vertices_cache)
 
         fields_builder = AttributeFieldsDecorator(BaseFieldsBuilder(), city_model.j)
-        fields_builder = LodFieldsDecorator(fields_builder)
-        fields_builder = SemanticSurfaceFieldsDecorator(fields_builder)
-
         feature_builder = SimpleFeatureBuilder(geometry_reader)
-        feature_builder = LodFeatureDecorator(feature_builder, geometry_reader)
-        feature_builder = SemanticSurfaceFeatureDecorator(feature_builder, geometry_reader)
+
+        if self.dlg.loDLoadingComboBox.currentIndex() > 0:
+            fields_builder = LodFieldsDecorator(fields_builder)
+            feature_builder = LodFeatureDecorator(feature_builder, geometry_reader)
+        
+        if self.dlg.semanticsLoadingCheckBox.isChecked():
+            fields_builder = SemanticSurfaceFieldsDecorator(fields_builder)
+            feature_builder = SemanticSurfaceFeatureDecorator(feature_builder, geometry_reader)
 
         if multilayer:
             naming_iterator = TypeNamingIterator(filename, city_model.j)
         else:
             naming_iterator = BaseNamingIterator(filename)
-        naming_iterator = LodNamingDecorator(naming_iterator,
-                                                filename,
-                                                city_model.j)
+        if self.dlg.loDLoadingComboBox.currentIndex() > 1:
+            naming_iterator = LodNamingDecorator(naming_iterator,
+                                                 filename,
+                                                 city_model.j)
 
         layer_manager = DynamicLayerManager(city_model.j, feature_builder, naming_iterator, fields_builder)
 
