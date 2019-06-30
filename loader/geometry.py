@@ -42,29 +42,69 @@ class GeometryReader:
         self._vertices_cache = vertices_cache
         self._skipped_geometries = 0
 
-    def read_geometry(self, geometry, lod_filter=None):
+    def read_geometry(self, geometry):
         """Reads a CityJSON geometry and returns it as QgsGeometry
 
         TODO: For now supports only Surfaces and Solids
         """
+        polygons, _ = self.get_polygons(geometry)
+
+        return self.polygons_to_geometry(polygons)
+
+    def polygons_to_geometry(self, polygons):
+        """Returns a QgsGeometry object from a list of polygons"""
         geoms = QgsMultiPolygon()
+        for polygon in polygons:
+            g = self.read_polygon(polygon)
+            geoms.addGeometry(g)
+        return QgsGeometry(geoms)
+
+    def get_polygons(self, geometry):
+        """Returns a dictionary where keys are polygons and values
+        are the semantic surfaces
+        """
+        polygons = []
+        semantics = []
+
         for geom in geometry:
-            if lod_filter is not None and geom["lod"] != lod_filter:
-                continue
+            with_semantics = "semantics" in geom
 
             if "Surface" in geom["type"]:
+                if with_semantics:
+                    surface = iter(geom["semantics"]["values"])
+
                 for boundary in geom["boundaries"]:
-                    g = self.read_polygon(boundary)
-                    geoms.addGeometry(g)
-                continue
-            if geom["type"] == "Solid":
+                    if with_semantics:
+                        semantic = next(surface)
+                    else:
+                        semantic = None
+                    polygons.append(boundary)
+                    if semantic is None:
+                        semantics.append(None)
+                    else:
+                        semantics.append(geom["semantics"]["surfaces"][semantic])
+            elif geom["type"] == "Solid":
+                if with_semantics:
+                    solid_surface = iter(geom["semantics"]["values"])
+
                 for solid in geom["boundaries"]:
+                    if with_semantics:
+                        surface = iter(next(solid_surface))
+
                     for boundary in solid:
-                        g = self.read_polygon(boundary)
-                        geoms.addGeometry(g)
-                continue
-            self._skipped_geometries += 1
-        return QgsGeometry(geoms)
+                        if with_semantics:
+                            semantic = next(surface)
+                        else:
+                            semantic = None
+                        polygons.append(boundary)
+                        if semantic is None:
+                            semantics.append(None)
+                        else:
+                            semantics.append(geom["semantics"]["surfaces"][semantic])
+            else:
+                self._skipped_geometries += 1
+
+        return polygons, semantics
 
     def read_polygon(self, boundary):
         """Reads the specified polygon"""

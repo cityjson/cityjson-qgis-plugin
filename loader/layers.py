@@ -196,7 +196,7 @@ class SimpleFeatureBuilder:
     def __init__(self, geometry_reader):
         self._geometry_reader = geometry_reader
 
-    def create_features(self, fields, object_key, cityobject):
+    def create_features(self, fields, object_key, cityobject, read_geometry=True):
         """Creates a feature based on the city object's semantics"""
         new_feature = QgsFeature(fields)
         new_feature["uid"] = object_key
@@ -207,10 +207,11 @@ class SimpleFeatureBuilder:
             for att_key, att_value in cityobject["attributes"].items():
                 new_feature["attribute.{}".format(att_key)] = att_value
 
-        geom = self._geometry_reader.read_geometry(cityobject["geometry"])
-        new_feature.setGeometry(geom)
+        if read_geometry:
+            geom = self._geometry_reader.read_geometry(cityobject["geometry"])
+            new_feature.setGeometry(geom)
 
-        return [new_feature]
+        return {new_feature: cityobject["geometry"]}
 
 class LodFeatureDecorator:
     """A class that decorates feature with lod information and geometries"""
@@ -219,25 +220,69 @@ class LodFeatureDecorator:
         self._decorated = decorated
         self._geometry_reader = geometry_reader
 
-    def create_features(self, fields, object_key, cityobject):
+    def create_features(self, fields, object_key, cityobject, read_geometry=True):
         """Creates features per LoD in the geometry"""
-        # TODO: This has to get the geometries as divided and provided it again
-        # as input to other decorators
         features = self._decorated.create_features(fields,
                                                    object_key,
-                                                   cityobject)
-        return_features = []
+                                                   cityobject,
+                                                   False)
+        return_features = {}
 
-        lods = [geom["lod"] for geom in cityobject["geometry"]]
+        for feature, feature_geom in features.items():
+            lod_geom_dict = {} # Stores the lod -> geometry dictionary
+            for geom in feature_geom:
+                lod_geom_dict.setdefault(geom["lod"], []).append(geom)
 
-        for lod in lods:
-            for feature in features:
+            for lod, geom in lod_geom_dict.items():
                 new_feature = QgsFeature(feature)
 
                 new_feature["lod"] = lod
-                geometry = self._geometry_reader.read_geometry(cityobject["geometry"], lod)
-                new_feature.setGeometry(geometry)
+                if read_geometry:
+                    qgs_geometry = self._geometry_reader.read_geometry(geom)
+                    new_feature.setGeometry(qgs_geometry)
 
-                return_features.append(new_feature)
+                return_features[new_feature] = geom
+
+        return return_features
+
+class SemanticSurfaceFeatureDecorator:
+    """A class that decorates feature with lod information and geometries"""
+
+    def __init__(self, decorated, geometry_reader):
+        self._decorated = decorated
+        self._geometry_reader = geometry_reader
+    
+    def semantic_to_string(self, semantic):
+        """Returns a string from a semantic surface object"""
+        if semantic is None:
+            return "None"
+        else:
+            return semantic["type"]
+
+    def create_features(self, fields, object_key, cityobject, read_geometry=True):
+        """Creates features per semantic surface in each geometry"""
+        features = self._decorated.create_features(fields,
+                                                   object_key,
+                                                   cityobject,
+                                                   False)
+        return_features = {}
+
+        for feature, feature_geom in features.items():
+            polygons, semantics = self._geometry_reader.get_polygons(feature_geom)
+
+            surf_geom_dict = {}
+            for polygon, semantic in zip(polygons, semantics):
+                semantic_surface = self.semantic_to_string(semantic)
+                surf_geom_dict.setdefault(semantic_surface, []).append(polygon)
+
+            for surface, polygons in surf_geom_dict.items():
+                new_feature = QgsFeature(feature)
+
+                new_feature["semantic_surface"] = surface
+                if read_geometry:
+                    qgs_geometry = self._geometry_reader.polygons_to_geometry(polygons)
+                    new_feature.setGeometry(qgs_geometry)
+
+                return_features[new_feature] = polygons #TODO: This is wrong! There must be a geometry here
 
         return return_features

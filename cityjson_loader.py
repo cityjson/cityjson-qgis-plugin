@@ -25,7 +25,7 @@ from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVa
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
 from qgis.core import *
-from .loader.layers import DynamicLayerManager, BaseFieldsBuilder, AttributeFieldsDecorator, LodFieldsDecorator, SemanticSurfaceFieldsDecorator, TypeNamingIterator, BaseNamingIterator, LodNamingDecorator, SimpleFeatureBuilder, LodFeatureDecorator
+from .loader.layers import DynamicLayerManager, BaseFieldsBuilder, AttributeFieldsDecorator, LodFieldsDecorator, SemanticSurfaceFieldsDecorator, TypeNamingIterator, BaseNamingIterator, LodNamingDecorator, SimpleFeatureBuilder, LodFeatureDecorator, SemanticSurfaceFeatureDecorator
 from .loader.geometry import VerticesCache, GeometryReader
 try:
     from qgis._3d import *
@@ -245,9 +245,11 @@ class CityJsonLoader:
 
         fields_builder = AttributeFieldsDecorator(BaseFieldsBuilder(), city_model.j)
         fields_builder = LodFieldsDecorator(fields_builder)
+        fields_builder = SemanticSurfaceFieldsDecorator(fields_builder)
 
         feature_builder = SimpleFeatureBuilder(geometry_reader)
         feature_builder = LodFeatureDecorator(feature_builder, geometry_reader)
+        feature_builder = SemanticSurfaceFeatureDecorator(feature_builder, geometry_reader)
 
         if multilayer:
             naming_iterator = TypeNamingIterator(filename, city_model.j)
