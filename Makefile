@@ -38,19 +38,21 @@ LOCALES =
 # translation
 SOURCES = \
 	__init__.py \
-	cityjson_loader.py cityjson_loader_dialog.py
+	gui/cityjson_loader.py gui/cityjson_loader_dialog.py \
+	loader/layers.py loader/geometry.py
 
 PLUGINNAME = CityJSON-loader
 
 PY_FILES = \
 	__init__.py \
-	cityjson_loader.py cityjson_loader_dialog.py
+	gui/cityjson_loader.py gui/cityjson_loader_dialog.py \
+	loader/__init__.py loader/layers.py loader/geometry.py
 
-UI_FILES = cityjson_loader_dialog_base.ui
+UI_FILES = gui/cityjson_loader_dialog_base.ui
 
 EXTRAS = metadata.txt icon.png
 
-EXTRA_DIRS =
+EXTRA_DIRS = cjio
 
 COMPILED_RESOURCE_FILES = resources.py
 
@@ -67,7 +69,7 @@ PLUGIN_UPLOAD = $(c)/plugin_upload.py
 
 RESOURCE_SRC=$(shell grep '^ *<file' resources.qrc | sed 's@</file>@@g;s/.*>//g' | tr '\n' ' ')
 
-QGISDIR=.qgis2
+QGISDIR=Library/Application Support/QGIS/QGIS3/profiles/default
 
 default: compile
 
@@ -100,20 +102,20 @@ test: compile transcompile
 deploy: compile doc transcompile
 	@echo
 	@echo "------------------------------------------"
-	@echo "Deploying plugin to your .qgis2 directory."
+	@echo "Deploying plugin to your QGIS3 directory."
 	@echo "------------------------------------------"
 	# The deploy  target only works on unix like operating system where
 	# the Python plugin directory is located at:
 	# $HOME/$(QGISDIR)/python/plugins
-	mkdir -p $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)
-	cp -vf $(PY_FILES) $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)
-	cp -vf $(UI_FILES) $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)
-	cp -vf $(COMPILED_RESOURCE_FILES) $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)
-	cp -vf $(EXTRAS) $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)
-	cp -vfr i18n $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)
-	cp -vfr $(HELP) $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/help
+	mkdir -p "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
+	rsync -R $(PY_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
+	rsync -R $(UI_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
+	cp -vf $(COMPILED_RESOURCE_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
+	cp -vf $(EXTRAS) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
+	# cp -vfr i18n "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
+	# cp -vfr $(HELP) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/help"
 	# Copy extra directories if any
-	(foreach EXTRA_DIR,(EXTRA_DIRS), cp -R (EXTRA_DIR) (HOME)/(QGISDIR)/python/plugins/(PLUGINNAME)/;)
+	$(foreach EXTRA_DIR,$(EXTRA_DIRS), cp -R $(EXTRA_DIR) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"/;)
 
 
 # The dclean target removes compiled python files from plugin directory
