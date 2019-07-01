@@ -208,18 +208,8 @@ class CityJsonLoader:
         # remove the toolbar
         del self.toolbar
 
-    def get_attribute_keys(self, objs):
-        atts = []
-
-        for key, obj in objs.items():
-            if "attributes" in obj:
-                for att_key, att_value in obj["attributes"].items():
-                    if not att_key in atts:
-                        atts.append(att_key)
-        
-        return atts
-
     def load_cityjson(self, filepath):
+        """Loads a specified CityJSON file and adds it to the project"""
         file = open(filepath)
         city_model = cityjson.CityJSON(file)
 
