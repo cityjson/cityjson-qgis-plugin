@@ -82,8 +82,25 @@ class CityJsonLoader:
         self.dlg.browseButton.clicked.connect(self.select_cityjson_file)
 
     def select_cityjson_file(self):
+        """Show a dialog to select a CityJSON file."""
         filename, _ = QFileDialog.getOpenFileName(self.dlg, "Select CityJSON file", "", "*.json")
-        self.dlg.cityjsonPathLineEdit.setText(filename)
+        if filename == "":
+            self.clear_file_information()
+        else:
+            self.dlg.cityjsonPathLineEdit.setText(filename)
+            self.update_file_information(filename)
+    
+    def clear_file_information(self):
+        """Clear all fields related to file information"""
+        line_edits = [self.dlg.cityjsonVersionLineEdit,
+                      self.dlg.compressedLineEdit,
+                      self.dlg.crsLineEdit]
+        for line_edit in line_edits:
+            line_edit.setText("")
+        self.dlg.metadataPlainTextEdit.setPlainText("")
+
+    def update_file_information(self, filename):
+        """Update metadata fields according to the file provided"""
         try:
             fstream = open(filename)
             model = cityjson.CityJSON(fstream)
