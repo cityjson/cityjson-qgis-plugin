@@ -50,7 +50,7 @@ PY_FILES = \
 
 UI_FILES = gui/cityjson_loader_dialog_base.ui
 
-EXTRAS = metadata.txt icon.png
+EXTRAS = metadata.txt icon.png cityjson_logo_big.png
 
 EXTRA_DIRS = cjio
 
