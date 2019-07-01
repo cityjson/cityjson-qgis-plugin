@@ -40,7 +40,7 @@ SOURCES = \
 	__init__.py \
 	cityjson_loader.py cityjson_loader_dialog.py
 
-PLUGINNAME = cityjson_loader
+PLUGINNAME = CityJSON-loader
 
 PY_FILES = \
 	__init__.py \
