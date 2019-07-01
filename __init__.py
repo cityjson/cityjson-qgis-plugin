@@ -32,5 +32,5 @@ def classFactory(iface):  # pylint: disable=invalid-name
     :type iface: QgsInterface
     """
     #
-    from .cityjson_loader import CityJsonLoader
+    from .gui.cityjson_loader import CityJsonLoader
     return CityJsonLoader(iface)

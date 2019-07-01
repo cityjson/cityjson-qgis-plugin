@@ -25,8 +25,8 @@ from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVa
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
 from qgis.core import *
-from .loader.layers import DynamicLayerManager, BaseFieldsBuilder, AttributeFieldsDecorator, LodFieldsDecorator, SemanticSurfaceFieldsDecorator, TypeNamingIterator, BaseNamingIterator, LodNamingDecorator, SimpleFeatureBuilder, LodFeatureDecorator, SemanticSurfaceFeatureDecorator
-from .loader.geometry import VerticesCache, GeometryReader
+from ..loader.layers import DynamicLayerManager, BaseFieldsBuilder, AttributeFieldsDecorator, LodFieldsDecorator, SemanticSurfaceFieldsDecorator, TypeNamingIterator, BaseNamingIterator, LodNamingDecorator, SimpleFeatureBuilder, LodFeatureDecorator, SemanticSurfaceFeatureDecorator
+from ..loader.geometry import VerticesCache, GeometryReader
 try:
     from qgis._3d import *
     with_3d = True
@@ -34,11 +34,11 @@ except ImportError:
     with_3d = False
 
 # Initialize Qt resources from file resources.py
-from .resources import *
+from ..resources import *
 # Import the code for the dialog
 from .cityjson_loader_dialog import CityJsonLoaderDialog
 import os.path
-from .cjio import cityjson
+from ..cjio import cityjson
 
 class CityJsonLoader:
     """QGIS Plugin Implementation."""
