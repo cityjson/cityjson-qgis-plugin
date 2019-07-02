@@ -23,7 +23,7 @@
 """
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVariant
 from PyQt5.QtGui import QIcon, QColor
-from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox, QDialogButtonBox
 from qgis.core import *
 from ..loader.layers import DynamicLayerManager, BaseFieldsBuilder, AttributeFieldsDecorator, LodFieldsDecorator, SemanticSurfaceFieldsDecorator, TypeNamingIterator, BaseNamingIterator, LodNamingDecorator, SimpleFeatureBuilder, LodFeatureDecorator, SemanticSurfaceFeatureDecorator
 from ..loader.geometry import VerticesCache, GeometryReader
@@ -83,13 +83,16 @@ class CityJsonLoader:
 
     def select_cityjson_file(self):
         """Show a dialog to select a CityJSON file."""
-        filename, _ = QFileDialog.getOpenFileName(self.dlg, "Select CityJSON file", "", "*.json")
+        filename, _ = QFileDialog.getOpenFileName(self.dlg,
+                                                  "Select CityJSON file",
+                                                  "",
+                                                  "*.json")
         if filename == "":
             self.clear_file_information()
         else:
             self.dlg.cityjsonPathLineEdit.setText(filename)
             self.update_file_information(filename)
-    
+
     def clear_file_information(self):
         """Clear all fields related to file information"""
         line_edits = [self.dlg.cityjsonVersionLineEdit,
@@ -98,6 +101,7 @@ class CityJsonLoader:
         for line_edit in line_edits:
             line_edit.setText("")
         self.dlg.metadataPlainTextEdit.setPlainText("")
+        self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
     def update_file_information(self, filename):
         """Update metadata fields according to the file provided"""
@@ -111,8 +115,10 @@ class CityJsonLoader:
             else:
                 self.dlg.crsLineEdit.setText("None")
             self.dlg.metadataPlainTextEdit.setPlainText(model.get_info())
+            self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
         except Exception as error:
             self.dlg.metadataPlainTextEdit.setPlainText("File could not be loaded")
+            self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
             raise error
 
     # noinspection PyMethodMayBeStatic
@@ -315,6 +321,7 @@ class CityJsonLoader:
         """Run method that performs all the real work"""
         # show the dialog
         self.dlg.show()
+        self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
         # Run the dialog event loop
         result = self.dlg.exec_()
         # See if OK was pressed
