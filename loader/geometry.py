@@ -67,41 +67,17 @@ class GeometryReader:
         semantics = []
 
         for geom in geometry:
-            with_semantics = "semantics" in geom
-
-            if "Surface" in geom["type"]:
-                if with_semantics:
-                    surface = iter(geom["semantics"]["values"])
-
-                for boundary in geom["boundaries"]:
-                    if with_semantics:
-                        semantic = next(surface)
-                    else:
-                        semantic = None
-                    polygons.append(boundary)
-                    if semantic is None:
-                        semantics.append(None)
-                    else:
-                        semantics.append(geom["semantics"]["surfaces"][semantic])
-            elif geom["type"] == "Solid":
-                if with_semantics:
-                    solid_surface = iter(geom["semantics"]["values"])
-
-                for solid in geom["boundaries"]:
-                    if with_semantics:
-                        surface = iter(next(solid_surface))
-
-                    for boundary in solid:
-                        if with_semantics:
-                            semantic = next(surface)
-                        else:
-                            semantic = None
-                        polygons.append(boundary)
-                        if semantic is None:
-                            semantics.append(None)
-                        else:
-                            semantics.append(geom["semantics"]["surfaces"][semantic])
-            else:
+            try:
+                if "semantics" in geom:
+                    surfaces = geom["semantics"]["surfaces"]
+                    values = geom["semantics"]["values"]
+                else:
+                    surfaces = None
+                    values = None
+                new_polygons, new_semantics = read_boundaries(geom["boundaries"], surfaces, values)
+                polygons = polygons + new_polygons
+                semantics = semantics + new_semantics
+            except:
                 self._skipped_geometries += 1
 
         return polygons, semantics
@@ -127,3 +103,26 @@ class GeometryReader:
     def skipped_geometries(self):
         """Returns the count of geometries that were skipped while reading"""
         return self._skipped_geometries
+
+def read_boundaries(boundaries, surfaces, values):
+    """Return the polygons from a boundaries list"""
+    polygons = []
+    semantic_surfaces = []
+
+    if isinstance(boundaries[0][0], list):
+        if values is not None:
+            values_iter = iter(values)
+        else:
+            values_iter = iter([None for i in range(len(boundaries))])
+        for boundary in boundaries:
+            new_polygons, new_semantic_surfaces = read_boundaries(boundary, surfaces, next(values_iter))
+            polygons = polygons + new_polygons
+            semantic_surfaces = semantic_surfaces + new_semantic_surfaces
+    else:
+        polygons.append(boundaries)
+        if surfaces is None or values is None:
+            semantic_surfaces.append(None)
+        else:
+            semantic_surfaces.append(surfaces[values])
+
+    return polygons, semantic_surfaces

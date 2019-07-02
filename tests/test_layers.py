@@ -1,7 +1,6 @@
 import pytest
 
 from loader.layers import TypeNamingIterator, BaseFieldsBuilder, NullFieldsBuilder, AttributeFieldsDecorator, LodFieldsDecorator, SemanticSurfaceFieldsDecorator
-from loader.geometry import GeometryReader, VerticesCache
 
 two_cubes_citymodel = {"CityObjects":{"id-1":{"geometry":[{"boundaries":[[[0,1,2,3]],[[7,4,0,3]],[[4,5,1,0]],[[5,6,2,1]],[[3,2,6,7]],[[6,5,4,7]]],"lod":1,"type":"MultiSurface"}],"type":"GenericCityObject"}},"type":"CityJSON","version":"0.9","vertices":[[1.0,0.0,1.0],[0.0,1.0,1.0],[-1.0,0.0,1.0],[0.0,-1.0,1.0],[1.0,0.0,0.0],[0.0,1.0,0.0],[-1.0,0.0,0.0],[0.0,-1.0,0.0]],"metadata":{"geographicalExtent":[-1.0,-1.0,0.0,1.0,1.0,1.0]}}
 citymodel_with_attributes = {"type":"CityJSON","version":"0.9","CityObjects":{"id-1":{"type":"Building","attributes":{"attribute1":1,"attribute2":2}},"id-2":{"type":"Building","attributes":{"attribute1":1,"attribute3":2}}}}
@@ -64,23 +63,3 @@ class TestFieldBuilders:
 
         assert len(fields) == 1
         assert fields[0].name() == "semantic_surface"
-
-class TestGeometryReader:
-    """A class that tests the geometry reader"""
-    # TODO: This test must not be here!
-
-    def test_polygon_parser(self):
-        """Tests if the geometry reader parses the correct amount of polygons"""
-        geometry_reader = GeometryReader(VerticesCache())
-
-        one_polygon_multisurface = [{
-            "type": "MultiSurface",
-            "boundaries": [
-                    [[0, 1, 2, 3]]
-                ]
-        }]
-
-        polygons, _ = geometry_reader.get_polygons(one_polygon_multisurface)
-
-        assert len(polygons) == 1
-
