@@ -8,13 +8,17 @@ from qgis.core import QgsFeature, QgsField, QgsFields, QgsVectorLayer
 class BaseLayerManager:
     """A base layer manager for the common functionality between current ones"""
 
-    def __init__(self, citymodel, fields_builder):
+    def __init__(self, citymodel, fields_builder, srid):
         self._citymodel = citymodel
         self._fields_builder = fields_builder
         self._geom_type = "MultiPolygon"
         self._fields = QgsFields()
-        if "crs" in self._citymodel["metadata"]:
-            self._geom_type = "{}?crs=EPSG:{}".format(self._geom_type, self._citymodel["metadata"]["crs"]["epsg"])
+        if srid is None:
+            if "crs" in self._citymodel["metadata"]:
+                srid = self._citymodel["metadata"]["crs"]["epsg"]
+
+        if srid is not None:
+            self._geom_type = "{}?crs=EPSG:{}".format(self._geom_type, srid)
 
     def prepare_attributes(self):
         """Prepares the attributes of the vector layer."""
@@ -34,9 +38,10 @@ class BaseLayerManager:
 class DynamicLayerManager(BaseLayerManager):
     """A class that create a simple layer for all city objects"""
 
-    def __init__(self, citymodel, feature_builder, layer_iterator, fields_builder):
+    def __init__(self, citymodel, feature_builder, layer_iterator, fields_builder, srid=None):
         super(DynamicLayerManager, self).__init__(citymodel,
-                                                  fields_builder)
+                                                  fields_builder,
+                                                  srid)
 
         self._feature_builder = feature_builder
         self._layer_iterator = layer_iterator

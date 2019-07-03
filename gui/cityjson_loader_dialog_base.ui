@@ -112,20 +112,20 @@
          <property name="checkable">
           <bool>false</bool>
          </property>
-         <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0" columnstretch="0,0,0,0">
+         <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0" columnstretch="0,0,0,0,0,0">
           <property name="verticalSpacing">
            <number>-1</number>
           </property>
-          <item row="0" column="1">
-           <widget class="QLineEdit" name="cityjsonVersionLineEdit">
+          <item row="2" column="0">
+           <widget class="QLabel" name="otherLabel">
             <property name="font">
              <font>
               <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
-            <property name="readOnly">
-             <bool>true</bool>
+            <property name="text">
+             <string>Metadata:</string>
             </property>
            </widget>
           </item>
@@ -142,21 +142,8 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="compressedLabel">
-            <property name="font">
-             <font>
-              <weight>50</weight>
-              <bold>false</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Compessed:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="3">
-           <widget class="QLineEdit" name="crsLineEdit">
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="compressedLineEdit">
             <property name="font">
              <font>
               <weight>50</weight>
@@ -181,8 +168,38 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
-           <widget class="QLineEdit" name="compressedLineEdit">
+          <item row="2" column="1" colspan="5">
+           <widget class="QPlainTextEdit" name="metadataPlainTextEdit">
+            <property name="font">
+             <font>
+              <weight>50</weight>
+              <bold>false</bold>
+             </font>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="compressedLabel">
+            <property name="font">
+             <font>
+              <weight>50</weight>
+              <bold>false</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Compessed:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="4">
+           <widget class="QPushButton" name="changeCrsPushButton">
+            <property name="text">
+             <string>Change...</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="cityjsonVersionLineEdit">
             <property name="font">
              <font>
               <weight>50</weight>
@@ -194,26 +211,16 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="otherLabel">
+          <item row="0" column="3">
+           <widget class="QLineEdit" name="crsLineEdit">
             <property name="font">
              <font>
               <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
-            <property name="text">
-             <string>Metadata:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1" colspan="3">
-           <widget class="QPlainTextEdit" name="metadataPlainTextEdit">
-            <property name="font">
-             <font>
-              <weight>50</weight>
-              <bold>false</bold>
-             </font>
+            <property name="readOnly">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -288,6 +295,9 @@
    </item>
    <item>
     <widget class="QDialogButtonBox" name="button_box">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>

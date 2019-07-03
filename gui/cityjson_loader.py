@@ -25,6 +25,7 @@ from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVa
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox, QDialogButtonBox
 from qgis.core import *
+from qgis.gui import QgsProjectionSelectionDialog
 from ..loader.layers import DynamicLayerManager, BaseFieldsBuilder, AttributeFieldsDecorator, LodFieldsDecorator, SemanticSurfaceFieldsDecorator, TypeNamingIterator, BaseNamingIterator, LodNamingDecorator, SimpleFeatureBuilder, LodFeatureDecorator, SemanticSurfaceFeatureDecorator
 from ..loader.geometry import VerticesCache, GeometryReader
 try:
@@ -80,9 +81,10 @@ class CityJsonLoader:
         self.toolbar.setObjectName(u'CityJsonLoader')
 
         self.dlg.browseButton.clicked.connect(self.select_cityjson_file)
+        self.dlg.changeCrsPushButton.clicked.connect(self.select_crs)
 
     def select_cityjson_file(self):
-        """Show a dialog to select a CityJSON file."""
+        """Shows a dialog to select a CityJSON file."""
         filename, _ = QFileDialog.getOpenFileName(self.dlg,
                                                   "Select CityJSON file",
                                                   "",
@@ -92,6 +94,19 @@ class CityJsonLoader:
         else:
             self.dlg.cityjsonPathLineEdit.setText(filename)
             self.update_file_information(filename)
+    
+    def select_crs(self):
+        """Shows a dialog to select a new CRS for the model"""
+        crs_dialog = QgsProjectionSelectionDialog()
+        crs_dialog.setShowNoProjection(True)
+        if self.dlg.crsLineEdit.text() != "None":
+            old_crs = QgsCoordinateReferenceSystem("EPSG:{}".format(self.dlg.crsLineEdit.text()))
+            crs_dialog.setCrs(old_crs)
+        crs_dialog.exec()
+        if crs_dialog.crs().postgisSrid() == 0:
+            self.dlg.crsLineEdit.setText("None")
+        else:
+            self.dlg.crsLineEdit.setText("{}".format(crs_dialog.crs().postgisSrid()))
 
     def clear_file_information(self):
         """Clear all fields related to file information"""
@@ -101,6 +116,7 @@ class CityJsonLoader:
         for line_edit in line_edits:
             line_edit.setText("")
         self.dlg.metadataPlainTextEdit.setPlainText("")
+        self.dlg.changeCrsPushButton.setEnabled(False)
         self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
     def update_file_information(self, filename):
@@ -115,9 +131,11 @@ class CityJsonLoader:
             else:
                 self.dlg.crsLineEdit.setText("None")
             self.dlg.metadataPlainTextEdit.setPlainText(model.get_info())
+            self.dlg.changeCrsPushButton.setEnabled(True)
             self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
         except Exception as error:
             self.dlg.metadataPlainTextEdit.setPlainText("File could not be loaded")
+            self.dlg.changeCrsPushButton.setEnabled(False)
             self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
             raise error
 
@@ -276,7 +294,10 @@ class CityJsonLoader:
                                                  filename,
                                                  city_model.j)
 
-        layer_manager = DynamicLayerManager(city_model.j, feature_builder, naming_iterator, fields_builder)
+        srid = None
+        if self.dlg.crsLineEdit.text() != "None":
+            srid = self.dlg.crsLineEdit.text()
+        layer_manager = DynamicLayerManager(city_model.j, feature_builder, naming_iterator, fields_builder, srid)
 
         layer_manager.prepare_attributes()
 
@@ -324,6 +345,7 @@ class CityJsonLoader:
         """Run method that performs all the real work"""
         # show the dialog
         self.dlg.show()
+        self.dlg.changeCrsPushButton.setEnabled(False)
         self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
         # Run the dialog event loop
         result = self.dlg.exec_()

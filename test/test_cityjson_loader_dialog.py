@@ -14,11 +14,11 @@ __copyright__ = 'Copyright 2018, 3D Geoinformation'
 
 import unittest
 
-from PyQt5.QtGui import QDialogButtonBox, QDialog
+from PyQt5.QtWidgets import QDialogButtonBox, QDialog
 
-from cityjson_loader_dialog import CityJsonLoaderDialog
+from gui.cityjson_loader_dialog import CityJsonLoaderDialog
 
-from utilities import get_qgis_app
+from .utilities import get_qgis_app
 QGIS_APP = get_qgis_app()
 
 
