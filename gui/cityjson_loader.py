@@ -285,8 +285,11 @@ class CityJsonLoader:
             layer_manager.add_object(key, obj)
 
         # Add the layer(s) to the project
+        root = QgsProject.instance().layerTreeRoot()
+        group = root.addGroup(filename)
         for vl in layer_manager.get_all_layers():
-            QgsProject.instance().addMapLayer(vl)
+            QgsProject.instance().addMapLayer(vl ,False)
+            group.addLayer(vl)
             
             if with_3d:
                 # Add the 3D symbol to the renderer
