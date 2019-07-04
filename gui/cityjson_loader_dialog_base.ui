@@ -52,7 +52,7 @@
         <height>507</height>
        </rect>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,1,0,0,0">
+      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,1,0,0,0,0">
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
@@ -286,6 +286,19 @@
          </property>
          <property name="text">
           <string>Load semantic surfaces (as individual features)</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="semanticSurfacesStylingCheckBox">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Style layers according to semantic surfaces</string>
          </property>
         </widget>
        </item>

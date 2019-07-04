@@ -78,6 +78,7 @@ class CityJsonLoader:
 
         self.dlg.browseButton.clicked.connect(self.select_cityjson_file)
         self.dlg.changeCrsPushButton.clicked.connect(self.select_crs)
+        self.dlg.semanticsLoadingCheckBox.stateChanged.connect(self.semantics_loading_changed)
 
     def select_cityjson_file(self):
         """Shows a dialog to select a CityJSON file."""
@@ -103,6 +104,13 @@ class CityJsonLoader:
             self.dlg.crsLineEdit.setText("None")
         else:
             self.dlg.crsLineEdit.setText("{}".format(crs_dialog.crs().postgisSrid()))
+
+    def semantics_loading_changed(self):
+        """Update the GUI according to the new state of semantic
+        surfaces loading
+        """
+        if is_rule_based_3d_styling_available():
+            self.dlg.semanticSurfacesStylingCheckBox.setEnabled(self.dlg.semanticsLoadingCheckBox.isChecked())
 
     def clear_file_information(self):
         """Clear all fields related to file information"""
@@ -308,8 +316,10 @@ class CityJsonLoader:
             styler = Copy2dStyling()
         else:
             styler = NullStyling()
-        
-        if self.dlg.semanticsLoadingCheckBox.isChecked() and is_rule_based_3d_styling_available():
+
+        if (self.dlg.semanticsLoadingCheckBox.isChecked()
+                and is_rule_based_3d_styling_available()
+                and self.dlg.semanticSurfacesStylingCheckBox.isChecked()):
             styler = SemanticSurfacesStyling()
 
         # Add the layer(s) to the project
@@ -342,6 +352,7 @@ class CityJsonLoader:
         self.dlg.show()
         self.dlg.changeCrsPushButton.setEnabled(False)
         self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+        self.dlg.semanticSurfacesStylingCheckBox.setEnabled(False)
         # Run the dialog event loop
         result = self.dlg.exec_()
         # See if OK was pressed
