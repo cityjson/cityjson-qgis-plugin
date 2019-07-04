@@ -99,20 +99,23 @@ class TypeNamingIterator:
 class LodNamingDecorator:
     """A decorator class to append LoD in a layer's name"""
 
-    def __init__(self, decorated, filename, citymodel):
+    def __init__(self, decorated, filename, citymodel, geometry_reader):
         self._decorated = decorated
         self._filename = filename
         self._citymodel = citymodel
-        self._lods = set([geom["lod"]
-                          for obj in citymodel["CityObjects"].values()
-                          for geom in obj["geometry"]])
+        self._geometry_reader = geometry_reader
+
+        lods = [self._geometry_reader.get_lod(geom)
+                for obj in citymodel["CityObjects"].values()
+                for geom in obj["geometry"]]
+        self._lods = set(lods)
 
     def all_layers(self):
         """Returns all layer names with LoD"""
         for lod in self._lods:
             for layer in self._decorated.all_layers():
                 yield "{} [LoD{}]".format(layer, str(lod))
-    
+
     def get_feature_layer(self, feature):
         """Returns the layer name for the given city object"""
         layer = self._decorated.get_feature_layer(feature)
@@ -236,7 +239,7 @@ class LodFeatureDecorator:
         for feature, feature_geom in features.items():
             lod_geom_dict = {} # Stores the lod -> geometry dictionary
             for geom in feature_geom:
-                lod_geom_dict.setdefault(geom["lod"], []).append(geom)
+                lod_geom_dict.setdefault(self._geometry_reader.get_lod(geom), []).append(geom)
 
             for lod, geom in lod_geom_dict.items():
                 new_feature = QgsFeature(feature)

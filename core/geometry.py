@@ -41,15 +41,33 @@ class GeometryReader:
     def __init__(self, vertices_cache):
         self._vertices_cache = vertices_cache
         self._skipped_geometries = 0
+        self._geometry_templates = None
+        self._templates_geometry_reader = None
+
+    def set_geometry_templates(self, geometry_templates):
+        """Sets the geometry templates for the geometry reader"""
+        if geometry_templates is not None:
+            self._geometry_templates = geometry_templates
+
+            template_vertex_cache = VerticesCache()
+            for vertex in geometry_templates["vertices-templates"]:
+                template_vertex_cache.add_vertex(vertex)
+            self._templates_geometry_reader = GeometryReader(template_vertex_cache)
 
     def read_geometry(self, geometry):
         """Reads a CityJSON geometry and returns it as QgsGeometry
-
-        TODO: For now supports only Surfaces and Solids
         """
         polygons, _ = self.get_polygons(geometry)
 
         return self.polygons_to_geometry(polygons)
+
+    def get_lod(self, geometry):
+        """Returns the lod of a give geometry"""
+        if geometry["type"] == "GeometryInstance":
+            geom_index = geometry["template"]
+            return self._geometry_templates["templates"][geom_index]["lod"]
+        else:
+            return geometry["lod"]
 
     def polygons_to_geometry(self, polygons):
         """Returns a QgsGeometry object from a list of polygons"""

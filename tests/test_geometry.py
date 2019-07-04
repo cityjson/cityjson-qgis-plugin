@@ -58,3 +58,26 @@ class TestGeometryReader:
         polygons, _ = geometry_reader.get_polygons(example_composite_solid)
 
         assert len(polygons) == 12
+    
+    def test_creation_with_geometry_template(self):
+        """Tests if the geometry reader is created properly when a geometry
+        template is provided
+        """
+        empty_vertices = VerticesCache()
+        geometry_template = example_geometry_template
+        geometry_reader = GeometryReader(empty_vertices)
+        geometry_reader.set_geometry_templates(geometry_template)
+
+        assert len(geometry_reader._templates_geometry_reader._vertices_cache._vertices) == len(example_geometry_template["vertices-templates"])
+    
+    def test_get_lod_with_geometry_template(self):
+        """Tests if the get_lod function works for geometry instances"""
+        empty_vertices = VerticesCache()
+        geometry_template = example_geometry_template
+        geometry_reader = GeometryReader(empty_vertices)
+        geometry_reader.set_geometry_templates(geometry_template)
+
+        geom = example_geometry_instance[0]
+        lod = geometry_reader.get_lod(geom)
+
+        assert lod == 2

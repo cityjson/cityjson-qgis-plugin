@@ -269,6 +269,8 @@ class CityJsonLoader:
             vertices_cache.add_vertex(v)
 
         geometry_reader = GeometryReader(vertices_cache)
+        if "geometry-templates" in city_model.j:
+            geometry_reader.set_geometry_templates(city_model.j["geometry-templates"])
 
         fields_builder = AttributeFieldsDecorator(BaseFieldsBuilder(), city_model.j)
         feature_builder = SimpleFeatureBuilder(geometry_reader)
@@ -288,7 +290,8 @@ class CityJsonLoader:
         if self.dlg.loDLoadingComboBox.currentIndex() > 1:
             naming_iterator = LodNamingDecorator(naming_iterator,
                                                  filename,
-                                                 city_model.j)
+                                                 city_model.j,
+                                                 geometry_reader)
 
         srid = None
         if self.dlg.crsLineEdit.text() != "None":
