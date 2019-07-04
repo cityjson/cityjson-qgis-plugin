@@ -1,6 +1,6 @@
 import pytest
 
-from loader.geometry import GeometryReader, VerticesCache, read_boundaries
+from core.geometry import GeometryReader, VerticesCache, read_boundaries
 from tests.sample_geometries import *
 
 class TestReadBoundaries:

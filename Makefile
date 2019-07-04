@@ -39,14 +39,14 @@ LOCALES =
 SOURCES = \
 	__init__.py \
 	gui/cityjson_loader.py gui/cityjson_loader_dialog.py \
-	loader/layers.py loader/geometry.py
+	core/layers.py core/geometry.py
 
 PLUGINNAME = CityJSON-loader
 
 PY_FILES = \
 	__init__.py \
 	gui/cityjson_loader.py gui/cityjson_loader_dialog.py \
-	loader/__init__.py loader/layers.py loader/geometry.py
+	core/__init__.py core/layers.py core/geometry.py
 
 UI_FILES = gui/cityjson_loader_dialog_base.ui
 
