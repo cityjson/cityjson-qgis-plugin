@@ -18,4 +18,4 @@ class TestSemanticSurfacesStyling:
         renderer = vectorlayer.renderer3D()
         root_rule = renderer.rootRule()
 
-        assert len(root_rule.children()) == len(semantic_colors)
+        assert len(root_rule.children()) == len(semantic_colors) + 1
