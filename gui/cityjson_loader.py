@@ -28,11 +28,7 @@ from qgis.core import *
 from qgis.gui import QgsProjectionSelectionDialog
 from ..core.layers import DynamicLayerManager, BaseFieldsBuilder, AttributeFieldsDecorator, LodFieldsDecorator, SemanticSurfaceFieldsDecorator, TypeNamingIterator, BaseNamingIterator, LodNamingDecorator, SimpleFeatureBuilder, LodFeatureDecorator, SemanticSurfaceFeatureDecorator
 from ..core.geometry import VerticesCache, GeometryReader
-try:
-    from qgis._3d import *
-    with_3d = True
-except ImportError:
-    with_3d = False
+from ..core.styling import NullStyling, Copy2dStyling, SemanticSurfacesStyling, is_3d_styling_available, is_rule_based_3d_styling_available
 
 # Initialize Qt resources from file resources.py
 from ..resources import *
@@ -305,26 +301,22 @@ class CityJsonLoader:
         for key, obj in city_objects.items():
             layer_manager.add_object(key, obj)
 
+        if is_3d_styling_available():
+            styler = Copy2dStyling()
+        else:
+            styler = NullStyling()
+        
+        if self.dlg.semanticsLoadingCheckBox.isChecked() and is_rule_based_3d_styling_available():
+            styler = SemanticSurfacesStyling()
+
         # Add the layer(s) to the project
         root = QgsProject.instance().layerTreeRoot()
         group = root.addGroup(filename)
         for vl in layer_manager.get_all_layers():
             QgsProject.instance().addMapLayer(vl ,False)
             group.addLayer(vl)
-            
-            if with_3d:
-                # Add the 3D symbol to the renderer
-                material = QgsPhongMaterialSettings()
-                material.setDiffuse(vl.renderer().symbol().color())
-                
-                symbol = QgsPolygon3DSymbol()
-                symbol.setMaterial(material)
 
-                renderer = QgsVectorLayer3DRenderer()
-                renderer.setLayer(vl)
-                renderer.setSymbol(symbol)
-                vl.setRenderer3D(renderer)
-
+            styler.apply(vl)
         
         # Show a message with the outcome of the loading process
         msg = QMessageBox()
