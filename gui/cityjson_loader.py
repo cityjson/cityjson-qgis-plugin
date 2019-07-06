@@ -337,7 +337,7 @@ class CityJsonLoader:
             msg.setIcon(QMessageBox.Warning)
             msg.setText("CityJSON loaded with issues.")
             msg.setInformativeText("Some geometries were skipped.")
-            msg.setDetailedText("{} geometries were not surfaces or solids, so could not be loaded.".format(geometry_reader.skipped_geometries()))
+            msg.setDetailedText("{} geometries could not be loaded (p.s. GeometryInstances are not supported yet).".format(geometry_reader.skipped_geometries()))
         else:
             msg.setIcon(QMessageBox.Information)
             msg.setText("CityJSON loaded successfully.")
