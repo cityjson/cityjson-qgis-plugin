@@ -82,4 +82,8 @@ def load_settings():
     settings.endArray()
     settings.endGroup()
 
-    return colors
+    result = {
+        "semantic_colors": colors
+    }
+
+    return result

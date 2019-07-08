@@ -1,7 +1,7 @@
 """A module related to apply styling in QGIS layers"""
 
 from qgis.PyQt.QtGui import QColor
-from ..core.settings import load_settings
+from .settings import load_settings
 
 try:
     from qgis._3d import (QgsPhongMaterialSettings,
@@ -37,6 +37,7 @@ class Copy2dStyling:
 
         symbol = QgsPolygon3DSymbol()
         symbol.setMaterial(material)
+        symbol.setEdgesEnabled(True)
 
         renderer = QgsVectorLayer3DRenderer()
         renderer.setLayer(vectorlayer)
@@ -46,11 +47,16 @@ class Copy2dStyling:
 class SemanticSurfacesStyling:
     """A class that applies colors for semantic surfaces"""
 
-    def __init__(self, colors=None):
+    def __init__(self, colors=None, else_color=None):
         if colors is None:
-            self._colors = load_settings()
+            settings = load_settings()
+            self._colors = settings["semantic_colors"]
         else:
             self._colors = colors
+        if else_color is None:
+            self._else_color = QColor(255, 0, 255)
+        else:
+            self._else_color = else_color
         if not has_rules:
             raise Exception("Rule-based 3D styling is not available for this version of QGIS!")
 
@@ -62,14 +68,16 @@ class SemanticSurfacesStyling:
 
             symbol = QgsPolygon3DSymbol()
             symbol.setMaterial(material)
+            symbol.setEdgesEnabled(True)
 
             new_rule = QgsRuleBased3DRenderer.Rule(symbol, "\"semantic_surface\" = '{surface}'".format(surface=surface_type))
             root_rule.appendChild(new_rule)
 
-        material = create_material(QColor(255, 0, 255))
+        material = create_material(self._else_color)
 
         symbol = QgsPolygon3DSymbol()
         symbol.setMaterial(material)
+        symbol.setEdgesEnabled(True)
 
         new_rule = QgsRuleBased3DRenderer.Rule(symbol, "ELSE")
         root_rule.appendChild(new_rule)

@@ -8,6 +8,6 @@ class TestSettings:
     def test_load_defaults(self):
         """Tests if the default settings are loaded correctly"""
         save_defaults()
-        colors = load_settings()
+        settings = load_settings()
 
-        assert len(colors) == 5
+        assert len(settings["semantic_colors"]) == 5
