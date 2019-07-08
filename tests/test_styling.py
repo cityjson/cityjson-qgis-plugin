@@ -2,7 +2,8 @@
 
 import pytest
 
-from core.styling import SemanticSurfacesStyling, semantic_colors
+from core.styling import SemanticSurfacesStyling
+from core.settings import semantic_colors
 from qgis.core import QgsVectorLayer
 
 class TestSemanticSurfacesStyling:
@@ -12,7 +13,7 @@ class TestSemanticSurfacesStyling:
         """Tests if the class creates the correct number of rules"""
         vectorlayer = QgsVectorLayer()
 
-        styling = SemanticSurfacesStyling()
+        styling = SemanticSurfacesStyling(semantic_colors)
         styling.apply(vectorlayer)
 
         renderer = vectorlayer.renderer3D()

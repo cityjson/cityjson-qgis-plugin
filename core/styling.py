@@ -1,6 +1,7 @@
 """A module related to apply styling in QGIS layers"""
 
 from qgis.PyQt.QtGui import QColor
+from ..core.settings import load_settings
 
 try:
     from qgis._3d import (QgsPhongMaterialSettings,
@@ -15,34 +16,6 @@ try:
     has_rules = True
 except ImportError:
     has_rules = False
-
-semantic_colors = {
-    "RoofSurface": {
-        "diffuse": QColor(255, 0, 0),
-        "ambient": QColor(255, 0, 0),
-        "specular": None
-    },
-    "WallSurface": {
-        "diffuse": QColor(200, 200, 200),
-        "ambient": QColor(255, 255, 255),
-        "specular": None
-    },
-    "GroundSurface": {
-        "diffuse": QColor(0, 0, 0),
-        "ambient": QColor(0, 0, 0),
-        "specular": None
-    },
-    "Door": {
-        "diffuse": QColor(255, 200, 0),
-        "ambient": QColor(255, 200, 0),
-        "specular": None
-    },
-    "Window": {
-        "diffuse": QColor(0, 100, 255),
-        "ambient": QColor(0, 100, 255),
-        "specular": None
-    }
-}
 
 class NullStyling:
     """A class that applies no styling to the provided layer"""
@@ -73,14 +46,18 @@ class Copy2dStyling:
 class SemanticSurfacesStyling:
     """A class that applies colors for semantic surfaces"""
 
-    def __init__(self):
+    def __init__(self, colors=None):
+        if colors is None:
+            self._colors = load_settings()
+        else:
+            self._colors = colors
         if not has_rules:
             raise Exception("Rule-based 3D styling is not available for this version of QGIS!")
 
     def apply(self, vectorlayer):
         """Applies the style to the vector layer"""
         root_rule = QgsRuleBased3DRenderer.Rule(None)
-        for surface_type, colors in semantic_colors.items():
+        for surface_type, colors in self._colors.items():
             material = create_material(colors["diffuse"], colors["ambient"], colors["specular"])
 
             symbol = QgsPolygon3DSymbol()
