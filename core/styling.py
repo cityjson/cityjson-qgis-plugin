@@ -53,10 +53,7 @@ class SemanticSurfacesStyling:
             self._colors = settings["semantic_colors"]
         else:
             self._colors = colors
-        if else_color is None:
-            self._else_color = QColor(255, 0, 255)
-        else:
-            self._else_color = else_color
+        self._else_color = else_color
         if not has_rules:
             raise Exception("Rule-based 3D styling is not available for this version of QGIS!")
 
@@ -73,7 +70,10 @@ class SemanticSurfacesStyling:
             new_rule = QgsRuleBased3DRenderer.Rule(symbol, "\"semantic_surface\" = '{surface}'".format(surface=surface_type))
             root_rule.appendChild(new_rule)
 
-        material = create_material(self._else_color)
+        if self._else_color is None:
+            material = create_material(vectorlayer.renderer().symbol().color())
+        else:
+            material = create_material(self._else_color)
 
         symbol = QgsPolygon3DSymbol()
         symbol.setMaterial(material)
