@@ -259,7 +259,7 @@ class CityJsonLoader:
         city_model = cityjson.CityJSON(file)
 
         filename_with_ext = os.path.basename(filepath)
-        filename, file_extension = os.path.splitext(filename_with_ext)
+        filename, _ = os.path.splitext(filename_with_ext)
         
         multilayer = self.dlg.splitByTypeCheckBox.isChecked()
 
@@ -276,9 +276,10 @@ class CityJsonLoader:
         for v in verts:
             vertices_cache.add_vertex(v)
 
-        geometry_reader = GeometryReader(vertices_cache)
+        geometry_template = None
         if "geometry-templates" in city_model.j:
-            geometry_reader.set_geometry_templates(city_model.j["geometry-templates"])
+            geometry_template = city_model.j["geometry-templates"]
+        geometry_reader = GeometryReader(vertices_cache, geometry_template)
 
         fields_builder = AttributeFieldsDecorator(BaseFieldsBuilder(), city_model.j)
         feature_builder = SimpleFeatureBuilder(geometry_reader)
@@ -326,7 +327,7 @@ class CityJsonLoader:
         root = QgsProject.instance().layerTreeRoot()
         group = root.addGroup(filename)
         for vl in layer_manager.get_all_layers():
-            QgsProject.instance().addMapLayer(vl ,False)
+            QgsProject.instance().addMapLayer(vl, False)
             group.addLayer(vl)
 
             styler.apply(vl)
