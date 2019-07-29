@@ -29,6 +29,7 @@ from qgis.gui import QgsProjectionSelectionDialog
 from ..core.layers import DynamicLayerManager, BaseFieldsBuilder, AttributeFieldsDecorator, LodFieldsDecorator, SemanticSurfaceFieldsDecorator, TypeNamingIterator, BaseNamingIterator, LodNamingDecorator, SimpleFeatureBuilder, LodFeatureDecorator, SemanticSurfaceFeatureDecorator
 from ..core.geometry import VerticesCache, GeometryReader
 from ..core.styling import NullStyling, Copy2dStyling, SemanticSurfacesStyling, is_3d_styling_available, is_rule_based_3d_styling_available
+from ..core.helpers.treemodel import MetadataElement, MetadataNode, MetadataModel
 
 # Initialize Qt resources from file resources.py
 from ..resources import *
@@ -134,11 +135,11 @@ class CityJsonLoader:
                 self.dlg.crsLineEdit.setText(str(model.j["metadata"]["crs"]["epsg"]))
             else:
                 self.dlg.crsLineEdit.setText("None")
-            self.dlg.metadataPlainTextEdit.setPlainText(model.get_info())
             self.dlg.changeCrsPushButton.setEnabled(True)
             self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+            model = MetadataModel(model.j["metadata"])
+            self.dlg.metadataTreeView.setModel(model)
         except Exception as error:
-            self.dlg.metadataPlainTextEdit.setPlainText("File could not be loaded")
             self.dlg.changeCrsPushButton.setEnabled(False)
             self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
             raise error
