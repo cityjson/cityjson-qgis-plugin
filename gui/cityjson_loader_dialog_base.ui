@@ -101,7 +101,7 @@
           </font>
          </property>
          <property name="title">
-          <string>City model properties</string>
+          <string>CityJSON properties</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -217,7 +217,14 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_3">
           <item>
-           <widget class="QTreeView" name="metadataTreeView"/>
+           <widget class="QTreeView" name="metadataTreeView">
+            <property name="styleSheet">
+             <string notr="true">QTreeView::item:has-children {
+	font-weight: bold;
+	background: rgb(102, 178, 255);
+}</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
