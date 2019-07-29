@@ -1,5 +1,15 @@
 from qgis.PyQt.QtCore import QAbstractItemModel, QModelIndex, Qt
 
+metadata_realnames = {
+    "citymodelIdentifier": "City Model Identifier",
+    "datasetTitle": "Dataset Title",
+    "geographicLocation": "Geographic Location",
+    "datasetLanguage": "Dataset Language",
+    "datasetCharacterSet": "Dataset CharacterSet",
+    "referenceSystem": "Reference System",
+    "geographicalExtent": "Geographical Extent"
+}
+
 class TreeNode(object):
     def __init__(self, parent, row):
         self.parent = parent
@@ -81,7 +91,7 @@ class MetadataModel(TreeModel):
             return None
         node = index.internalPointer()
         if role == Qt.DisplayRole and index.column() == 0:
-            return node.ref.key
+            return get_real_key(node.ref.key)
         elif role == Qt.DisplayRole and index.column() == 1:
             return node.ref.value
         
@@ -94,3 +104,9 @@ class MetadataModel(TreeModel):
             elif section == 1:
                 return 'Value'
         return None
+
+def get_real_key(key_name):
+    if key_name in metadata_realnames:
+        return metadata_realnames[key_name]
+    else:
+        return key_name
