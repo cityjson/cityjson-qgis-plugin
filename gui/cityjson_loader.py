@@ -133,6 +133,8 @@ class CityJsonLoader:
             self.dlg.compressedLineEdit.setText("Yes" if "transform" in model.j else "No")
             if "crs" in model.j["metadata"]:
                 self.dlg.crsLineEdit.setText(str(model.j["metadata"]["crs"]["epsg"]))
+            elif "referenceSystem" in model.j["metadata"]:
+                self.dlg.crsLineEdit.setText(str(model.j["metadata"]["referenceSystem"]).split("::")[1])
             else:
                 self.dlg.crsLineEdit.setText("None")
             self.dlg.changeCrsPushButton.setEnabled(True)
