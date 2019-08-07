@@ -1,3 +1,8 @@
+0.4.0 - 7/8/2019
+    * Add metadata viewer in CityJSON loading window
+    * Fix issue with CRS loading from ISO 19115
+    * Remove experimental flag
+
 0.3.0 - 24/7/2019
     * Add option to select a CRS for the city model
     * All layers of a city model are loaded in a group now
