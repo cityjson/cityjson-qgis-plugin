@@ -120,7 +120,7 @@ class CityJsonLoader:
                       self.dlg.crsLineEdit]
         for line_edit in line_edits:
             line_edit.setText("")
-        self.dlg.metadataPlainTextEdit.setPlainText("")
+        self.dlg.metadataTreeView.setModel(None)
         self.dlg.changeCrsPushButton.setEnabled(False)
         self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
