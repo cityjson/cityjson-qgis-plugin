@@ -213,7 +213,7 @@
           </font>
          </property>
          <property name="title">
-          <string>City model information</string>
+          <string>Metadata</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_3">
           <item>
