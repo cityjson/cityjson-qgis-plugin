@@ -44,7 +44,7 @@ metadata_realnames = {
     "processStep": "Process Step",
     "rationale": "Rationale",
     "reference": "Reference",
-    "stepDateTime": "Step Date and Time"
+    "stepDateTime": "Step Date and Time",
     "thematicModels": "Thematic Models",
     "geographicalExtent": "Geographical Extent",
     "temporalExtent": "Temporal Extent",
