@@ -117,6 +117,8 @@ class MetadataElement(object): # your internal structure
                     "max z":value_pair[1][5]}
             elif value_pair[0] in metadata_realnames:
                 self.subelements = {metadata_realnames[value_pair[0]] + " " + str(i): v for i, v in enumerate(value_pair[1],start = 1)}
+                if value_pair[0] in ["keywords", "thematicModels"]:
+                    self.subelements = {v: "" for k, v in self.subelements.items()}
             else:
                 self.subelements = {i: v for i, v in enumerate(value_pair[1],start = 1)}
             self.value = ""
