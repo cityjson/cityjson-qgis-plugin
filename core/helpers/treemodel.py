@@ -107,7 +107,18 @@ class MetadataElement(object): # your internal structure
             self.subelements = value_pair[1]
             self.value = ""
         elif isinstance(value_pair[1], list):
-            self.subelements = {i: v for i, v in enumerate(value_pair[1])}
+            if value_pair[0] == "geographicalExtent":
+                self.subelements = {
+                    "min x":value_pair[1][0],
+                    "min y":value_pair[1][1],
+                    "min z":value_pair[1][2],
+                    "max x":value_pair[1][3],
+                    "max y":value_pair[1][4],
+                    "max z":value_pair[1][5]}
+            elif value_pair[0] in metadata_realnames:
+                self.subelements = {metadata_realnames[value_pair[0]] + " " + str(i): v for i, v in enumerate(value_pair[1],start = 1)}
+            else:
+                self.subelements = {i: v for i, v in enumerate(value_pair[1],start = 1)}
             self.value = ""
         else:
             self.subelements = {}
