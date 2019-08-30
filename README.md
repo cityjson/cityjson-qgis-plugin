@@ -1,13 +1,12 @@
 # CityJSON Loader for QGIS 3
 
-This is a Python plugin for QGIS 3 which adds support for [CityJSON](http://www.cityjson.org) datasets.
+This is a Python plugin for QGIS 3 which adds support for loading [CityJSON](http://www.cityjson.org) datasets in QGIS.
 
 ## Installation
 
-"Stable" releases are available through the official QGIS plugins repository (although the plugin is still experimental).
+"Stable" releases are available through the official QGIS plugins repository.
 
 * In QGIS 3 select `Plugins`->`Manage and Install Plugins...`
-* In the `Settings` panel enable the `Show also experimental plugins`.
 * In the `All` panel select the `CityJSON Loader` plugin from the list.
 
 ## Use
@@ -16,7 +15,19 @@ After the installation, there must be a new submenu under the `Vector` menu. Sel
 
 You may enable the `Split layers according to object type` option in order to load different object types as different layers in QGIS.
 
-In order to view the 3D data you must have QGIS installed with the 3D capabilities. For every layer of the CityJSON file you have to enable 3D rendering as follows:
+### 3D view in QGIS 3.0
+
+CityJSON Loader automatically enables 3D renderer in QGIS versions 3.2 onwards.
+However, if you are using QGIS 3.0 you have to enable it manually.
+This can be done as follows:
 * Right-click on the layer and select `Properties...`
 * Select the `3D View` panel and check the `Enable 3D renderer` option.
 * In QGIS 3 menu select `View`->`New 3D Map View` in order to see the 3D geometry.
+
+## Development
+
+You may use `make` to assist you while developing.
+
+The following rules can be useful:
+* `make deploy`: will automatically copy the required files to your QGIS plugins' folder. **BEWARE:** *it only works out-of-the-box for macOS. For other operating systems you might have to change the `QGISDIR` variable in `Makefile`.*
+* `make package version=GIT_REF`: (where *GIT_REF* is a branch, tag or any other git ref) will make a zip package to be installed manually from QGIS or uploaded to the QGIS plugins' repository.
