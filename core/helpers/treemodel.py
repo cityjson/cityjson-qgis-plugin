@@ -1,4 +1,5 @@
-from qgis.PyQt.QtCore import QAbstractItemModel, QModelIndex, Qt
+from qgis.PyQt.QtCore import QAbstractItemModel, QModelIndex, Qt, QSize, QRect, QPoint
+from qgis.PyQt.QtGui import QFontMetrics, QFont
 
 metadata_realnames = {
     "citymodelIdentifier": "City Model Identifier",
@@ -116,8 +117,9 @@ class MetadataNode(TreeNode):
             for index, elem in enumerate(self.ref.subelements.items())]
 
 class MetadataModel(TreeModel):
-    def __init__(self, rootElements):
+    def __init__(self, rootElements, treeview):
         self.rootElements = rootElements
+        self.treeview = treeview
         TreeModel.__init__(self)
 
     def _getRootNodes(self):
@@ -135,7 +137,15 @@ class MetadataModel(TreeModel):
             return get_real_key(node.ref.key)
         elif role == Qt.DisplayRole and index.column() == 1:
             return node.ref.value
-        
+        elif role == Qt.SizeHintRole and index.column() == 1:
+            baseSize = QSize(self.treeview.columnWidth(index.column()), 16)
+
+            metrics = QFontMetrics(self.treeview.font())
+            outRect = metrics.boundingRect(QRect(QPoint(0, 0), baseSize), Qt.AlignLeft + Qt.TextWordWrap, self.data(index, Qt.DisplayRole))
+            baseSize.setHeight(outRect.height())
+
+            return baseSize
+
         return None
 
     def headerData(self, section, orientation, role):

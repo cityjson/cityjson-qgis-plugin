@@ -139,7 +139,7 @@ class CityJsonLoader:
                 self.dlg.crsLineEdit.setText("None")
             self.dlg.changeCrsPushButton.setEnabled(True)
             self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
-            model = MetadataModel(model.j["metadata"])
+            model = MetadataModel(model.j["metadata"], self.dlg.metadataTreeView)
             self.dlg.metadataTreeView.setModel(model)
         except Exception as error:
             self.dlg.changeCrsPushButton.setEnabled(False)
