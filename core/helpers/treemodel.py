@@ -121,6 +121,17 @@ class MetadataModel(TreeModel):
         self.rootElements = rootElements
         self.treeview = treeview
         TreeModel.__init__(self)
+    
+    def getKeyColumnWidth(self):
+        width = 100
+        padding = 30
+        for key, _ in self.rootElements.items():
+            metrics = QFontMetrics(self.treeview.font())
+            outRect = metrics.boundingRect(get_real_key(key))
+            if width < outRect.width() + padding:
+                width = outRect.width() + padding
+        
+        return width
 
     def _getRootNodes(self):
         return [MetadataNode(MetadataElement(elem), None, index)
