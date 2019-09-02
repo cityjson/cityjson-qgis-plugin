@@ -141,7 +141,7 @@ class MetadataModel(TreeModel):
             baseSize = QSize(self.treeview.columnWidth(index.column()), 16)
 
             metrics = QFontMetrics(self.treeview.font())
-            outRect = metrics.boundingRect(QRect(QPoint(0, 0), baseSize), Qt.AlignLeft + Qt.TextWordWrap, self.data(index, Qt.DisplayRole))
+            outRect = metrics.boundingRect(QRect(QPoint(0, 0), baseSize), Qt.AlignLeft + Qt.TextWordWrap, str(self.data(index, Qt.DisplayRole)))
             baseSize.setHeight(outRect.height())
 
             return baseSize
