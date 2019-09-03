@@ -1,3 +1,7 @@
+0.4.1 - 3/9/2019
+    * Improve metadata information viewing
+    * Fix bug when no file is selected in dialog
+
 0.4.0 - 7/8/2019
     * Add metadata viewer in CityJSON loading window
     * Fix issue with CRS loading from ISO 19115
