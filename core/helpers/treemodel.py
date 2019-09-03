@@ -4,9 +4,12 @@ from qgis.PyQt.QtGui import QFontMetrics, QFont
 metadata_realnames = {
     "citymodelIdentifier": "City Model Identifier",
     "datasetTitle": "Dataset Title",
+    "datasetReferenceDate": "Dataset Reference Date",
     "geographicLocation": "Geographic Location",
     "datasetLanguage": "Dataset Language",
-    "datasetCharacterSet": "Dataset CharacterSet",
+    "datasetCharacterSet": "Dataset Character Set",
+    "datasetTopicCategory": "Dataset Topic Category",
+    "distributionFormatVersion": "Distribution Format Version",
     "referenceSystem": "Reference System",
     "geographicalExtent": "Geographical Extent",
     "spatialRepresentationType": "Spatial Representation Type",
@@ -18,6 +21,8 @@ metadata_realnames = {
     "address": "Address",
     "emailAddress": "Email Address",
     "contactType": "Contact Type",
+    "role": "Role",
+    "organization": "Organization",
     "website": "Website",
     "metadataStandard": "Metadata Standard",
     "metadataStandardVersion": "Metadata Standard Version",
@@ -26,12 +31,21 @@ metadata_realnames = {
     "metadataDateStamp": "Metadata Date Stamp",
     "metadataPointOfContact": "Metadata Point of Contact",
     "lineage": "Lineage",
+    "statement": "Statement",
+    "scope": "Scope",
+    "additionalDocumentation": "Additional Documentation",
     "featureIDs": "Feature IDs",
     "source": "Source",
     "description": "Description",
     "sourceSpatialResolution": "Source Spatial Resolution",
     "sourceReferenceSystem": "Source Reference System",
+    "sourceCitation": "Source Citation",
+    "sourceMetadata": "Source Metadata",
+    "processor": "Processor",
     "processStep": "Process Step",
+    "rationale": "Rationale",
+    "reference": "Reference",
+    "stepDateTime": "Step Date and Time",
     "thematicModels": "Thematic Models",
     "geographicalExtent": "Geographical Extent",
     "temporalExtent": "Temporal Extent",
@@ -46,6 +60,9 @@ metadata_realnames = {
     "userNote": "User Note",
     "textures": "Textures",
     "materials": "Materials",
+    "extensions": "Extensions",
+    "transform": "Transform",
+    "geometry-templates": "Geometry Templates",
     "presentLoDs": "Present LoDs",
     "cityfeatureMetadata": "City Feature Metadata",
     "uniqueFeatureCount": "Unique Feature Count",
@@ -101,7 +118,20 @@ class MetadataElement(object): # your internal structure
             self.subelements = value_pair[1]
             self.value = ""
         elif isinstance(value_pair[1], list):
-            self.subelements = {i: v for i, v in enumerate(value_pair[1])}
+            if value_pair[0] == "geographicalExtent":
+                self.subelements = {
+                    "min x":value_pair[1][0],
+                    "min y":value_pair[1][1],
+                    "min z":value_pair[1][2],
+                    "max x":value_pair[1][3],
+                    "max y":value_pair[1][4],
+                    "max z":value_pair[1][5]}
+            elif value_pair[0] in ["keywords", "thematicModels"]:
+                self.subelements = {v: "" for v in value_pair[1]}
+            elif value_pair[0] in metadata_realnames:
+                self.subelements = {metadata_realnames[value_pair[0]] + " " + str(i): v for i, v in enumerate(value_pair[1],start = 1)}
+            else:
+                self.subelements = {i: v for i, v in enumerate(value_pair[1],start = 1)}
             self.value = ""
         else:
             self.subelements = {}
