@@ -120,7 +120,7 @@ class CityJsonLoader:
                       self.dlg.crsLineEdit]
         for line_edit in line_edits:
             line_edit.setText("")
-        self.dlg.metadataPlainTextEdit.setPlainText("")
+        self.dlg.metadataTreeView.setModel(None)
         self.dlg.changeCrsPushButton.setEnabled(False)
         self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
@@ -139,8 +139,9 @@ class CityJsonLoader:
                 self.dlg.crsLineEdit.setText("None")
             self.dlg.changeCrsPushButton.setEnabled(True)
             self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
-            model = MetadataModel(model.j["metadata"])
+            model = MetadataModel(model.j["metadata"], self.dlg.metadataTreeView)
             self.dlg.metadataTreeView.setModel(model)
+            self.dlg.metadataTreeView.setColumnWidth(0, model.getKeyColumnWidth())
         except Exception as error:
             self.dlg.changeCrsPushButton.setEnabled(False)
             self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
