@@ -127,7 +127,7 @@ class CityJsonLoader:
     def update_file_information(self, filename):
         """Update metadata fields according to the file provided"""
         try:
-            fstream = open(filename)
+            fstream = open(filename, encoding='utf-8-sig')
             model = cityjson.CityJSON(fstream)
             self.dlg.cityjsonVersionLineEdit.setText(model.get_version())
             self.dlg.compressedLineEdit.setText("Yes" if "transform" in model.j else "No")
@@ -259,7 +259,7 @@ class CityJsonLoader:
 
     def load_cityjson(self, filepath):
         """Loads a specified CityJSON file and adds it to the project"""
-        file = open(filepath)
+        file = open(filepath, encoding='utf-8-sig')
         city_model = cityjson.CityJSON(file)
 
         filename_with_ext = os.path.basename(filepath)
