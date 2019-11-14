@@ -21,23 +21,33 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVariant
-from PyQt5.QtGui import QIcon, QColor
-from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox, QDialogButtonBox
+import os.path
+
+from PyQt5.QtCore import (QCoreApplication, QSettings, QTranslator, QVariant,
+                          qVersion)
+from PyQt5.QtGui import QColor, QIcon
+from PyQt5.QtWidgets import QAction, QDialogButtonBox, QFileDialog, QMessageBox
 from qgis.core import *
 from qgis.gui import QgsProjectionSelectionDialog
-from ..core.layers import DynamicLayerManager, BaseFieldsBuilder, AttributeFieldsDecorator, LodFieldsDecorator, SemanticSurfaceFieldsDecorator, TypeNamingIterator, BaseNamingIterator, LodNamingDecorator, SimpleFeatureBuilder, LodFeatureDecorator, SemanticSurfaceFeatureDecorator
-from ..core.geometry import VerticesCache, GeometryReader
-from ..core.styling import NullStyling, Copy2dStyling, SemanticSurfacesStyling, is_3d_styling_available, is_rule_based_3d_styling_available
-from ..core.helpers.treemodel import MetadataElement, MetadataNode, MetadataModel
-from ..core.loading import CityJSONLoader, load_cityjson_model
 
-# Initialize Qt resources from file resources.py
-from ..resources import *
+from .cjio import cityjson
+from .core.geometry import GeometryReader, VerticesCache
+from .core.helpers.treemodel import (MetadataElement, MetadataModel,
+                                     MetadataNode)
+from .core.layers import (AttributeFieldsDecorator, BaseFieldsBuilder,
+                          BaseNamingIterator, DynamicLayerManager,
+                          LodFeatureDecorator, LodFieldsDecorator,
+                          LodNamingDecorator, SemanticSurfaceFeatureDecorator,
+                          SemanticSurfaceFieldsDecorator, SimpleFeatureBuilder,
+                          TypeNamingIterator)
+from .core.loading import CityJSONLoader, load_cityjson_model
+from .core.styling import (Copy2dStyling, NullStyling, SemanticSurfacesStyling,
+                           is_3d_styling_available,
+                           is_rule_based_3d_styling_available)
 # Import the code for the dialog
-from .cityjson_loader_dialog import CityJsonLoaderDialog
-import os.path
-from ..cjio import cityjson
+from .gui.cityjson_loader_dialog import CityJsonLoaderDialog
+from .resources import *
+
 
 class CityJsonLoader:
     """QGIS Plugin Implementation."""
