@@ -30,6 +30,7 @@ from ..core.layers import DynamicLayerManager, BaseFieldsBuilder, AttributeField
 from ..core.geometry import VerticesCache, GeometryReader
 from ..core.styling import NullStyling, Copy2dStyling, SemanticSurfacesStyling, is_3d_styling_available, is_rule_based_3d_styling_available
 from ..core.helpers.treemodel import MetadataElement, MetadataNode, MetadataModel
+from ..core.loading import CityJSONLoader, load_cityjson_model
 
 # Initialize Qt resources from file resources.py
 from ..resources import *
@@ -257,100 +258,6 @@ class CityJsonLoader:
         # remove the toolbar
         del self.toolbar
 
-    def load_cityjson(self, filepath):
-        """Loads a specified CityJSON file and adds it to the project"""
-        file = open(filepath, encoding='utf-8-sig')
-        city_model = cityjson.CityJSON(file)
-
-        filename_with_ext = os.path.basename(filepath)
-        filename, _ = os.path.splitext(filename_with_ext)
-        
-        multilayer = self.dlg.splitByTypeCheckBox.isChecked()
-
-        city_objects = city_model.j["CityObjects"]
-
-        vertices_cache = VerticesCache()
-
-        if "transform" in city_model.j:
-            vertices_cache.set_scale(city_model.j["transform"]["scale"])
-            vertices_cache.set_translation(city_model.j["transform"]["translate"])
-
-        # Load the vertices list
-        verts = city_model.j["vertices"]
-        for v in verts:
-            vertices_cache.add_vertex(v)
-
-        geometry_template = None
-        if "geometry-templates" in city_model.j:
-            geometry_template = city_model.j["geometry-templates"]
-        geometry_reader = GeometryReader(vertices_cache, geometry_template)
-
-        fields_builder = AttributeFieldsDecorator(BaseFieldsBuilder(), city_model.j)
-        feature_builder = SimpleFeatureBuilder(geometry_reader)
-
-        if self.dlg.loDLoadingComboBox.currentIndex() > 0:
-            fields_builder = LodFieldsDecorator(fields_builder)
-            feature_builder = LodFeatureDecorator(feature_builder, geometry_reader)
-        
-        if self.dlg.semanticsLoadingCheckBox.isChecked():
-            fields_builder = SemanticSurfaceFieldsDecorator(fields_builder)
-            feature_builder = SemanticSurfaceFeatureDecorator(feature_builder, geometry_reader)
-
-        if multilayer:
-            naming_iterator = TypeNamingIterator(filename, city_model.j)
-        else:
-            naming_iterator = BaseNamingIterator(filename)
-        if self.dlg.loDLoadingComboBox.currentIndex() > 1:
-            naming_iterator = LodNamingDecorator(naming_iterator,
-                                                 filename,
-                                                 city_model.j,
-                                                 geometry_reader)
-
-        srid = None
-        if self.dlg.crsLineEdit.text() != "None":
-            srid = self.dlg.crsLineEdit.text()
-        layer_manager = DynamicLayerManager(city_model.j, feature_builder, naming_iterator, fields_builder, srid)
-
-        layer_manager.prepare_attributes()
-
-        # Iterate through the city objects
-        for key, obj in city_objects.items():
-            layer_manager.add_object(key, obj)
-
-        if is_3d_styling_available():
-            styler = Copy2dStyling()
-        else:
-            styler = NullStyling()
-
-        if (self.dlg.semanticsLoadingCheckBox.isChecked()
-                and is_rule_based_3d_styling_available()
-                and self.dlg.semanticSurfacesStylingCheckBox.isChecked()):
-            styler = SemanticSurfacesStyling()
-
-        # Add the layer(s) to the project
-        root = QgsProject.instance().layerTreeRoot()
-        group = root.addGroup(filename)
-        for vl in layer_manager.get_all_layers():
-            QgsProject.instance().addMapLayer(vl, False)
-            group.addLayer(vl)
-
-            styler.apply(vl)
-        
-        # Show a message with the outcome of the loading process
-        msg = QMessageBox()
-        if geometry_reader.skipped_geometries() > 0:
-            msg.setIcon(QMessageBox.Warning)
-            msg.setText("CityJSON loaded with issues.")
-            msg.setInformativeText("Some geometries were skipped.")
-            msg.setDetailedText("{} geometries could not be loaded (p.s. GeometryInstances are not supported yet).".format(geometry_reader.skipped_geometries()))
-        else:
-            msg.setIcon(QMessageBox.Information)
-            msg.setText("CityJSON loaded successfully.")
-        
-        msg.setWindowTitle("CityJSON loading finished")
-        msg.setStandardButtons(QMessageBox.Ok)
-        msg.exec_()
-
     def run(self):
         """Run method that performs all the real work"""
         # show the dialog
@@ -364,3 +271,41 @@ class CityJsonLoader:
         if result:
             filepath = self.dlg.cityjsonPathLineEdit.text()
             self.load_cityjson(filepath)
+    
+    def load_cityjson(self, filepath):
+        """Loads the given CityJSON"""
+
+        citymodel = load_cityjson_model(filepath)
+
+        lod_as = 'NONE'
+        if self.dlg.loDLoadingComboBox.currentIndex() == 1:
+            lod_as = 'ATTRIBUTES'
+        elif self.dlg.loDLoadingComboBox.currentIndex() == 2:
+            lod_as = 'LAYERS'
+
+        loader = CityJSONLoader(filepath,
+                                citymodel,
+                                epsg=self.dlg.crsLineEdit.text(),
+                                divide_by_object=self.dlg.splitByTypeCheckBox.isChecked(),
+                                lod_as=lod_as,
+                                load_semantic_surfaces=self.dlg.semanticsLoadingCheckBox.isChecked(),
+                                style_semantic_surfaces=self.dlg.semanticsLoadingCheckBox.isChecked()
+                               )
+
+        skipped_geometries = loader.load()
+
+        # Show a message with the outcome of the loading process
+        msg = QMessageBox()
+        if skipped_geometries > 0:
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("CityJSON loaded with issues.")
+            msg.setInformativeText("Some geometries were skipped.")
+            msg.setDetailedText("{} geometries could not be loaded (p.s. "
+                                "GeometryInstances are not supported yet).".format(skipped_geometries))
+        else:
+            msg.setIcon(QMessageBox.Information)
+            msg.setText("CityJSON loaded successfully.")
+        
+        msg.setWindowTitle("CityJSON loading finished")
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
