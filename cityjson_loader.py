@@ -27,7 +27,7 @@ from PyQt5.QtCore import (QCoreApplication, QSettings, QTranslator, QVariant,
                           qVersion)
 from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtWidgets import QAction, QDialogButtonBox, QFileDialog, QMessageBox
-from qgis.core import *
+from qgis.core import QgsApplication
 from qgis.gui import QgsProjectionSelectionDialog
 
 from .cjio import cityjson
@@ -47,6 +47,7 @@ from .core.styling import (Copy2dStyling, NullStyling, SemanticSurfacesStyling,
 # Import the code for the dialog
 from .gui.cityjson_loader_dialog import CityJsonLoaderDialog
 from .resources import *
+from .processing.provider import Provider
 
 
 class CityJsonLoader:
@@ -91,6 +92,13 @@ class CityJsonLoader:
         self.dlg.browseButton.clicked.connect(self.select_cityjson_file)
         self.dlg.changeCrsPushButton.clicked.connect(self.select_crs)
         self.dlg.semanticsLoadingCheckBox.stateChanged.connect(self.semantics_loading_changed)
+
+        self.provider = None
+    
+    def initProcessing(self):
+        """Initialises the processing provider"""
+        self.provider = Provider()
+        QgsApplication.processingRegistry().addProvider(self.provider)
 
     def select_cityjson_file(self):
         """Shows a dialog to select a CityJSON file."""
@@ -256,6 +264,8 @@ class CityJsonLoader:
             text=self.tr(u'Load CityJSON...'),
             callback=self.run,
             parent=self.iface.mainWindow())
+        
+        self.initProcessing()
 
 
     def unload(self):
@@ -265,8 +275,10 @@ class CityJsonLoader:
                 self.tr(u'&CityJSON Loader'),
                 action)
             self.iface.removeToolBarIcon(action)
-        # remove the toolbar
+
         del self.toolbar
+        
+        QgsApplication.processingRegistry().removeProvider(self.provider)
 
     def run(self):
         """Run method that performs all the real work"""
