@@ -2,6 +2,7 @@
 QGIS processing algorithms"""
 
 from qgis.core import QgsProcessingProvider
+from PyQt5.QtGui import QIcon
 
 from .cityjson_load_algorithm import CityJsonLoadAlrogithm
 
@@ -30,4 +31,5 @@ class Provider(QgsProcessingProvider):
         """Should return a QIcon which is used for your provider inside
         the Processing toolbox.
         """
-        return QgsProcessingProvider.icon(self)
+        icon_path = ':/plugins/cityjson_loader/cityjson_logo.svg'
+        return QIcon(icon_path)
