@@ -12,15 +12,12 @@
 """
 
 from PyQt5.QtCore import QCoreApplication
-from qgis.core import (QgsProcessing,
-                       QgsFeatureSink,
-                       QgsProcessingException,
-                       QgsProcessingAlgorithm,
-                       QgsProcessingParameterFile,
-                       QgsProcessingParameterBoolean,
-                       QgsProcessingParameterEnum,
-                       QgsProcessingParameterCrs)
-from ..core.loading import CityJSONLoader, load_cityjson_model
+from qgis.core import (QgsFeatureSink, QgsProcessing, QgsProcessingAlgorithm,
+                       QgsProcessingException, QgsProcessingParameterBoolean,
+                       QgsProcessingParameterCrs, QgsProcessingParameterEnum,
+                       QgsProcessingParameterFile)
+
+from ..core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
 
 
 class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
@@ -200,13 +197,18 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
             context
         )
 
+        feedback.setProgressText("Loading city model...")
+        cm = load_cityjson_model(filepath)
+
         if crs.isValid():
             epsg = epsg.postgisSrid()
         else:
-            epsg = 'None'
-
-        feedback.setProgressText("Loading city model...")
-        cm = load_cityjson_model(filepath)
+            feedback.pushInfo("No CRS selected! Looking for CRS definition in metadata...")
+            epsg = get_model_epsg(cm)
+            if epsg != 'None':
+                feedback.pushInfo("CRS found: {}.".format(epsg))
+            else:
+                feedback.pushInfo("No CRS found.")
 
         feedback.setProgressText("Transforming city objects...")
         loader = CityJSONLoader(filepath,

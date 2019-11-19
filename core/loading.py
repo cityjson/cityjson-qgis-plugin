@@ -136,3 +136,18 @@ def load_cityjson_model(filepath):
     file.close()
 
     return citymodel
+
+
+def get_model_epsg(citymodel):
+    """Returns the EPSG of the city model, if exists it exists in
+    the metadata.
+    """
+    metadata = citymodel["metadata"]
+
+    if "crs" in metadata:
+        return str(metadata["crs"]["epsg"])
+
+    if "referenceSystem" in metadata:
+        return str(metadata["referenceSystem"]).split("::")[1]
+
+    return "None"
