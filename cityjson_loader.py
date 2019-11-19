@@ -27,7 +27,7 @@ from PyQt5.QtCore import (QCoreApplication, QSettings, QTranslator, QVariant,
                           qVersion)
 from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtWidgets import QAction, QDialogButtonBox, QFileDialog, QMessageBox
-from qgis.core import QgsApplication
+from qgis.core import QgsApplication, QgsCoordinateReferenceSystem
 from qgis.gui import QgsProjectionSelectionDialog
 
 from .cjio import cityjson
