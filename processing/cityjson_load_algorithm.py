@@ -205,8 +205,10 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
         else:
             epsg = 'None'
 
+        feedback.setProgressText("Loading city model...")
         cm = load_cityjson_model(filepath)
 
+        feedback.setProgressText("Transforming city objects...")
         loader = CityJSONLoader(filepath,
                                 cm,
                                 epsg=epsg,
@@ -214,6 +216,6 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
                                 lod_as=lod_as,
                                 load_semantic_surfaces=load_semantic_surfaces,
                                 style_semantic_surfaces=style_semantic_surfaces)
-        loader.load()
+        loader.load(feedback=feedback)
 
         return {'STATUS': 'SUCCESS'}

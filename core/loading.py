@@ -101,15 +101,21 @@ class CityJSONLoader:
         for v in verts:
             self.vertices_cache.add_vertex(v)
 
-    def load(self):
+    def load(self, feedback=None):
         """Loads a specified CityJSON file and returns the number of
         skipped geometries
         """
         city_objects = self.citymodel["CityObjects"]
 
         # Iterate through the city objects
+        current = 1
+        step = 100.0 / len(city_objects)
         for key, obj in city_objects.items():
             self.layer_manager.add_object(key, obj)
+
+            if feedback is not None:
+                feedback.setProgress(int(current * step))
+            current = current + 1
 
         # Add the layer(s) to the project
         root = QgsProject.instance().layerTreeRoot()
