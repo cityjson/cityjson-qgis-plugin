@@ -161,10 +161,10 @@ class CityJsonLoader:
             model = MetadataModel(model.j["metadata"], self.dlg.metadataTreeView)
             self.dlg.metadataTreeView.setModel(model)
             self.dlg.metadataTreeView.setColumnWidth(0, model.getKeyColumnWidth())
-        except Exception as error:
-            self.dlg.changeCrsPushButton.setEnabled(False)
-            self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
-            raise error
+        except:
+            self.dlg.changeCrsPushButton.setEnabled(True)
+            self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+            self.dlg.crsLineEdit.setText("None")
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
