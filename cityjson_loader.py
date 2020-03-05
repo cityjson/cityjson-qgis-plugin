@@ -148,6 +148,7 @@ class CityJsonLoader:
         try:
             fstream = open(filename, encoding='utf-8-sig')
             model = cityjson.CityJSON(fstream)
+            fstream.close()
             self.dlg.cityjsonVersionLineEdit.setText(model.get_version())
             self.dlg.compressedLineEdit.setText("Yes" if "transform" in model.j else "No")
 
