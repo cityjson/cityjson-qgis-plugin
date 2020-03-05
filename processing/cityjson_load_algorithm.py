@@ -201,7 +201,7 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
         cm = load_cityjson_model(filepath)
 
         if crs.isValid():
-            epsg = epsg.postgisSrid()
+            epsg = crs.postgisSrid()
         else:
             feedback.pushInfo("No CRS selected! Looking for CRS definition in metadata...")
             epsg = get_model_epsg(cm)
