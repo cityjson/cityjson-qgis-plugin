@@ -16,15 +16,15 @@ email=s.vitalis@tudelft.nl
 
 about=This plugin allows QGIS to load CityJSON datasets. Data are loaded in respective tables and all information are loaded.
 
-tracker=https://github.com/tudelft3d/cityjson-qgis-plugin/issues
-repository=https://github.com/tudelft3d/cityjson-qgis-plugin
+tracker=https://github.com/cityjson/cityjson-qgis-plugin/issues
+repository=https://github.com/cityjson/cityjson-qgis-plugin
 # End of mandatory metadata
 
 # changelog=
 
 tags=python, cityjson, 3d
 
-homepage=https://github.com/tudelft3d/cityjson-qgis-plugin
+homepage=https://github.com/cityjson/cityjson-qgis-plugin
 category=Vector
 icon=cityjson_logo.svg
 experimental=False
