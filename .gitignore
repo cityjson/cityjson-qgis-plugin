@@ -2,3 +2,4 @@ __pycache__/
 .vscode/
 .pytest_cache/
 help/build/
+CityJSON-loader.zip
