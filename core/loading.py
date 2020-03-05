@@ -142,7 +142,7 @@ def get_model_epsg(citymodel):
     """Returns the EPSG of the city model, if exists it exists in
     the metadata.
     """
-    try:
+    if "metadata" in citymodel:
         metadata = citymodel["metadata"]
         if "crs" in metadata:
             return str(metadata["crs"]["epsg"])
@@ -151,5 +151,5 @@ def get_model_epsg(citymodel):
             return str(metadata["referenceSystem"]).split("::")[1]
         else:
             return "None"
-    except:
-        return "None"
+
+    return "None"

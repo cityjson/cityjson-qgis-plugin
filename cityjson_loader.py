@@ -150,21 +150,26 @@ class CityJsonLoader:
             model = cityjson.CityJSON(fstream)
             self.dlg.cityjsonVersionLineEdit.setText(model.get_version())
             self.dlg.compressedLineEdit.setText("Yes" if "transform" in model.j else "No")
-            if "crs" in model.j["metadata"]:
-                self.dlg.crsLineEdit.setText(str(model.j["metadata"]["crs"]["epsg"]))
-            elif "referenceSystem" in model.j["metadata"]:
-                self.dlg.crsLineEdit.setText(str(model.j["metadata"]["referenceSystem"]).split("::")[1])
+
+            if "metadata" in model.j:
+                if "crs" in model.j["metadata"]:
+                    self.dlg.crsLineEdit.setText(str(model.j["metadata"]["crs"]["epsg"]))
+                elif "referenceSystem" in model.j["metadata"]:
+                    self.dlg.crsLineEdit.setText(str(model.j["metadata"]["referenceSystem"]).split("::")[1])
+                else:
+                    self.dlg.crsLineEdit.setText("None")
+                metadata = model.j["metadata"]
             else:
-                self.dlg.crsLineEdit.setText("None")
+                metadata = {"Medata missing": "There is no metadata in this file"}
             self.dlg.changeCrsPushButton.setEnabled(True)
             self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
-            model = MetadataModel(model.j["metadata"], self.dlg.metadataTreeView)
+            model = MetadataModel(metadata, self.dlg.metadataTreeView)
             self.dlg.metadataTreeView.setModel(model)
             self.dlg.metadataTreeView.setColumnWidth(0, model.getKeyColumnWidth())
-        except:
-            self.dlg.changeCrsPushButton.setEnabled(True)
-            self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
-            self.dlg.crsLineEdit.setText("None")
+        except Exception as exp:
+            self.dlg.changeCrsPushButton.setEnabled(False)
+            self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+            raise exp
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
