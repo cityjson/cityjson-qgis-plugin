@@ -1,3 +1,7 @@
+0.6.0 - 22/7/2020
+    * Add option to filter by area or object type in processing algorithm
+    * Small fixes (typos etc.)
+
 0.5.0 - 5/3/2020
     * Add a processing algorithm to load CityJSON (experimental)
     * Fix issue where loading CityJSON would not work without metadata
