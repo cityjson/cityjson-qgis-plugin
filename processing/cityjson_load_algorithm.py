@@ -15,9 +15,10 @@ from PyQt5.QtCore import QCoreApplication
 from qgis.core import (QgsFeatureSink, QgsProcessing, QgsProcessingAlgorithm,
                        QgsProcessingException, QgsProcessingParameterBoolean,
                        QgsProcessingParameterCrs, QgsProcessingParameterEnum,
-                       QgsProcessingParameterFile)
+                       QgsProcessingParameterFile, QgsProcessingParameterExtent)
 
 from ..core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
+from ..cjio.cityjson import CityJSON
 
 
 class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
@@ -42,6 +43,7 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
     LOAD_SEMANTIC_SURFACES = 'LOAD_SEMANTIC_SURFACES'
     STYLE_BY_SEMANTIC_SURFACES = 'STYLE_BY_SEMANTIC_SURFACES'
     SRID = 'SRID'
+    BBOX = 'BBOX'
 
     def tr(self, string):
         """
@@ -152,6 +154,14 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
             )
         )
 
+        self.addParameter(
+            QgsProcessingParameterExtent(
+                self.BBOX,
+                self.tr('Extract subset'),
+                optional=True
+            )
+        )
+
     def processAlgorithm(self, parameters, context, feedback):
         """
         Here is where the processing itself takes place.
@@ -209,6 +219,24 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
                 feedback.pushInfo("CRS found: {}.".format(epsg))
             else:
                 feedback.pushInfo("No CRS found.")
+        
+        if epsg == 'None':
+            extent = self.parameterAsExtent(
+                parameters,
+                self.BBOX,
+                context
+            )
+        else:
+            extent = self.parameterAsExtent(
+                parameters,
+                self.BBOX,
+                context,
+                crs = crs
+            )
+
+        if not extent.isNull():
+            feedback.setProgressText("Filtering objects by extent...")
+            cm = self.subset_bbox(cm, extent)
 
         feedback.setProgressText("Transforming city objects...")
         loader = CityJSONLoader(filepath,
@@ -221,3 +249,21 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
         loader.load(feedback=feedback)
 
         return {'STATUS': 'SUCCESS'}
+
+    def subset_bbox(self, cm, rectangle):
+        """
+        Returns a subset of the original city model based on the defined
+        extent.
+        """
+
+        bbox = [
+            rectangle.xMinimum(),
+            rectangle.yMinimum(),
+            rectangle.xMaximum(),
+            rectangle.yMaximum()
+        ]
+
+        cityjson = CityJSON(j=cm)
+        sub_cm = cityjson.get_subset_bbox(bbox)
+
+        return sub_cm.j

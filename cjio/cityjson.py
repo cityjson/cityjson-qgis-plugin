@@ -107,6 +107,7 @@ def poly2cj(file):
 class CityJSON:
 
     def __init__(self, file=None, j=None, ignore_duplicate_keys=False):
+        self.path=None
         if file is not None:
             self.read(file, ignore_duplicate_keys)
             self.path = os.path.abspath(file.name)
