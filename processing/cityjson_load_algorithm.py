@@ -44,6 +44,9 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
     STYLE_BY_SEMANTIC_SURFACES = 'STYLE_BY_SEMANTIC_SURFACES'
     SRID = 'SRID'
     BBOX = 'BBOX'
+    OBJECT_TYPE = 'OBJECT_TYPE'
+
+    OBJECTTYPES = ['All', 'Building', 'Bridge', 'Road', 'TransportSquare', 'LandUse', 'Railway', 'TINRelief', 'WaterBody', 'PlantCover', 'SolitaryVegetationObject', 'CityFurniture', 'GenericCityObject', 'Tunnel']
 
     def tr(self, string):
         """
@@ -157,8 +160,16 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterExtent(
                 self.BBOX,
-                self.tr('Extract subset'),
+                self.tr('Filter by area'),
                 optional=True
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterEnum(
+                self.OBJECT_TYPE,
+                self.tr('Filter by type'),
+                self.OBJECTTYPES
             )
         )
 
@@ -210,6 +221,8 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
         feedback.setProgressText("Loading city model...")
         cm = load_cityjson_model(filepath)
 
+        feedback.pushInfo("Loaded {} objects.".format(len(cm["CityObjects"])))
+
         if crs.isValid():
             epsg = crs.postgisSrid()
         else:
@@ -237,6 +250,22 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
         if not extent.isNull():
             feedback.setProgressText("Filtering objects by extent...")
             cm = self.subset_bbox(cm, extent)
+            feedback.pushInfo("Found {} objects.".format(len(cm["CityObjects"])))
+        
+        object_type = self.parameterAsEnum(
+            parameters,
+            self.OBJECT_TYPE,
+            context
+        )
+
+        if object_type > 0:
+            feedback.setProgressText("Filtering objects by type...")
+            cm = self.subset_cotype(cm, self.OBJECTTYPES[object_type])
+            feedback.pushInfo("Found {} objects.".format(len(cm["CityObjects"])))
+
+        if len(cm["CityObjects"]) == 0:
+            feedback.pushInfo("No objects to load. Skipping!")
+            return {'STATUS': 'SUCCESS'}
 
         feedback.setProgressText("Transforming city objects...")
         loader = CityJSONLoader(filepath,
@@ -265,5 +294,11 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
 
         cityjson = CityJSON(j=cm)
         sub_cm = cityjson.get_subset_bbox(bbox)
+
+        return sub_cm.j
+
+    def subset_cotype(self, cm, cotype):
+        cityjson = CityJSON(j=cm)
+        sub_cm = cityjson.get_subset_cotype(cotype)
 
         return sub_cm.j
