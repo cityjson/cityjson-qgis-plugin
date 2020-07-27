@@ -1,3 +1,6 @@
+0.6.1 - 27/7/2020
+    * Fix issue with settings breaking the user's QGIS profile
+
 0.6.0 - 22/7/2020
     * Add option to filter by area or object type in processing algorithm
     * Small fixes (typos etc.)
