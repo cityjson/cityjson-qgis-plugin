@@ -64,26 +64,9 @@ def save_defaults():
 
 def load_settings():
     """Loads the settings from the app's registry"""
-    settings = QSettings()
-    if not settings.contains("CityJSON Loader"):
-        save_defaults()
-    settings.beginGroup("CityJSON Loader")
-
-    colors = {}
-    size = settings.beginReadArray("semantic_colors")
-    for i in range(size):
-        settings.setArrayIndex(i)
-        surface = settings.value("surface")
-        colors[surface] = {}
-        colors[surface]["diffuse"] = get_color_from_tuple(settings.value("diffuse"))
-        colors[surface]["ambient"] = get_color_from_tuple(settings.value("ambient"))
-        colors[surface]["specular"] = get_color_from_tuple(settings.value("specular"))
-        i = i + 1
-    settings.endArray()
-    settings.endGroup()
 
     result = {
-        "semantic_colors": colors
+        "semantic_colors": semantic_colors
     }
 
     return result
