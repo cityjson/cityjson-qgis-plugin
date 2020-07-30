@@ -1,3 +1,6 @@
+0.6.2 - 30/7/2020
+    * Make option to filter by object type allow multi-selection
+
 0.6.1 - 27/7/2020
     * Fix issue with settings breaking the user's QGIS profile
 
