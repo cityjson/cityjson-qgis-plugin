@@ -376,17 +376,22 @@ class CityJSON:
 
     def get_subset_cotype(self, cotype, invert=False):
         # print ('get_subset_cotype')
-        lsCOtypes = [cotype]
-        if cotype == 'Building':
-            lsCOtypes.append('BuildingInstallation')
-            lsCOtypes.append('BuildingPart')
-        if cotype == 'Bridge':
-            lsCOtypes.append('BridgePart')
-            lsCOtypes.append('BridgeInstallation')
-            lsCOtypes.append('BridgeConstructionElement')
-        if cotype == 'Tunnel':
-            lsCOtypes.append('TunnelInstallation')
-            lsCOtypes.append('TunnelPart')
+        if isinstance(cotype, list):
+            lsCOtypes = cotype
+        else:
+            lsCOtypes = [cotype]
+
+        for t in lsCOtypes:
+            if t == 'Building':
+                lsCOtypes.append('BuildingInstallation')
+                lsCOtypes.append('BuildingPart')
+            if t == 'Bridge':
+                lsCOtypes.append('BridgePart')
+                lsCOtypes.append('BridgeInstallation')
+                lsCOtypes.append('BridgeConstructionElement')
+            if t == 'Tunnel':
+                lsCOtypes.append('TunnelInstallation')
+                lsCOtypes.append('TunnelPart')
         #-- new sliced CityJSON object
         cm2 = CityJSON()
         cm2.j["version"] = self.j["version"]

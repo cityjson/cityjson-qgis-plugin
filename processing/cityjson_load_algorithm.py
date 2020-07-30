@@ -46,7 +46,7 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
     BBOX = 'BBOX'
     OBJECT_TYPE = 'OBJECT_TYPE'
 
-    OBJECTTYPES = ['All', 'Building', 'Bridge', 'Road', 'TransportSquare', 'LandUse', 'Railway', 'TINRelief', 'WaterBody', 'PlantCover', 'SolitaryVegetationObject', 'CityFurniture', 'GenericCityObject', 'Tunnel']
+    OBJECTTYPES = ['Building', 'Bridge', 'Road', 'TransportSquare', 'LandUse', 'Railway', 'TINRelief', 'WaterBody', 'PlantCover', 'SolitaryVegetationObject', 'CityFurniture', 'GenericCityObject', 'Tunnel']
 
     def tr(self, string):
         """
@@ -169,7 +169,9 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
             QgsProcessingParameterEnum(
                 self.OBJECT_TYPE,
                 self.tr('Filter by type'),
-                self.OBJECTTYPES
+                self.OBJECTTYPES,
+                allowMultiple=True,
+                optional=True
             )
         )
 
@@ -252,15 +254,15 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
             cm = self.subset_bbox(cm, extent)
             feedback.pushInfo("Found {} objects.".format(len(cm["CityObjects"])))
         
-        object_type = self.parameterAsEnum(
+        object_types = self.parameterAsEnums(
             parameters,
             self.OBJECT_TYPE,
             context
         )
 
-        if object_type > 0:
+        if len(object_types) > 0:
             feedback.setProgressText("Filtering objects by type...")
-            cm = self.subset_cotype(cm, self.OBJECTTYPES[object_type])
+            cm = self.subset_cotype(cm, [self.OBJECTTYPES[t] for t in object_types])
             feedback.pushInfo("Found {} objects.".format(len(cm["CityObjects"])))
 
         if len(cm["CityObjects"]) == 0:
