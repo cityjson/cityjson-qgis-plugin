@@ -129,6 +129,8 @@ class BaseFieldsBuilder:
         fields = QgsFields()
         fields.append(QgsField("uid", QVariant.String))
         fields.append(QgsField("type", QVariant.String))
+        fields.append(QgsField("parents", QVariant.StringList))
+        fields.append(QgsField("children", QVariant.StringList))
 
         return fields
 
@@ -209,6 +211,12 @@ class SimpleFeatureBuilder:
         new_feature = QgsFeature(fields)
         new_feature["uid"] = object_key
         new_feature["type"] = cityobject["type"]
+
+        if "parents" in cityobject:
+            new_feature["parents"] = cityobject["parents"]
+
+        if "children" in cityobject:
+            new_feature["children"] = cityobject["children"]
 
         # Load the attributes
         if "attributes" in cityobject:
