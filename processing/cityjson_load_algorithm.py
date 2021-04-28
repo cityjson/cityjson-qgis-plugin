@@ -18,7 +18,7 @@ from qgis.core import (QgsFeatureSink, QgsProcessing, QgsProcessingAlgorithm,
                        QgsProcessingParameterFile, QgsProcessingParameterExtent)
 
 from ..core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
-
+from ..core.utils import get_subset_bbox, get_subset_cotype
 
 class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
     """
@@ -293,13 +293,11 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
             rectangle.yMaximum()
         ]
 
-        cityjson = CityJSON(j=cm)
-        sub_cm = cityjson.get_subset_bbox(bbox)
+        sub_cm = get_subset_bbox(cm, bbox)
 
-        return sub_cm.j
+        return sub_cm
 
     def subset_cotype(self, cm, cotype):
-        cityjson = CityJSON(j=cm)
-        sub_cm = cityjson.get_subset_cotype(cotype)
+        sub_cm = get_subset_cotype(cm, cotype)
 
-        return sub_cm.j
+        return sub_cm

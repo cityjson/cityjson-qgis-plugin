@@ -22,6 +22,7 @@
  ***************************************************************************/
 """
 import os.path
+import json
 
 from PyQt5.QtCore import (QCoreApplication, QSettings, QTranslator, QVariant,
                           qVersion)
@@ -146,19 +147,19 @@ class CityJsonLoader:
         """Update metadata fields according to the file provided"""
         try:
             fstream = open(filename, encoding='utf-8-sig')
-            model = cityjson.CityJSON(fstream)
+            model = json.load(fstream)
             fstream.close()
-            self.dlg.cityjsonVersionLineEdit.setText(model.get_version())
-            self.dlg.compressedLineEdit.setText("Yes" if "transform" in model.j else "No")
+            self.dlg.cityjsonVersionLineEdit.setText(model["version"])
+            self.dlg.compressedLineEdit.setText("Yes" if "transform" in model else "No")
 
-            if "metadata" in model.j:
-                if "crs" in model.j["metadata"]:
-                    self.dlg.crsLineEdit.setText(str(model.j["metadata"]["crs"]["epsg"]))
-                elif "referenceSystem" in model.j["metadata"]:
-                    self.dlg.crsLineEdit.setText(str(model.j["metadata"]["referenceSystem"]).split("::")[1])
+            if "metadata" in model:
+                if "crs" in model["metadata"]:
+                    self.dlg.crsLineEdit.setText(str(model["metadata"]["crs"]["epsg"]))
+                elif "referenceSystem" in model["metadata"]:
+                    self.dlg.crsLineEdit.setText(str(model["metadata"]["referenceSystem"]).split("::")[1])
                 else:
                     self.dlg.crsLineEdit.setText("None")
-                metadata = model.j["metadata"]
+                metadata = model["metadata"]
             else:
                 metadata = {"Medata missing": "There is no metadata in this file"}
             self.dlg.changeCrsPushButton.setEnabled(True)
