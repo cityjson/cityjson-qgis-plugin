@@ -55,7 +55,7 @@ UI_FILES = gui/cityjson_loader_dialog_base.ui
 
 EXTRAS = metadata.txt icon.png cityjson_logo_big.png cityjson_logo.svg Changelog
 
-EXTRA_DIRS = cjio
+EXTRA_DIRS = 
 
 COMPILED_RESOURCE_FILES = resources.py
 
@@ -72,7 +72,7 @@ PLUGIN_UPLOAD = $(c)/plugin_upload.py
 
 RESOURCE_SRC=$(shell grep '^ *<file' resources.qrc | sed 's@</file>@@g;s/.*>//g' | tr '\n' ' ')
 
-QGISDIR=Library/Application Support/QGIS/QGIS3/profiles/default
+QGISDIR=.local/share/QGIS/QGIS3/profiles/default
 
 default: compile
 

@@ -18,7 +18,6 @@ from qgis.core import (QgsFeatureSink, QgsProcessing, QgsProcessingAlgorithm,
                        QgsProcessingParameterFile, QgsProcessingParameterExtent)
 
 from ..core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
-from ..cjio.cityjson import CityJSON
 
 
 class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):

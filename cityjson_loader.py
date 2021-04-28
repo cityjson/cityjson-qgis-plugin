@@ -30,7 +30,6 @@ from PyQt5.QtWidgets import QAction, QDialogButtonBox, QFileDialog, QMessageBox
 from qgis.core import QgsApplication, QgsCoordinateReferenceSystem
 from qgis.gui import QgsProjectionSelectionDialog
 
-from .cjio import cityjson
 from .core.geometry import GeometryReader, VerticesCache
 from .core.helpers.treemodel import (MetadataElement, MetadataModel,
                                      MetadataNode)
@@ -85,7 +84,7 @@ class CityJsonLoader:
         # Declare instance attributes
         self.actions = []
         self.menu = self.tr(u'&CityJSON Loader')
-        # TODO: We are going to let the user set this up in a future iteration
+        # # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar(u'CityJsonLoader')
         self.toolbar.setObjectName(u'CityJsonLoader')
 
