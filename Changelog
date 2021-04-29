@@ -1,3 +1,6 @@
+0.7.1 - 29/4/2021
+    * Improve parsing of parents and children
+
 0.7.0 - 28/4/2021
     * Remove cjio as an internal dependency (it would cause crashes due to memory)
     * Add support for parsing parents and children
