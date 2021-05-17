@@ -45,6 +45,7 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
     BBOX = 'BBOX'
     OBJECT_TYPE = 'OBJECT_TYPE'
 
+    LODLOADINGTYPES = ['NONE', 'ATTRIBUTES', 'LAYERS']
     OBJECTTYPES = ['Building', 'Bridge', 'Road', 'TransportSquare', 'LandUse', 'Railway', 'TINRelief', 'WaterBody', 'PlantCover', 'SolitaryVegetationObject', 'CityFurniture', 'GenericCityObject', 'Tunnel']
 
     def tr(self, string):
@@ -127,7 +128,7 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
             QgsProcessingParameterEnum(
                 self.LOD_AS,
                 self.tr('Load LoD as'),
-                ['NONE', 'ATTRIBUTES', 'LAYERS'],
+                self.LODLOADINGTYPES,
                 defaultValue='NONE'
             )
         )
@@ -200,6 +201,7 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
             self.LOD_AS,
             context
         )
+        lod_as = self.LODLOADINGTYPES[lod_as]
 
         load_semantic_surfaces = self.parameterAsBoolean(
             parameters,

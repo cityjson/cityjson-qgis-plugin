@@ -62,7 +62,7 @@ class CityJSONLoader:
         else:
             self.naming_iterator = BaseNamingIterator(filename)
 
-        if load_semantic_surfaces == 'LAYERS':
+        if lod_as == 'LAYERS':
             self.naming_iterator = LodNamingDecorator(self.naming_iterator,
                                                       filename,
                                                       citymodel,
