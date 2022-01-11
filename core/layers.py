@@ -107,6 +107,7 @@ class LodNamingDecorator:
 
         lods = [self._geometry_reader.get_lod(geom)
                 for obj in citymodel["CityObjects"].values()
+                if "geometry" in obj
                 for geom in obj["geometry"]]
         self._lods = set(lods)
 
@@ -226,11 +227,14 @@ class SimpleFeatureBuilder:
             for att_key, att_value in cityobject["attributes"].items():
                 new_feature["attribute.{}".format(att_key)] = att_value
 
-        if read_geometry:
+        if read_geometry and "geometry" in cityobject:
+            return_geom = cityobject["geometry"]
             geom = self._geometry_reader.read_geometry(cityobject["geometry"])
             new_feature.setGeometry(geom)
+        else:
+            return_geom = []
 
-        return {new_feature: cityobject["geometry"]}
+        return {new_feature: return_geom}
 
 class LodFeatureDecorator:
     """A class that decorates feature with lod information and geometries"""
