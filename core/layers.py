@@ -227,10 +227,12 @@ class SimpleFeatureBuilder:
             for att_key, att_value in cityobject["attributes"].items():
                 new_feature["attribute.{}".format(att_key)] = att_value
 
-        if read_geometry and "geometry" in cityobject:
+        if "geometry" in cityobject:
             return_geom = cityobject["geometry"]
-            geom = self._geometry_reader.read_geometry(cityobject["geometry"])
-            new_feature.setGeometry(geom)
+            
+            if read_geometry:
+                geom = self._geometry_reader.read_geometry(cityobject["geometry"])
+                new_feature.setGeometry(geom)
         else:
             return_geom = []
 
