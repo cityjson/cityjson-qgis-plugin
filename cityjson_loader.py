@@ -155,6 +155,9 @@ class CityJsonLoader:
             if "metadata" in model:
                 self.dlg.crsLineEdit.setText(get_model_epsg(model))
                 metadata = model["metadata"]
+
+                if "+metadata-extended" in model:
+                    metadata = {**metadata, **model["+metadata-extended"]}
             else:
                 metadata = {"Medata missing": "There is no metadata in this file"}
             self.dlg.changeCrsPushButton.setEnabled(True)
