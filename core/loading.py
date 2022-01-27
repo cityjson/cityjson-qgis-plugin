@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 
 from PyQt5.QtWidgets import QMessageBox
 from qgis.core import QgsProject
@@ -148,7 +149,13 @@ def get_model_epsg(citymodel):
             return str(metadata["crs"]["epsg"])
 
         if "referenceSystem" in metadata:
-            return str(metadata["referenceSystem"]).split("::")[1]
+            ref_string = str(metadata["referenceSystem"])
+            if ref_string.__contains__("::"):
+                return ref_string.split("::")[1]
+
+            p = re.compile(r"https:\/\/www.opengis.net\/def\/crs\/([A-Z]+)\/([0-9]+)\/([0-9]+)")
+            m = p.match(ref_string)
+            return m.group(3)
         else:
             return "None"
 

@@ -40,7 +40,7 @@ from .core.layers import (AttributeFieldsDecorator, BaseFieldsBuilder,
                           LodNamingDecorator, SemanticSurfaceFeatureDecorator,
                           SemanticSurfaceFieldsDecorator, SimpleFeatureBuilder,
                           TypeNamingIterator)
-from .core.loading import CityJSONLoader, load_cityjson_model
+from .core.loading import CityJSONLoader, load_cityjson_model, get_model_epsg
 from .core.styling import (Copy2dStyling, NullStyling, SemanticSurfacesStyling,
                            is_3d_styling_available,
                            is_rule_based_3d_styling_available)
@@ -153,12 +153,7 @@ class CityJsonLoader:
             self.dlg.compressedLineEdit.setText("Yes" if "transform" in model else "No")
 
             if "metadata" in model:
-                if "crs" in model["metadata"]:
-                    self.dlg.crsLineEdit.setText(str(model["metadata"]["crs"]["epsg"]))
-                elif "referenceSystem" in model["metadata"]:
-                    self.dlg.crsLineEdit.setText(str(model["metadata"]["referenceSystem"]).split("::")[1])
-                else:
-                    self.dlg.crsLineEdit.setText("None")
+                self.dlg.crsLineEdit.setText(get_model_epsg(model))
                 metadata = model["metadata"]
             else:
                 metadata = {"Medata missing": "There is no metadata in this file"}
