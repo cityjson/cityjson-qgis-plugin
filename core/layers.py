@@ -190,14 +190,34 @@ class LodFieldsDecorator:
 class SemanticSurfaceFieldsDecorator:
     """A class that creates an LoD field"""
 
-    def __init__(self, decorated):
+    def __init__(self, decorated, citymodel):
         self._decorated = decorated
+        self._citymodel = citymodel
+
+    def get_semantic_attributes(self, objs):
+        """Returns the list of (unique) attributes found in all city objects."""
+        atts = []
+
+        for obj in objs.values():
+            if "geometry" in obj:
+                for geom in obj["geometry"]:
+                    if "semantics" in geom:
+                        for surface in geom["semantics"]["surfaces"]:
+                            for att_key in surface:
+                                if not att_key in atts:
+                                    atts.append(att_key)
+
+        return atts
 
     def get_fields(self):
         """Create and returns fields"""
         fields = self._decorated.get_fields()
 
-        fields.append(QgsField("semantic_surface", QVariant.String))
+        attributes = self.get_semantic_attributes(self._citymodel["CityObjects"])
+
+        for att in attributes:
+            fields.append(QgsField("surface.{}".format(att),
+                                   QVariant.String))
 
         return fields
 
@@ -297,17 +317,16 @@ class SemanticSurfaceFeatureDecorator:
 
             surf_geom_dict = {}
             for polygon, semantic in zip(polygons, semantics):
-                semantic_surface = self.semantic_to_string(semantic)
-                surf_geom_dict.setdefault(semantic_surface, []).append(polygon)
-
-            for surface, polygons in surf_geom_dict.items():
                 new_feature = QgsFeature(feature)
 
-                new_feature["semantic_surface"] = surface
+                if not semantic is None:
+                    for att in semantic:
+                        new_feature[f"surface.{att}"] = semantic[att]
+
                 if read_geometry:
-                    qgs_geometry = self._geometry_reader.polygons_to_geometry(polygons)
+                    qgs_geometry = self._geometry_reader.polygons_to_geometry([polygon])
                     new_feature.setGeometry(qgs_geometry)
 
-                return_features[new_feature] = polygons #TODO: This is wrong! There must be a geometry here
+                return_features[new_feature] = polygon #TODO: This is wrong! There must be a geometry here
 
         return return_features

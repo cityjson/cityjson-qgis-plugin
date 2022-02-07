@@ -54,7 +54,8 @@ class CityJSONLoader:
                                                        self.geometry_reader)
 
         if load_semantic_surfaces:
-            self.fields_builder = SemanticSurfaceFieldsDecorator(self.fields_builder)
+            self.fields_builder = SemanticSurfaceFieldsDecorator(self.fields_builder,
+                                                                 citymodel)
             self.feature_builder = SemanticSurfaceFeatureDecorator(self.feature_builder,
                                                                    self.geometry_reader)
 

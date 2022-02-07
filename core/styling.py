@@ -67,7 +67,7 @@ class SemanticSurfacesStyling:
             symbol.setMaterial(material)
             symbol.setEdgesEnabled(True)
 
-            new_rule = QgsRuleBased3DRenderer.Rule(symbol, "\"semantic_surface\" = '{surface}'".format(surface=surface_type))
+            new_rule = QgsRuleBased3DRenderer.Rule(symbol, "\"surface.type\" = '{surface}'".format(surface=surface_type))
             root_rule.appendChild(new_rule)
 
         if self._else_color is None:
