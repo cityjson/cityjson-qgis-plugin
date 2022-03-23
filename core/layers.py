@@ -109,6 +109,7 @@ class LodNamingDecorator:
                 for obj in citymodel["CityObjects"].values()
                 if "geometry" in obj
                 for geom in obj["geometry"]]
+        lods.append(None)
         self._lods = set(lods)
 
     def all_layers(self):
@@ -275,18 +276,22 @@ class LodFeatureDecorator:
 
         for feature, feature_geom in features.items():
             lod_geom_dict = {} # Stores the lod -> geometry dictionary
-            for geom in feature_geom:
-                lod_geom_dict.setdefault(self._geometry_reader.get_lod(geom), []).append(geom)
 
-            for lod, geom in lod_geom_dict.items():
-                new_feature = QgsFeature(feature)
+            if len(feature_geom) > 0:
+                for geom in feature_geom:
+                    lod_geom_dict.setdefault(self._geometry_reader.get_lod(geom), []).append(geom)
 
-                new_feature["lod"] = lod
-                if read_geometry:
-                    qgs_geometry = self._geometry_reader.read_geometry(geom)
-                    new_feature.setGeometry(qgs_geometry)
+                for lod, geom in lod_geom_dict.items():
+                    new_feature = QgsFeature(feature)
 
-                return_features[new_feature] = geom
+                    new_feature["lod"] = lod
+                    if read_geometry:
+                        qgs_geometry = self._geometry_reader.read_geometry(geom)
+                        new_feature.setGeometry(qgs_geometry)
+
+                    return_features[new_feature] = geom
+            else:
+                return_features[feature] = None
 
         return return_features
 
@@ -315,18 +320,21 @@ class SemanticSurfaceFeatureDecorator:
         for feature, feature_geom in features.items():
             polygons, semantics = self._geometry_reader.get_polygons(feature_geom)
 
-            surf_geom_dict = {}
-            for polygon, semantic in zip(polygons, semantics):
-                new_feature = QgsFeature(feature)
+            if len(polygons) > 1:
+                surf_geom_dict = {}
+                for polygon, semantic in zip(polygons, semantics):
+                    new_feature = QgsFeature(feature)
 
-                if not semantic is None:
-                    for att in semantic:
-                        new_feature[f"surface.{att}"] = semantic[att]
+                    if not semantic is None:
+                        for att in semantic:
+                            new_feature[f"surface.{att}"] = semantic[att]
 
-                if read_geometry:
-                    qgs_geometry = self._geometry_reader.polygons_to_geometry([polygon])
-                    new_feature.setGeometry(qgs_geometry)
+                    if read_geometry:
+                        qgs_geometry = self._geometry_reader.polygons_to_geometry([polygon])
+                        new_feature.setGeometry(qgs_geometry)
 
-                return_features[new_feature] = polygon #TODO: This is wrong! There must be a geometry here
+                    return_features[new_feature] = polygon #TODO: This is wrong! There must be a geometry here
+            else:
+                return_features[feature] = None
 
         return return_features
