@@ -1,3 +1,6 @@
+0.8.1 - 23/3/2022
+    * Fix issue where objects without geometries weren't loaded under certain circumstances
+
 0.8.0 - 7/2/2022
     * Add support for all semantic surface attributes
 
