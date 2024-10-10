@@ -36,7 +36,7 @@ class Copy2dStyling:
         material = create_material(vectorlayer.renderer().symbol().color())
 
         symbol = QgsPolygon3DSymbol()
-        symbol.setMaterial(material)
+        symbol.setMaterialSettings(material)
         symbol.setEdgesEnabled(True)
 
         renderer = QgsVectorLayer3DRenderer()
@@ -64,7 +64,7 @@ class SemanticSurfacesStyling:
             material = create_material(colors["diffuse"], colors["ambient"], colors["specular"])
 
             symbol = QgsPolygon3DSymbol()
-            symbol.setMaterial(material)
+            symbol.setMaterialSettings(material)
             symbol.setEdgesEnabled(True)
 
             new_rule = QgsRuleBased3DRenderer.Rule(symbol, "\"surface.type\" = '{surface}'".format(surface=surface_type))
@@ -76,7 +76,7 @@ class SemanticSurfacesStyling:
             material = create_material(self._else_color)
 
         symbol = QgsPolygon3DSymbol()
-        symbol.setMaterial(material)
+        symbol.setMaterialSettings(material)
         symbol.setEdgesEnabled(True)
 
         new_rule = QgsRuleBased3DRenderer.Rule(symbol, "ELSE")
