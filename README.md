@@ -1,3 +1,12 @@
+# This fork of **cityjson-qgis-plugin** includes fixes and support for additional semantic surface attributes
+
+## Key Updates:
+
+- **New feature(s)**: Support for additional semantic surface attributes when loading a cityjson file using option ***Load semantic surfaces (as individual features)***.
+  Compatible with cityjson files generated using my own version of **3d-building-metrics** https://github.com/FLeroux23/3d-building-metrics
+- **Fixes**:
+     - Fix error: 'QgsPolygon3DSymbol' object has no attribute 'setMaterial'
+___
 # CityJSON Loader for QGIS 3
 
 This is a Python plugin for QGIS 3 which adds support for loading [CityJSON](http://www.cityjson.org) datasets in QGIS.
