@@ -207,7 +207,13 @@ class SemanticSurfaceFieldsDecorator:
                             for att_key in surface:
                                 if not att_key in atts:
                                     atts.append(att_key)
-
+                        
+                        # Handle custom semantics
+                        for key, _ in geom["semantics"].items():
+                            key = key.lstrip("+")
+                            if key not in ["surfaces", "values"] and key not in atts:
+                                atts.append(key)
+        
         return atts
 
     def get_fields(self):
@@ -221,6 +227,14 @@ class SemanticSurfaceFieldsDecorator:
                                    QVariant.String))
 
         return fields
+
+    def get_attributes(self):
+        """Create and returns fields"""
+        fields = self._decorated.get_fields()
+
+        attributes = self.get_semantic_attributes(self._citymodel["CityObjects"])
+        
+        return attributes
 
 class SimpleFeatureBuilder:
     """A class that create features according to their attributes"""
@@ -301,6 +315,10 @@ class SemanticSurfaceFeatureDecorator:
     def __init__(self, decorated, geometry_reader):
         self._decorated = decorated
         self._geometry_reader = geometry_reader
+
+        # Get attributes from the field decorator
+        self._field_decorator = field_decorator
+        self._attributes = self._field_decorator.get_attributes()
     
     def semantic_to_string(self, semantic):
         """Returns a string from a semantic surface object"""
@@ -318,16 +336,17 @@ class SemanticSurfaceFeatureDecorator:
         return_features = {}
 
         for feature, feature_geom in features.items():
-            polygons, semantics = self._geometry_reader.get_polygons(feature_geom)
+            polygons, semantics = self._geometry_reader.get_polygons(feature_geom, self._attributes)
 
             if len(polygons) > 1:
                 surf_geom_dict = {}
                 for polygon, semantic in zip(polygons, semantics):
                     new_feature = QgsFeature(feature)
 
-                    if not semantic is None:
-                        for att in semantic:
-                            new_feature[f"surface.{att}"] = semantic[att]
+                    if semantic is not None:
+                        for att in self._attributes:
+                            if att in semantic:
+                                new_feature[f"surface.{att}"] = semantic[att]
 
                     if read_geometry:
                         qgs_geometry = self._geometry_reader.polygons_to_geometry([polygon])
