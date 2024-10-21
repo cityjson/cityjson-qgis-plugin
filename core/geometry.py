@@ -108,7 +108,7 @@ class GeometryReader:
             geoms.addGeometry(g)
         return QgsGeometry(geoms)
 
-    def get_polygons(self, geometry):
+    def get_polygons(self, geometry, attributes):
         """Returns a dictionary where keys are polygons and values
         are the semantic surfaces
         """
@@ -125,17 +125,37 @@ class GeometryReader:
                 temp_geom = geom
                 temp_vertices_cache = self._vertices_cache
 
+            # Prepare a dictionary to hold surface attributes
+            additional_semantics = {}
             try:
                 if "semantics" in temp_geom:
                     surfaces = temp_geom["semantics"]["surfaces"]
                     values = temp_geom["semantics"]["values"]
+                    if len(attributes) > 2:
+                        # Collect additional attributes
+                        for attr in attributes:
+                            attr = '+' + attr
+                            if attr.lstrip("+") not in ['type','on_footprint_edge'] and attr in temp_geom["semantics"]:
+                                additional_semantics[attr.lstrip("+")] = temp_geom["semantics"][attr][0]
                 else:
                     surfaces = None
                     values = None
                 new_polygons, new_semantics = read_boundaries(temp_geom["boundaries"], surfaces, values)
                 new_polygons = self.indexes_to_points(new_polygons, temp_vertices_cache)
-                polygons = polygons + new_polygons
-                semantics = semantics + new_semantics
+                
+                polygons += new_polygons
+
+                if len(additional_semantics) > 0:
+                    combined_semantics = []
+                    for i, semantic in enumerate(new_semantics):
+                        combined_semantics.append({
+                            **semantic,
+                            **{key: str(additional_semantics[key][i]) for key in additional_semantics.keys()}
+                        })
+                        
+                    semantics += combined_semantics
+                else:
+                    semantics += new_semantics
 
             except Exception as e:
                 self._skipped_geometries += 1
@@ -190,8 +210,8 @@ def read_boundaries(boundaries, surfaces, values):
             values_iter = iter([None for i in range(len(boundaries))])
         for boundary in boundaries:
             new_polygons, new_semantic_surfaces = read_boundaries(boundary, surfaces, next(values_iter))
-            polygons = polygons + new_polygons
-            semantic_surfaces = semantic_surfaces + new_semantic_surfaces
+            polygons += new_polygons
+            semantic_surfaces += new_semantic_surfaces
     else:
         polygons.append(boundaries)
         if surfaces is None or values is None:
