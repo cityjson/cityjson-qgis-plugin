@@ -228,6 +228,14 @@ class SemanticSurfaceFieldsDecorator:
 
         return fields
 
+    def get_attributes(self):
+        """Create and returns fields"""
+        fields = self._decorated.get_fields()
+
+        attributes = self.get_semantic_attributes(self._citymodel["CityObjects"])
+        
+        return attributes
+
 class SimpleFeatureBuilder:
     """A class that create features according to their attributes"""
 
