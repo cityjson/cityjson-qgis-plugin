@@ -57,7 +57,7 @@ class CityJSONLoader:
             self.fields_builder = SemanticSurfaceFieldsDecorator(self.fields_builder,
                                                                  citymodel)
             self.feature_builder = SemanticSurfaceFeatureDecorator(self.feature_builder,
-                                                                   self.geometry_reader)
+                                                                   self.geometry_reader, self.fields_builder)
 
         if divide_by_object:
             self.naming_iterator = TypeNamingIterator(filename, citymodel)
