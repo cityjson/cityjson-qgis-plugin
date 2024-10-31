@@ -108,7 +108,7 @@ class GeometryReader:
             geoms.addGeometry(g)
         return QgsGeometry(geoms)
 
-    def get_polygons(self, geometry, attributes):
+    def get_polygons(self, geometry, attributes={}):
         """Returns a dictionary where keys are polygons and values
         are the semantic surfaces
         """
