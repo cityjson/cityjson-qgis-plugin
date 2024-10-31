@@ -312,7 +312,7 @@ class LodFeatureDecorator:
 class SemanticSurfaceFeatureDecorator:
     """A class that decorates feature with lod information and geometries"""
 
-    def __init__(self, decorated, geometry_reader):
+    def __init__(self, decorated, geometry_reader, field_decorator):
         self._decorated = decorated
         self._geometry_reader = geometry_reader
 
