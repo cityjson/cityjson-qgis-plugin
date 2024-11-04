@@ -47,7 +47,7 @@ class CityJSONLoader:
 
         self.fields_builder = AttributeFieldsDecorator(BaseFieldsBuilder(),
                                                        citymodel)
-        self.feature_builder = SimpleFeatureBuilder(self.geometry_reader, self.fields_builder)
+        self.feature_builder = SimpleFeatureBuilder(self.geometry_reader)
                    
         if load_parent_attributes:
             self.feature_builder = ParentFeatureDecorator(self.feature_builder, self.geometry_reader, citymodel)
