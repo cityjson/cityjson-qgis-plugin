@@ -174,15 +174,6 @@ class AttributeFieldsDecorator:
 
         return fields
         
-    def get_attributes(self):
-        """Get parent attributes for city objects."""
-        objs = self._citymodel["CityObjects"]
-        return {
-            obj: data["attributes"]
-            for obj, data in objs.items()
-            if data.get("attributes")  # Check if attributes exist and are not empty
-        }
-        
 class LodFieldsDecorator:
     """A class that creates an LoD field"""
 
@@ -248,12 +239,10 @@ class SemanticSurfaceFieldsDecorator:
 class SimpleFeatureBuilder:
     """A class that create features according to their attributes"""
 
-    def __init__(self, geometry_reader, field_builder):
+    def __init__(self, geometry_reader):
         self._geometry_reader = geometry_reader
-        self._field_builder = field_builder
-        self._attributes = self._field_builder.get_attributes()
 
-    def create_features(self, fields, object_key, cityobject, read_geometry=True, add_attributes=True):
+    def create_features(self, fields, object_key, cityobject, read_geometry=True):
         """Creates a feature based on the city object's semantics"""
         new_feature = QgsFeature(fields)
         new_feature["uid"] = object_key
@@ -269,14 +258,9 @@ class SimpleFeatureBuilder:
             new_feature["children"] = str(cityobject["children"])
 
         # Load the attributes
-        city_attributes = cityobject.get("attributes", {})
-        if city_attributes:  # If the city object has attributes
-            for att_key, att_value in city_attributes.items():
-                new_feature[f"attribute.{att_key}"] = att_value
-        elif add_attributes:  # If no attributes in city object and add_attributes is True
-            parent_attributes = self._attributes.get(new_feature["parents"], {})
-            for att_key, att_value in parent_attributes.items():
-                new_feature[f"attribute.{att_key}"] = att_value
+        if "attributes" in cityobject:
+            for att_key, att_value in cityobject["attributes"].items():
+                new_feature["attribute.{}".format(att_key)] = att_value
 
         if "geometry" in cityobject:
             return_geom = cityobject["geometry"]
@@ -373,3 +357,54 @@ class SemanticSurfaceFeatureDecorator:
                 return_features[feature] = None
 
         return return_features
+
+class ParentFeatureDecorator:
+    """A class that decorates feature with parent attributes"""
+    def __init__(self, decorated, geometry_reader, citymodel):
+        self._decorated = decorated
+        self._geometry_reader = geometry_reader
+        self._citymodel = citymodel
+        
+    def get_attributes(self):
+        """Get parent attributes for city objects."""
+        objs = self._citymodel["CityObjects"]
+        
+        return {
+            obj: data["attributes"]
+            for obj, data in objs.items()
+            if data.get("attributes")  # Check if attributes exist and are not empty
+        }
+        
+    def create_features(self, fields, object_key, cityobject, read_geometry=True):
+        """Creates a feature based on the city object's semantics"""
+        features = self._decorated.create_features(fields,
+                                                   object_key,
+                                                   cityobject,
+                                                   False)
+        
+        return_features = {}
+
+        for feature, feature_geom in features.items():
+            new_feature = QgsFeature(feature)
+            # Load the attributes
+            city_attributes = cityobject.get("attributes", {})
+            if city_attributes:  # If the city object has attributes
+                for att_key, att_value in city_attributes.items():
+                    new_feature[f"attribute.{att_key}"] = att_value
+            else:  # If no attributes in city object and add_attributes is True
+                parent_attributes = self.get_attributes().get(new_feature["parents"], {})
+                for att_key, att_value in parent_attributes.items():
+                    new_feature[f"attribute.{att_key}"] = att_value
+
+            if "geometry" in cityobject:
+                return_geom = cityobject["geometry"]
+                
+                if read_geometry:
+                    geom = self._geometry_reader.read_geometry(cityobject["geometry"])
+                    new_feature.setGeometry(geom)
+            else:
+                return_geom = []
+                
+            return_features[new_feature] = return_geom
+
+            return return_features
