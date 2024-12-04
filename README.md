@@ -6,6 +6,8 @@
   Compatible with cityjson files generated using my own version of **3d-building-metrics** https://github.com/FLeroux23/3d-building-metrics
 - **Fixes**:
      - Fix error: 'QgsPolygon3DSymbol' object has no attribute 'setMaterial'
+ 
+- **Upcoming feature(s)**: A new checkbox to control whether child objects retain parent attributes
 ___
 # CityJSON Loader for QGIS 3
 
