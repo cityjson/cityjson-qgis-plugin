@@ -173,7 +173,7 @@ class AttributeFieldsDecorator:
                                    QVariant.String))
 
         return fields
-        
+
 class LodFieldsDecorator:
     """A class that creates an LoD field"""
 
