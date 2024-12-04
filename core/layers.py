@@ -360,6 +360,7 @@ class SemanticSurfaceFeatureDecorator:
 
 class ParentFeatureDecorator:
     """A class that decorates feature with parent attributes"""
+    
     def __init__(self, decorated, geometry_reader, citymodel):
         self._decorated = decorated
         self._geometry_reader = geometry_reader
