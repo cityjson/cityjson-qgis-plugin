@@ -1,4 +1,4 @@
-# This fork of **cityjson-qgis-plugin** includes fixes and support for additional semantic surface attributes
+# This fork of <ins>**cityjson-qgis-plugin**</ins> includes fixes and support for additional semantic surface attributes
 
 ## Key Updates:
 
