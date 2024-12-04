@@ -23,8 +23,8 @@ class CityJSONLoader:
     """Class that loads a CityJSON to a QGIS project"""
 
     def __init__(self, filepath, citymodel,
-                 keep_parent_attributes=False,
                  epsg="None",
+                 keep_parent_attributes=False,
                  divide_by_object=False,
                  lod_as='NONE',
                  load_semantic_surfaces=False,
