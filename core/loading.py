@@ -23,10 +23,10 @@ class CityJSONLoader:
     """Class that loads a CityJSON to a QGIS project"""
 
     def __init__(self, filepath, citymodel,
+                 keep_parent_attributes=False,
                  epsg="None",
                  divide_by_object=False,
                  lod_as='NONE',
-                 load_parent_attributes=False,
                  load_semantic_surfaces=False,
                  style_semantic_surfaces=False):
         filename_with_ext = os.path.basename(filepath)
@@ -49,7 +49,7 @@ class CityJSONLoader:
                                                        citymodel)
         self.feature_builder = SimpleFeatureBuilder(self.geometry_reader)
                    
-        if load_parent_attributes:
+        if keep_parent_attributes:
             self.feature_builder = ParentFeatureDecorator(self.feature_builder, self.geometry_reader, citymodel)
           
         if lod_as in ['ATTRIBUTES', 'LAYERS']:
