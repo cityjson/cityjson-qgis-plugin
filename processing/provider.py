@@ -4,7 +4,7 @@ QGIS processing algorithms"""
 from qgis.core import QgsProcessingProvider
 from PyQt5.QtGui import QIcon
 
-from .cityjson_load_algorithm import CityJsonLoadAlrogithm
+from .cityjson_load_algorithm import CityJsonLoadAlgorithm
 
 class Provider(QgsProcessingProvider):
 
