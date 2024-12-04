@@ -310,7 +310,7 @@ class CityJsonLoader:
         loader = CityJSONLoader(filepath,
                                 citymodel,
                                 epsg=self.dlg.crsLineEdit.text(),
-                                keep_parent_attributes=self.dlg.retainParentAttributesCheckBox.ischecked(),
+                                keep_parent_attributes=self.dlg.retainParentAttributesCheckBox.isChecked(),
                                 divide_by_object=self.dlg.splitByTypeCheckBox.isChecked(),
                                 lod_as=lod_as,
                                 load_semantic_surfaces=self.dlg.semanticsLoadingCheckBox.isChecked(),
