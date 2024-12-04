@@ -26,7 +26,7 @@ class CityJSONLoader:
                  epsg="None",
                  divide_by_object=False,
                  lod_as='NONE',
-                 load_parent_attributes=True,
+                 load_parent_attributes=False,
                  load_semantic_surfaces=False,
                  style_semantic_surfaces=False):
         filename_with_ext = os.path.basename(filepath)
