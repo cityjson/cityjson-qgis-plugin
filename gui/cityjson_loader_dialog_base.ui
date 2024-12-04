@@ -233,6 +233,19 @@
         </widget>
        </item>
        <item>
+	<widget class="QCheckBox" name="retainParentAttributesCheckBox">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Retain parent attributes</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QCheckBox" name="splitByTypeCheckBox">
          <property name="font">
           <font>
