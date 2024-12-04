@@ -20,7 +20,7 @@ from qgis.core import (QgsFeatureSink, QgsProcessing, QgsProcessingAlgorithm,
 from ..core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
 from ..core.utils import get_subset_bbox, get_subset_cotype
 
-class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
+class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
     """
     This is an example algorithm that takes a vector layer and
     creates a new identical one.
@@ -58,7 +58,7 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
         """
         Returns an instance of the algorithm.
         """
-        return CityJsonLoadAlrogithm()
+        return CityJsonLoadAlgorithm()
 
     def name(self):
         """
