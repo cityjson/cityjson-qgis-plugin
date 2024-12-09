@@ -275,6 +275,9 @@
          </item>
          <item>
           <widget class="QComboBox" name="loDLoadingComboBox">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <item>
             <property name="text">
              <string>None</string>
@@ -288,6 +291,31 @@
            <item>
             <property name="text">
              <string>As Layers</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>LoD:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="loDSelectionComboBox">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <item>
+            <property name="text">
+             <string>All</string>
             </property>
            </item>
           </widget>
