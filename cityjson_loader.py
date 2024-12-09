@@ -35,7 +35,7 @@ from .core.geometry import GeometryReader, VerticesCache
 from .core.helpers.treemodel import (MetadataElement, MetadataModel,
                                      MetadataNode)
 from .core.layers import (AttributeFieldsDecorator, BaseFieldsBuilder,
-                          BaseNamingIterator, DynamicLayerManager,
+                          BaseNamingIterator, DynamicLayerManager, ParentFeatureDecorator,
                           LodFeatureDecorator, LodFieldsDecorator,
                           LodNamingDecorator, SemanticSurfaceFeatureDecorator,
                           SemanticSurfaceFieldsDecorator, SimpleFeatureBuilder,
@@ -185,7 +185,6 @@ class CityJsonLoader:
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
         return QCoreApplication.translate('CityJsonLoader', message)
 
-
     def add_action(
         self,
         icon_path,
@@ -271,7 +270,6 @@ class CityJsonLoader:
         
         self.initProcessing()
 
-
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
@@ -312,6 +310,7 @@ class CityJsonLoader:
         loader = CityJSONLoader(filepath,
                                 citymodel,
                                 epsg=self.dlg.crsLineEdit.text(),
+                                keep_parent_attributes=self.dlg.retainParentAttributesCheckBox.isChecked(),
                                 divide_by_object=self.dlg.splitByTypeCheckBox.isChecked(),
                                 lod_as=lod_as,
                                 load_semantic_surfaces=self.dlg.semanticsLoadingCheckBox.isChecked(),

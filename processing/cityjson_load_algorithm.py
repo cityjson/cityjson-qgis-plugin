@@ -20,7 +20,7 @@ from qgis.core import (QgsFeatureSink, QgsProcessing, QgsProcessingAlgorithm,
 from ..core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
 from ..core.utils import get_subset_bbox, get_subset_cotype
 
-class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
+class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
     """
     This is an example algorithm that takes a vector layer and
     creates a new identical one.
@@ -37,6 +37,7 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
     # calling from the QGIS console.
 
     INPUT = 'INPUT'
+    KEEP_PARENT_ATTRIBUTES = 'KEEP_PARENT_ATTRIBUTES'
     DIVIDE_BY_OBJECT_TYPE = 'DIVIDE_BY_OBJECT_TYPE'
     LOD_AS = 'LOD_AS'
     LOAD_SEMANTIC_SURFACES = 'LOAD_SEMANTIC_SURFACES'
@@ -58,7 +59,7 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
         """
         Returns an instance of the algorithm.
         """
-        return CityJsonLoadAlrogithm()
+        return CityJsonLoadAlgorithm()
 
     def name(self):
         """
@@ -116,6 +117,14 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
             )
         )
 
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.KEEP_PARENT_ATTRIBUTES,
+                self.tr('Retain parent attributes for each children geometry'),
+                False
+            )
+        )
+      
         self.addParameter(
             QgsProcessingParameterBoolean(
                 self.DIVIDE_BY_OBJECT_TYPE,
@@ -190,6 +199,12 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
             raise QgsProcessingException(
                 self.invalidSourceError(parameters, self.INPUT))
 
+        keep_parent_attributes = self.parameterAsBoolean(
+            parameters,
+            self.KEEP_PARENT_ATTRIBUTES,
+            context
+        )
+
         divide_by_type = self.parameterAsBoolean(
             parameters,
             self.DIVIDE_BY_OBJECT_TYPE,
@@ -201,6 +216,7 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
             self.LOD_AS,
             context
         )
+
         lod_as = self.LODLOADINGTYPES[lod_as]
 
         load_semantic_surfaces = self.parameterAsBoolean(
@@ -274,6 +290,7 @@ class CityJsonLoadAlrogithm(QgsProcessingAlgorithm):
         loader = CityJSONLoader(filepath,
                                 cm,
                                 epsg=epsg,
+                                keep_parent_attributes=keep_parent_attributes,
                                 divide_by_object=divide_by_type,
                                 lod_as=lod_as,
                                 load_semantic_surfaces=load_semantic_surfaces,

@@ -9,7 +9,7 @@ from qgis.core import QgsProject
 
 from .geometry import GeometryReader, VerticesCache
 from .layers import (AttributeFieldsDecorator, BaseFieldsBuilder,
-                     BaseNamingIterator, DynamicLayerManager,
+                     BaseNamingIterator, DynamicLayerManager, ParentFeatureDecorator,
                      LodFeatureDecorator, LodFieldsDecorator,
                      LodNamingDecorator, SemanticSurfaceFeatureDecorator,
                      SemanticSurfaceFieldsDecorator, SimpleFeatureBuilder,
@@ -24,6 +24,7 @@ class CityJSONLoader:
 
     def __init__(self, filepath, citymodel,
                  epsg="None",
+                 keep_parent_attributes=False,
                  divide_by_object=False,
                  lod_as='NONE',
                  load_semantic_surfaces=False,
@@ -47,7 +48,10 @@ class CityJSONLoader:
         self.fields_builder = AttributeFieldsDecorator(BaseFieldsBuilder(),
                                                        citymodel)
         self.feature_builder = SimpleFeatureBuilder(self.geometry_reader)
-
+                   
+        if keep_parent_attributes:
+            self.feature_builder = ParentFeatureDecorator(self.feature_builder, self.geometry_reader, citymodel)
+          
         if lod_as in ['ATTRIBUTES', 'LAYERS']:
             self.fields_builder = LodFieldsDecorator(self.fields_builder)
             self.feature_builder = LodFeatureDecorator(self.feature_builder,
