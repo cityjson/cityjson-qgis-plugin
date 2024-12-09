@@ -11,6 +11,7 @@
      - Fix error: 'QgsPolygon3DSymbol' object has no attribute 'setMaterial'
  
 - **New feature(s)**: A checkbox to control whether **child objects** retain **parent attributes**
+
 ___
 # CityJSON Loader for QGIS 3
 
