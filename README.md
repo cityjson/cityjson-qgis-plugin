@@ -14,7 +14,7 @@
  
 - **New feature(s)**:
      - Added a CheckBox to control whether **child objects** inherit **parent attributes**.
-     - Added a ComboBox to select the specific LoD to import.
+     - Added a ComboBox to select a specific LoD to import (e.g., "All", "1.2, "1.3", "2.2", etc.).
 
 ___
 # CityJSON Loader for QGIS 3
