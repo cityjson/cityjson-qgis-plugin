@@ -1,4 +1,4 @@
-# This fork of <ins>**cityjson-qgis-plugin**</ins> includes fixes and support for additional semantic surface attributes
+# This fork of <ins>**cityjson-qgis-plugin**</ins> includes fixes, improvements and support for new features
 
 ## Key Updates:
 
@@ -10,7 +10,7 @@
 - **Fixes & Improvements**:
      - Fixed error: 'QgsPolygon3DSymbol' object has no attribute 'setMaterial'.
      - Fixed an issue where empty layer(s) with *[LoD: None]* were unnecessarily created when the option to load LoD "As layers" was selected.
-     - Fixed the behavior where a group layer was created even when only a single layer was loaded.
+     - Removed the behavior where a group layer was created even when only a single layer was loaded.
  
 - **New feature(s)**:
      - Added a CheckBox to control whether **child objects** inherit **parent attributes**.
