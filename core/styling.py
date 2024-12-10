@@ -1,6 +1,7 @@
 """A module related to apply styling in QGIS layers"""
 
 from qgis.PyQt.QtGui import QColor
+from qgis.core import Qgis
 from .settings import load_settings
 
 try:
