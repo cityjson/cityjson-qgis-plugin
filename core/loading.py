@@ -114,10 +114,10 @@ class CityJSONLoader:
         current = 1
         step = 100.0 / len(city_objects)
         for key, obj in city_objects.items():
-          if not self.geometry_reader.has_lod(obj.get("geometry", []), self.lod):
-              continue
+            if not self.geometry_reader.has_lod(obj.get("geometry", []), self.lod):
+                continue
 
-          self.layer_manager.add_object(key, obj)
+            self.layer_manager.add_object(key, obj)
 
             if feedback is not None:
                 feedback.setProgress(int(current * step))
