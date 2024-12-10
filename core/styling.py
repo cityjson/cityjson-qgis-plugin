@@ -1,6 +1,7 @@
 """A module related to apply styling in QGIS layers"""
 
 from qgis.PyQt.QtGui import QColor
+from qgis.core import Qgis
 from .settings import load_settings
 
 try:
@@ -38,6 +39,7 @@ class Copy2dStyling:
         symbol = QgsPolygon3DSymbol()
         symbol.setMaterialSettings(material)
         symbol.setEdgesEnabled(True)
+        symbol.setAltitudeClamping(Qgis.AltitudeClamping.Absolute)
 
         renderer = QgsVectorLayer3DRenderer()
         renderer.setLayer(vectorlayer)

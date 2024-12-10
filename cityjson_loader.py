@@ -149,6 +149,17 @@ class CityJsonLoader:
             fstream = open(filename, encoding='utf-8-sig')
             model = json.load(fstream)
             fstream.close()
+
+            lods = set()  # Use a set to avoid duplicate LoDs
+            # Iterate over each cityObject and check for LoD attributes
+            for _, city_object in model['CityObjects'].items():
+                # Check if the cityObject has 'geometry' and extract LoD
+                if 'geometry' in city_object:
+                    for geom in city_object['geometry']:
+                        # Get the LoD from the geometry if available
+                        if 'lod' in geom:
+                            lods.add(geom['lod'])
+
             self.dlg.cityjsonVersionLineEdit.setText(model["version"])
             self.dlg.compressedLineEdit.setText("Yes" if "transform" in model else "No")
 
@@ -160,11 +171,26 @@ class CityJsonLoader:
                     metadata = {**metadata, **model["+metadata-extended"]}
             else:
                 metadata = {"Medata missing": "There is no metadata in this file"}
+             
             self.dlg.changeCrsPushButton.setEnabled(True)
             self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+         
             model = MetadataModel(metadata, self.dlg.metadataTreeView)
             self.dlg.metadataTreeView.setModel(model)
             self.dlg.metadataTreeView.setColumnWidth(0, model.getKeyColumnWidth())
+
+            self.dlg.loDLoadingComboBox.setEnabled(True)
+            # Reset the LoD combo box and populate it
+            self.dlg.loDSelectionComboBox.clear()  # Clear any old items
+            self.dlg.loDSelectionComboBox.addItem("All")  # Add the default "All" option
+            
+         # Only populate the LoD combobox if there are LoDs found
+            if lods:
+                self.dlg.loDSelectionComboBox.addItems(sorted(list(lods)))
+             
+            # Enable the LoD combobox if there are any LoDs
+            self.dlg.loDSelectionComboBox.setEnabled(len(lods) > 0)
+         
         except Exception as exp:
             self.dlg.changeCrsPushButton.setEnabled(False)
             self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
@@ -307,12 +333,22 @@ class CityJsonLoader:
         elif self.dlg.loDLoadingComboBox.currentIndex() == 2:
             lod_as = 'LAYERS'
 
+        # Get the selected LoD option from the combobox
+        selected_lod = self.dlg.loDSelectionComboBox.currentText()
+
+        # Check the selected option and set the 'lod' value accordingly
+        if selected_lod == "All":
+            lod = 'All'  # or you can set it to 'All' depending on your needs
+        else:
+            lod = selected_lod  # This will be a string like "0", "1.2", etc.
+
         loader = CityJSONLoader(filepath,
                                 citymodel,
                                 epsg=self.dlg.crsLineEdit.text(),
                                 keep_parent_attributes=self.dlg.retainParentAttributesCheckBox.isChecked(),
                                 divide_by_object=self.dlg.splitByTypeCheckBox.isChecked(),
                                 lod_as=lod_as,
+                                lod=lod,
                                 load_semantic_surfaces=self.dlg.semanticsLoadingCheckBox.isChecked(),
                                 style_semantic_surfaces=self.dlg.semanticsLoadingCheckBox.isChecked()
                                )

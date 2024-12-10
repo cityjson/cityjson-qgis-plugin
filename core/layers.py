@@ -57,11 +57,22 @@ class DynamicLayerManager(BaseLayerManager):
         for feature in new_features:
             layer_name = self._layer_iterator.get_feature_layer(feature)
             provider = self._vectorlayers[layer_name].dataProvider()
-            provider.addFeature(feature)
+            # Only add features with valid geometry
+            if feature.geometry() and not feature.geometry().isEmpty():
+                provider.addFeature(feature)
 
     def get_all_layers(self):
         """Returns all the vector layers from this manager."""
-        return [vl for vl_key, vl in self._vectorlayers.items()]
+        valid_layers = []
+        for layer_name, layer in self._vectorlayers.items():
+            provider = layer.dataProvider()
+            provider.addAttributes(self._fields)  # Ensure fields are added
+            layer.updateFields()
+            
+            if provider.featureCount() > 0:
+                valid_layers.append(layer)
+        
+        return valid_layers
 
 class BaseNamingIterator:
     """A class that iterates through the types"""

@@ -73,10 +73,12 @@ class TransformedVerticesCache:
 class GeometryReader:
     """A class that translates CityJSON geometries to QgsGeometry"""
 
-    def __init__(self, vertices_cache, geometry_templates=None):
+    def __init__(self, vertices_cache, geometry_templates=None, lod="All"):
         self._vertices_cache = vertices_cache
         self._skipped_geometries = 0
         self._geometry_templates = geometry_templates
+        self.lod = lod
+        
         if self._geometry_templates is None:
             self._templates_vertices_cache = VerticesCache()
         else:
@@ -85,20 +87,26 @@ class GeometryReader:
                 template_vertex_cache.add_vertex(vertex)
             self._templates_vertices_cache = template_vertex_cache
 
-    def read_geometry(self, geometry):
+    def read_geometry(self, geometry, lod="All"):
         """Reads a CityJSON geometry and returns it as QgsGeometry
         """
-        polygons, _ = self.get_polygons(geometry)
+        polygons, _ = self.get_polygons(geometry, lod)
 
         return self.polygons_to_geometry(polygons)
+
+    def has_lod(self, geometries, target_lod):
+        """Checks if any geometry in the list matches the specified LoD."""
+        if target_lod == "All":
+            return True
+        return any(self.get_lod(geom) == target_lod for geom in geometries)
 
     def get_lod(self, geometry):
         """Returns the lod of a give geometry"""
         if geometry["type"] == "GeometryInstance":
             geom_index = geometry["template"]
-            return self._geometry_templates["templates"][geom_index]["lod"]
+            return self._geometry_templates["templates"][geom_index].get("lod", None)
         else:
-            return geometry["lod"]
+            return geometry.get("lod", None)
 
     def polygons_to_geometry(self, polygons):
         """Returns a QgsGeometry object from a list of polygons"""
@@ -116,6 +124,10 @@ class GeometryReader:
         semantics = []
 
         for geom in geometry:
+            # Skip geometries that don't match the target LoD
+            if not self.has_lod([geom], self.lod) or not self.get_lod(geom):
+                continue
+
             if geom["type"] == "GeometryInstance":
                 template_index = geom["template"]
                 temp_geom = self._geometry_templates["templates"][template_index]
@@ -140,9 +152,10 @@ class GeometryReader:
                 else:
                     surfaces = None
                     values = None
+
                 new_polygons, new_semantics = read_boundaries(temp_geom["boundaries"], surfaces, values)
                 new_polygons = self.indexes_to_points(new_polygons, temp_vertices_cache)
-                
+
                 polygons += new_polygons
 
                 if len(additional_semantics) > 0:
@@ -152,7 +165,7 @@ class GeometryReader:
                             **semantic,
                             **{key: str(additional_semantics[key][i]) for key in additional_semantics.keys()}
                         })
-                        
+
                     semantics += combined_semantics
                 else:
                     semantics += new_semantics
