@@ -27,8 +27,10 @@ class CityJSONLoader:
                  keep_parent_attributes=False,
                  divide_by_object=False,
                  lod_as='NONE',
+                 lod='All',
                  load_semantic_surfaces=False,
                  style_semantic_surfaces=False):
+
         filename_with_ext = os.path.basename(filepath)
         filename, _ = os.path.splitext(filename_with_ext)
 
@@ -36,32 +38,28 @@ class CityJSONLoader:
         self.filename = filename
         self.citymodel = citymodel
         self.srid = None
+        self.lod = lod
 
         self.init_vertices()
 
         geometry_templates = None
         if "geometry-templates" in citymodel:
             geometry_templates = citymodel["geometry-templates"]
-        self.geometry_reader = GeometryReader(self.vertices_cache,
-                                              geometry_templates)
+        self.geometry_reader = GeometryReader(self.vertices_cache, geometry_templates, lod=self.lod)
 
-        self.fields_builder = AttributeFieldsDecorator(BaseFieldsBuilder(),
-                                                       citymodel)
+        self.fields_builder = AttributeFieldsDecorator(BaseFieldsBuilder(), citymodel)
         self.feature_builder = SimpleFeatureBuilder(self.geometry_reader)
-                   
+
         if keep_parent_attributes:
             self.feature_builder = ParentFeatureDecorator(self.feature_builder, self.geometry_reader, citymodel)
-          
+
         if lod_as in ['ATTRIBUTES', 'LAYERS']:
             self.fields_builder = LodFieldsDecorator(self.fields_builder)
-            self.feature_builder = LodFeatureDecorator(self.feature_builder,
-                                                       self.geometry_reader)
+            self.feature_builder = LodFeatureDecorator(self.feature_builder, self.geometry_reader)
 
         if load_semantic_surfaces:
-            self.fields_builder = SemanticSurfaceFieldsDecorator(self.fields_builder,
-                                                                 citymodel)
-            self.feature_builder = SemanticSurfaceFeatureDecorator(self.feature_builder,
-                                                                   self.geometry_reader, self.fields_builder)
+            self.fields_builder = SemanticSurfaceFieldsDecorator(self.fields_builder, citymodel)
+            self.feature_builder = SemanticSurfaceFeatureDecorator(self.feature_builder, self.geometry_reader, self.fields_builder)
 
         if divide_by_object:
             self.naming_iterator = TypeNamingIterator(filename, citymodel)
@@ -76,6 +74,7 @@ class CityJSONLoader:
 
         if epsg != "None":
             self.srid = epsg
+
         self.layer_manager = DynamicLayerManager(self.citymodel,
                                                  self.feature_builder,
                                                  self.naming_iterator,
@@ -89,9 +88,7 @@ class CityJSONLoader:
         else:
             self.styler = NullStyling()
 
-        if (load_semantic_surfaces
-                and is_rule_based_3d_styling_available()
-                and style_semantic_surfaces):
+        if (load_semantic_surfaces and is_rule_based_3d_styling_available() and style_semantic_surfaces):
             self.styler = SemanticSurfacesStyling()
 
     def init_vertices(self):
@@ -117,7 +114,10 @@ class CityJSONLoader:
         current = 1
         step = 100.0 / len(city_objects)
         for key, obj in city_objects.items():
-            self.layer_manager.add_object(key, obj)
+          if not self.geometry_reader.has_lod(obj.get("geometry", []), self.lod):
+              continue
+
+          self.layer_manager.add_object(key, obj)
 
             if feedback is not None:
                 feedback.setProgress(int(current * step))
@@ -125,24 +125,30 @@ class CityJSONLoader:
 
         # Add the layer(s) to the project
         root = QgsProject.instance().layerTreeRoot()
-        group = root.addGroup(self.filename)
-        for vl in self.layer_manager.get_all_layers():
-            QgsProject.instance().addMapLayer(vl, False)
-            group.addLayer(vl)
+        if len(self.layer_manager.get_all_layers()) > 1:
+            # If there are multiple layers, create a group
+            group = root.addGroup(self.filename)
+            for vl in self.layer_manager.get_all_layers():
+                QgsProject.instance().addMapLayer(vl, False)
+                group.addLayer(vl)
+                self.styler.apply(vl)
 
-            self.styler.apply(vl)
+        elif len(self.layer_manager.get_all_layers()) == 1:
+            # If there is only one layer, just add it directly
+            for vl in self.layer_manager.get_all_layers():
+                QgsProject.instance().addMapLayer(vl, False)
+                root.addLayer(vl)
+                self.styler.apply(vl)
 
         return self.geometry_reader.skipped_geometries()
 
 def load_cityjson_model(filepath):
     """Returns the citymodel for the given filepath"""
-
     file = open(filepath, encoding='utf-8-sig')
     citymodel = json.load(file)
     file.close()
 
     return citymodel
-
 
 def get_model_epsg(citymodel):
     """Returns the EPSG of the city model, if exists it exists in
