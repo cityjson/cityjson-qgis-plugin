@@ -151,14 +151,14 @@ class CityJsonLoader:
             fstream.close()
 
             lods = set()  # Use a set to avoid duplicate LoDs
-               # Iterate over each cityObject and check for LoD attributes
-               for _, city_object in model['CityObjects'].items():
-                   # Check if the cityObject has 'geometry' and extract LoD
-                   if 'geometry' in city_object:
-                       for geom in city_object['geometry']:
-                           # Get the LoD from the geometry if available
-                           if 'lod' in geom:
-                               lods.add(geom['lod'])
+            # Iterate over each cityObject and check for LoD attributes
+            for _, city_object in model['CityObjects'].items():
+                # Check if the cityObject has 'geometry' and extract LoD
+                if 'geometry' in city_object:
+                    for geom in city_object['geometry']:
+                        # Get the LoD from the geometry if available
+                        if 'lod' in geom:
+                            lods.add(geom['lod'])
 
             self.dlg.cityjsonVersionLineEdit.setText(model["version"])
             self.dlg.compressedLineEdit.setText("Yes" if "transform" in model else "No")
