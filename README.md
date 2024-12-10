@@ -16,6 +16,24 @@
      - Added a CheckBox to control whether **child objects** inherit **parent attributes**.
      - Added a ComboBox to select a specific LoD to import (e.g., "All", "1.2, "1.3", "2.2", etc.).
 
+## Installation
+Open the Command Prompt (CMD) and navigate to the directory where your QGIS plugins are stored. For example:
+```
+C:\Users\<user>\AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins
+```
+If you're unable to find this directory:
+- Launch QGIS 3.
+- Go to `Settings`->`User Profiles`->`Open Active Profile Folder`
+- This will open the folder containing your plugins.
+
+Once you're in the correct directory, run the following Git command to install the plugin:
+```
+git clone -b main https://github.com/FLeroux23/CityJSON-loader
+```
+To update the plugin later, use the following command:
+```
+git pull origin main
+```
 ___
 # CityJSON Loader for QGIS 3
 
