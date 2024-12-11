@@ -89,7 +89,11 @@ class CityJsonLoader:
         self.toolbar = self.iface.addToolBar(u'CityJsonLoader')
         self.toolbar.setObjectName(u'CityJsonLoader')
 
-        self.dlg.browseButton.clicked.connect(self.select_cityjson_file)
+        self.dlg.browseFilesButton.clicked.connect(self.select_cityjson_files)
+        self.dlg.browseDirectoryButton.clicked.connect(self.select_cityjson_files_directory)
+        self.dlg.listWidget.itemSelectionChanged.connect(self.update_file_list)
+        self.dlg.removeFilesButton.clicked.connect(self.remove_cityjson_files)
+
         self.dlg.changeCrsPushButton.clicked.connect(self.select_crs)
         self.dlg.semanticsLoadingCheckBox.stateChanged.connect(self.semantics_loading_changed)
 
@@ -100,18 +104,58 @@ class CityJsonLoader:
         self.provider = Provider()
         QgsApplication.processingRegistry().addProvider(self.provider)
 
-    def select_cityjson_file(self):
-        """Shows a dialog to select a CityJSON file."""
-        filename, _ = QFileDialog.getOpenFileName(self.dlg,
-                                                  "Select CityJSON file",
-                                                  "",
-                                                  "*.json")
-        if filename == "":
-            self.clear_file_information()
+    def select_cityjson_files(self):
+        """Shows a dialog to select CityJSON file(s)"""
+        filenames, _ = QFileDialog.getOpenFileNames(self.dlg, "Select CityJSON File(s)", "", "*.json")
+
+        if filenames:
+            for filename in filenames:
+                existing_items = self.dlg.listWidget.findItems(filename, QtCore.Qt.MatchExactly)
+
+                if not existing_items:
+                    self.dlg.listWidget.addItem(filename)
+
+            self.dlg.listWidget.setCurrentRow(0)
+
+    def select_cityjson_files_directory(self):
+        """Shows a dialog to select CityJSON file(s)"""
+        directory = QFileDialog.getExistingDirectory(self.dlg, "Select Directory", "", QFileDialog.ShowDirsOnly)
+
+        if not directory:
+            self.dlg.listWidget.clear()
         else:
-            self.dlg.cityjsonPathLineEdit.setText(filename)
-            self.update_file_information(filename)
-    
+            filenames = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.json')]
+
+            if filenames:
+                self.dlg.listWidget.clear()
+                self.dlg.listWidget.addItems(filenames)
+                self.dlg.listWidget.setCurrentRow(0)
+            else:
+
+                self.dlg.listWidget.clear()
+
+    def remove_cityjson_files(self):
+        """Removes CityJSON file(s) from the list"""
+        selected_items = self.dlg.listWidget.selectedItems()
+        if selected_items:
+            for item in selected_items:
+                row = self.dlg.listWidget.row(item)
+                self.dlg.listWidget.takeItem(row)
+
+            if self.dlg.listWidget.count() > 0:
+                self.dlg.listWidget.setCurrentRow(0)
+                self.update_file_list()
+            else:
+                self.clear_file_information()
+
+    def update_file_list(self):
+        """Update metadata fields according to the file selected"""
+        selected_item = self.dlg.listWidget.currentItem()
+        if selected_item:
+            self.update_file_information(selected_item.text())
+        else:
+            self.clear_file_information()
+
     def select_crs(self):
         """Shows a dialog to select a new CRS for the model"""
         crs_dialog = QgsProjectionSelectionDialog()
@@ -126,9 +170,7 @@ class CityJsonLoader:
             self.dlg.crsLineEdit.setText("{}".format(crs_dialog.crs().postgisSrid()))
 
     def semantics_loading_changed(self):
-        """Update the GUI according to the new state of semantic
-        surfaces loading
-        """
+        """Update the GUI according to the new state of semantic surfaces loading"""
         if is_rule_based_3d_styling_available():
             self.dlg.semanticSurfacesStylingCheckBox.setEnabled(self.dlg.semanticsLoadingCheckBox.isChecked())
 
@@ -150,13 +192,10 @@ class CityJsonLoader:
             model = json.load(fstream)
             fstream.close()
 
-            lods = set()  # Use a set to avoid duplicate LoDs
-            # Iterate over each cityObject and check for LoD attributes
+            lods = set()
             for _, city_object in model['CityObjects'].items():
-                # Check if the cityObject has 'geometry' and extract LoD
                 if 'geometry' in city_object:
                     for geom in city_object['geometry']:
-                        # Get the LoD from the geometry if available
                         if 'lod' in geom:
                             lods.add(geom['lod'])
 
@@ -171,26 +210,28 @@ class CityJsonLoader:
                     metadata = {**metadata, **model["+metadata-extended"]}
             else:
                 metadata = {"Medata missing": "There is no metadata in this file"}
-             
+
             self.dlg.changeCrsPushButton.setEnabled(True)
             self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
-         
+            self.dlg.removeFilesButton.setEnabled(True)
+
             model = MetadataModel(metadata, self.dlg.metadataTreeView)
             self.dlg.metadataTreeView.setModel(model)
             self.dlg.metadataTreeView.setColumnWidth(0, model.getKeyColumnWidth())
 
+            self.dlg.inheritParentAttributesCheckBox.setEnabled(True)
+            self.dlg.splitByTypeCheckBox.setEnabled(True)
+            self.dlg.semanticsLoadingCheckBox.setEnabled(True)
+
             self.dlg.loDLoadingComboBox.setEnabled(True)
-            # Reset the LoD combo box and populate it
-            self.dlg.loDSelectionComboBox.clear()  # Clear any old items
-            self.dlg.loDSelectionComboBox.addItem("All")  # Add the default "All" option
-            
-         # Only populate the LoD combobox if there are LoDs found
+            self.dlg.loDSelectionComboBox.clear()
+            self.dlg.loDSelectionComboBox.addItem("All")
+
             if lods:
                 self.dlg.loDSelectionComboBox.addItems(sorted(list(lods)))
-             
-            # Enable the LoD combobox if there are any LoDs
+
             self.dlg.loDSelectionComboBox.setEnabled(len(lods) > 0)
-         
+
         except Exception as exp:
             self.dlg.changeCrsPushButton.setEnabled(False)
             self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
@@ -293,11 +334,11 @@ class CityJsonLoader:
             text=self.tr(u'Load CityJSON...'),
             callback=self.run,
             parent=self.iface.mainWindow())
-        
+
         self.initProcessing()
 
     def unload(self):
-        """Removes the plugin menu item and icon from QGIS GUI."""
+        """Removes the plugin menu item and icon from QGIS GUI"""
         for action in self.actions:
             self.iface.removePluginVectorMenu(
                 self.tr(u'&CityJSON Loader'),
@@ -305,26 +346,38 @@ class CityJsonLoader:
             self.iface.removeToolBarIcon(action)
 
         del self.toolbar
-        
+
         QgsApplication.processingRegistry().removeProvider(self.provider)
 
     def run(self):
         """Run method that performs all the real work"""
-        # show the dialog
         self.dlg.show()
         self.dlg.changeCrsPushButton.setEnabled(False)
         self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
         self.dlg.semanticSurfacesStylingCheckBox.setEnabled(False)
-        # Run the dialog event loop
+
         result = self.dlg.exec_()
-        # See if OK was pressed
+
         if result:
-            filepath = self.dlg.cityjsonPathLineEdit.text()
-            self.load_cityjson(filepath)
-    
+            filepaths = [self.dlg.listWidget.item(i).text() for i in range(self.dlg.listWidget.count())]
+            for filepath in filepaths:
+                skipped_geometries = self.load_cityjson(filepath)
+                msg = QMessageBox()
+
+                if skipped_geometries > 0:
+                    msg.setIcon(QMessageBox.Warning)
+                    msg.setText("CityJSON loaded with issues.")
+                    msg.setInformativeText("Some geometries were skipped.")
+                    msg.setDetailedText("{} geometries could not be loaded (p.s. GeometryInstances are not supported yet).".format(skipped_geometries))
+
+            msg.setIcon(QMessageBox.Information)
+            msg.setText("CityJSON loaded successfully.")
+            msg.setWindowTitle("CityJSON loading finished")
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec_()
+
     def load_cityjson(self, filepath):
         """Loads the given CityJSON"""
-
         citymodel = load_cityjson_model(filepath)
 
         lod_as = 'NONE'
@@ -333,14 +386,12 @@ class CityJsonLoader:
         elif self.dlg.loDLoadingComboBox.currentIndex() == 2:
             lod_as = 'LAYERS'
 
-        # Get the selected LoD option from the combobox
         selected_lod = self.dlg.loDSelectionComboBox.currentText()
 
-        # Check the selected option and set the 'lod' value accordingly
         if selected_lod == "All":
-            lod = 'All'  # or you can set it to 'All' depending on your needs
+            lod = 'All'
         else:
-            lod = selected_lod  # This will be a string like "0", "1.2", etc.
+            lod = selected_lod
 
         loader = CityJSONLoader(filepath,
                                 citymodel,
@@ -355,18 +406,4 @@ class CityJsonLoader:
 
         skipped_geometries = loader.load()
 
-        # Show a message with the outcome of the loading process
-        msg = QMessageBox()
-        if skipped_geometries > 0:
-            msg.setIcon(QMessageBox.Warning)
-            msg.setText("CityJSON loaded with issues.")
-            msg.setInformativeText("Some geometries were skipped.")
-            msg.setDetailedText("{} geometries could not be loaded (p.s. "
-                                "GeometryInstances are not supported yet).".format(skipped_geometries))
-        else:
-            msg.setIcon(QMessageBox.Information)
-            msg.setText("CityJSON loaded successfully.")
-        
-        msg.setWindowTitle("CityJSON loading finished")
-        msg.setStandardButtons(QMessageBox.Ok)
-        msg.exec_()
+        return skipped_geometries
