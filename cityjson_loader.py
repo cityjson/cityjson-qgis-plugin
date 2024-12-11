@@ -24,10 +24,10 @@
 import os.path
 import json
 
-from PyQt5.QtCore import (QCoreApplication, QSettings, QTranslator, QVariant,
+from PyQt5.QtCore import (QCoreApplication, QSettings, QTranslator, QVariant, Qt,
                           qVersion)
-from PyQt5.QtGui import QColor, QIcon
-from PyQt5.QtWidgets import QAction, QDialogButtonBox, QFileDialog, QMessageBox
+from PyQt5.QtGui import QColor, QIcon, QKeySequence
+from PyQt5.QtWidgets import QAction, QDialogButtonBox, QFileDialog, QMessageBox, QShortcut
 from qgis.core import QgsApplication, QgsCoordinateReferenceSystem
 from qgis.gui import QgsProjectionSelectionDialog
 
@@ -88,6 +88,9 @@ class CityJsonLoader:
         # # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar(u'CityJsonLoader')
         self.toolbar.setObjectName(u'CityJsonLoader')
+
+        self.delete_shortcut = QShortcut(QKeySequence(Qt.Key_Delete), self.dlg)
+        self.delete_shortcut.activated.connect(self.remove_cityjson_files)
 
         self.dlg.browseFilesButton.clicked.connect(self.select_cityjson_files)
         self.dlg.browseDirectoryButton.clicked.connect(self.select_cityjson_files_directory)
