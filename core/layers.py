@@ -24,7 +24,6 @@ class BaseLayerManager:
         """Prepares the attributes of the vector layer."""
         self._fields = self._fields_builder.get_fields()
 
-        # Setup attributes on the datasource(s)
         for vl in self.get_all_layers():
             pr = vl.dataProvider()
             pr.addAttributes(self._fields)
@@ -39,9 +38,7 @@ class DynamicLayerManager(BaseLayerManager):
     """A class that create a simple layer for all city objects"""
 
     def __init__(self, citymodel, feature_builder, layer_iterator, fields_builder, srid=None):
-        super(DynamicLayerManager, self).__init__(citymodel,
-                                                  fields_builder,
-                                                  srid)
+        super(DynamicLayerManager, self).__init__(citymodel, fields_builder, srid)
 
         self._feature_builder = feature_builder
         self._layer_iterator = layer_iterator
@@ -57,7 +54,7 @@ class DynamicLayerManager(BaseLayerManager):
         for feature in new_features:
             layer_name = self._layer_iterator.get_feature_layer(feature)
             provider = self._vectorlayers[layer_name].dataProvider()
-            # Only add features with valid geometry
+
             if feature.geometry() and not feature.geometry().isEmpty():
                 provider.addFeature(feature)
 
@@ -66,12 +63,12 @@ class DynamicLayerManager(BaseLayerManager):
         valid_layers = []
         for layer_name, layer in self._vectorlayers.items():
             provider = layer.dataProvider()
-            provider.addAttributes(self._fields)  # Ensure fields are added
+            provider.addAttributes(self._fields)
             layer.updateFields()
-            
+
             if provider.featureCount() > 0:
                 valid_layers.append(layer)
-        
+
         return valid_layers
 
 class BaseNamingIterator:
@@ -97,8 +94,7 @@ class TypeNamingIterator:
 
     def all_layers(self):
         """Returns the all layer names"""
-        types = set([obj["type"]
-                     for obj in self._citymodel["CityObjects"].values()])
+        types = set([obj["type"] for obj in self._citymodel["CityObjects"].values()])
 
         for t in types:
             yield "{} - {}".format(self._filename, t)
@@ -218,13 +214,12 @@ class SemanticSurfaceFieldsDecorator:
                             for att_key in surface:
                                 if not att_key in atts:
                                     atts.append(att_key)
-                        
-                        # Handle custom semantics
+
                         for key, _ in geom["semantics"].items():
                             key = key.lstrip("+")
                             if key not in ["surfaces", "values"] and key not in atts:
                                 atts.append(key)
-        
+
         return atts
 
     def get_fields(self):
@@ -244,7 +239,7 @@ class SemanticSurfaceFieldsDecorator:
         fields = self._decorated.get_fields()
 
         attributes = self.get_semantic_attributes(self._citymodel["CityObjects"])
-        
+
         return attributes
 
 class SimpleFeatureBuilder:
@@ -268,14 +263,13 @@ class SimpleFeatureBuilder:
         if "children" in cityobject:
             new_feature["children"] = str(cityobject["children"])
 
-        # Load the attributes
         if "attributes" in cityobject:
             for att_key, att_value in cityobject["attributes"].items():
                 new_feature["attribute.{}".format(att_key)] = att_value
 
         if "geometry" in cityobject:
             return_geom = cityobject["geometry"]
-            
+
             if read_geometry:
                 geom = self._geometry_reader.read_geometry(cityobject["geometry"])
                 new_feature.setGeometry(geom)
@@ -300,7 +294,7 @@ class LodFeatureDecorator:
         return_features = {}
 
         for feature, feature_geom in features.items():
-            lod_geom_dict = {} # Stores the lod -> geometry dictionary
+            lod_geom_dict = {}
 
             if len(feature_geom) > 0:
                 for geom in feature_geom:
@@ -308,8 +302,8 @@ class LodFeatureDecorator:
 
                 for lod, geom in lod_geom_dict.items():
                     new_feature = QgsFeature(feature)
-
                     new_feature["lod"] = lod
+
                     if read_geometry:
                         qgs_geometry = self._geometry_reader.read_geometry(geom)
                         new_feature.setGeometry(qgs_geometry)
@@ -326,11 +320,9 @@ class SemanticSurfaceFeatureDecorator:
     def __init__(self, decorated, geometry_reader, field_decorator):
         self._decorated = decorated
         self._geometry_reader = geometry_reader
-
-        # Get attributes from the field decorator
         self._field_decorator = field_decorator
         self._attributes = self._field_decorator.get_attributes()
-    
+
     def semantic_to_string(self, semantic):
         """Returns a string from a semantic surface object"""
         if semantic is None:
@@ -371,52 +363,52 @@ class SemanticSurfaceFeatureDecorator:
 
 class ParentFeatureDecorator:
     """A class that decorates feature with parent attributes"""
-    
+
     def __init__(self, decorated, geometry_reader, citymodel):
         self._decorated = decorated
         self._geometry_reader = geometry_reader
         self._citymodel = citymodel
-        
+
     def get_attributes(self):
         """Get parent attributes for city objects."""
         objs = self._citymodel["CityObjects"]
-        
+
         return {
             obj: data["attributes"]
             for obj, data in objs.items()
             if data.get("attributes")  # Check if attributes exist and are not empty
         }
-        
+
     def create_features(self, fields, object_key, cityobject, read_geometry=True):
         """Creates a feature based on the city object's semantics"""
         features = self._decorated.create_features(fields,
                                                    object_key,
                                                    cityobject,
                                                    False)
-        
+
         return_features = {}
 
         for feature, feature_geom in features.items():
             new_feature = QgsFeature(feature)
-            # Load the attributes
             city_attributes = cityobject.get("attributes", {})
-            if city_attributes:  # If the city object has attributes
+
+            if city_attributes:
                 for att_key, att_value in city_attributes.items():
                     new_feature[f"attribute.{att_key}"] = att_value
-            else:  # If no attributes in city object and add_attributes is True
+            else:
                 parent_attributes = self.get_attributes().get(new_feature["parents"], {})
                 for att_key, att_value in parent_attributes.items():
                     new_feature[f"attribute.{att_key}"] = att_value
 
             if "geometry" in cityobject:
                 return_geom = cityobject["geometry"]
-                
+
                 if read_geometry:
                     geom = self._geometry_reader.read_geometry(cityobject["geometry"])
                     new_feature.setGeometry(geom)
             else:
                 return_geom = []
-                
+
             return_features[new_feature] = return_geom
 
             return return_features
