@@ -78,7 +78,7 @@ class GeometryReader:
         self._skipped_geometries = 0
         self._geometry_templates = geometry_templates
         self.lod = lod
-        
+
         if self._geometry_templates is None:
             self._templates_vertices_cache = VerticesCache()
         else:
