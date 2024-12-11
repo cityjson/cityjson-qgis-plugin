@@ -43,6 +43,7 @@ class DynamicLayerManager(BaseLayerManager):
         self._feature_builder = feature_builder
         self._layer_iterator = layer_iterator
         self._vectorlayers = dict()
+
         for name in self._layer_iterator.all_layers():
             vl = QgsVectorLayer(self._geom_type, name, "memory")
             self._vectorlayers[name] = vl
@@ -95,7 +96,6 @@ class TypeNamingIterator:
     def all_layers(self):
         """Returns the all layer names"""
         types = set([obj["type"] for obj in self._citymodel["CityObjects"].values()])
-
         for t in types:
             yield "{} - {}".format(self._filename, t)
 
@@ -128,6 +128,7 @@ class LodNamingDecorator:
     def get_feature_layer(self, feature):
         """Returns the layer name for the given city object"""
         layer = self._decorated.get_feature_layer(feature)
+
         return "{} [LoD{}]".format(layer, feature["lod"])
 
 class BaseFieldsBuilder:
@@ -160,7 +161,6 @@ class AttributeFieldsDecorator:
     def get_attribute_keys(self, objs):
         """Returns the list of (unique) attributes found in all city objects."""
         atts = []
-
         for obj in objs.values():
             if "attributes" in obj:
                 for att_key in obj["attributes"]:
@@ -172,7 +172,6 @@ class AttributeFieldsDecorator:
     def get_fields(self):
         """Create and returns fields"""
         fields = self._decorated.get_fields()
-
         attributes = self.get_attribute_keys(self._citymodel["CityObjects"])
 
         for att in attributes:
@@ -190,7 +189,6 @@ class LodFieldsDecorator:
     def get_fields(self):
         """Create and returns fields"""
         fields = self._decorated.get_fields()
-
         fields.append(QgsField("lod", QVariant.String))
 
         return fields
@@ -205,7 +203,6 @@ class SemanticSurfaceFieldsDecorator:
     def get_semantic_attributes(self, objs):
         """Returns the list of (unique) attributes found in all city objects."""
         atts = []
-
         for obj in objs.values():
             if "geometry" in obj:
                 for geom in obj["geometry"]:
@@ -225,7 +222,6 @@ class SemanticSurfaceFieldsDecorator:
     def get_fields(self):
         """Create and returns fields"""
         fields = self._decorated.get_fields()
-
         attributes = self.get_semantic_attributes(self._citymodel["CityObjects"])
 
         for att in attributes:
@@ -237,7 +233,6 @@ class SemanticSurfaceFieldsDecorator:
     def get_attributes(self):
         """Create and returns fields"""
         fields = self._decorated.get_fields()
-
         attributes = self.get_semantic_attributes(self._citymodel["CityObjects"])
 
         return attributes
@@ -292,7 +287,6 @@ class LodFeatureDecorator:
                                                    cityobject,
                                                    False)
         return_features = {}
-
         for feature, feature_geom in features.items():
             lod_geom_dict = {}
 
@@ -337,12 +331,12 @@ class SemanticSurfaceFeatureDecorator:
                                                    cityobject,
                                                    False)
         return_features = {}
-
         for feature, feature_geom in features.items():
             polygons, semantics = self._geometry_reader.get_polygons(feature_geom, self._attributes)
 
             if len(polygons) > 1:
                 surf_geom_dict = {}
+
                 for polygon, semantic in zip(polygons, semantics):
                     new_feature = QgsFeature(feature)
 
@@ -373,21 +367,15 @@ class ParentFeatureDecorator:
         """Get parent attributes for city objects."""
         objs = self._citymodel["CityObjects"]
 
-        return {
-            obj: data["attributes"]
+        return {obj: data["attributes"]
             for obj, data in objs.items()
-            if data.get("attributes")  # Check if attributes exist and are not empty
-        }
+            if data.get("attributes")}
 
     def create_features(self, fields, object_key, cityobject, read_geometry=True):
         """Creates a feature based on the city object's semantics"""
-        features = self._decorated.create_features(fields,
-                                                   object_key,
-                                                   cityobject,
-                                                   False)
+        features = self._decorated.create_features(fields, object_key, cityobject, False)
 
         return_features = {}
-
         for feature, feature_geom in features.items():
             new_feature = QgsFeature(feature)
             city_attributes = cityobject.get("attributes", {})
