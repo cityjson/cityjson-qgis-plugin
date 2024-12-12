@@ -120,6 +120,9 @@ class GeometryReader:
 
     def get_polygons(self, geometry, attributes={}):
         """Returns a dictionary where keys are polygons and values are the semantic surfaces"""
+        if geometry is None:
+            return [], []
+        
         polygons = []
         semantics = []
 
