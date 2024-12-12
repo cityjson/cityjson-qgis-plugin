@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>696</width>
-    <height>559</height>
+    <width>746</width>
+    <height>619</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -48,43 +48,103 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>684</width>
-        <height>507</height>
+        <width>746</width>
+        <height>572</height>
        </rect>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,1,0,0,0,0,0">
+      <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,1,0,0,0,0,0,0">
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="QLabel" name="cityjsonPathLabel">
-           <property name="font">
-            <font>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>CityJSON file:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="cityjsonPathLineEdit"/>
-         </item>
-         <item>
-          <widget class="QPushButton" name="browseButton">
-           <property name="font">
-            <font>
-             <weight>50</weight>
-             <bold>false</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>...</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
+        <widget class="QgsCollapsibleGroupBox" name="mGroupBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="title">
+          <string>CityJSON file(s)</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="0" column="0">
+           <layout class="QHBoxLayout" name="horizontalLayout_3">
+            <item>
+             <widget class="QListWidget" name="listWidget">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="sizeAdjustPolicy">
+               <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
+              </property>
+              <property name="selectionMode">
+               <enum>QAbstractItemView::ExtendedSelection</enum>
+              </property>
+              <property name="resizeMode">
+               <enum>QListView::Fixed</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QVBoxLayout" name="verticalLayout_4">
+              <property name="spacing">
+               <number>7</number>
+              </property>
+              <item alignment="Qt::AlignTop">
+               <widget class="QPushButton" name="browseFilesButton">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>Add File(s)...</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="browseDirectoryButton">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>Add Directory...</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="removeFilesButton">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>Remove File(s)</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
        </item>
        <item>
         <widget class="QgsCollapsibleGroupBox" name="cityModelPropertiesGroupBox">
@@ -114,7 +174,7 @@
          </property>
          <layout class="QGridLayout" name="gridLayout" rowstretch="0,0" columnstretch="0,0,0,0,0">
           <property name="verticalSpacing">
-           <number>-1</number>
+           <number>7</number>
           </property>
           <item row="0" column="4">
            <widget class="QPushButton" name="changeCrsPushButton">
@@ -233,7 +293,10 @@
         </widget>
        </item>
        <item>
-	<widget class="QCheckBox" name="retainParentAttributesCheckBox">
+        <widget class="QCheckBox" name="inheritParentAttributesCheckBox">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="font">
           <font>
            <weight>75</weight>
@@ -247,6 +310,9 @@
        </item>
        <item>
         <widget class="QCheckBox" name="splitByTypeCheckBox">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="font">
           <font>
            <weight>75</weight>
@@ -259,7 +325,7 @@
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="lodLoadingHorizontalLayout" stretch="0,1">
+        <layout class="QHBoxLayout" name="lodLoadingHorizontalLayout" stretch="0,1,0,0">
          <item>
           <widget class="QLabel" name="loDLoadingLabel">
            <property name="font">
@@ -296,7 +362,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLabel" name="label">
+          <widget class="QLabel" name="loDFilterLabel">
            <property name="font">
             <font>
              <weight>75</weight>
@@ -324,6 +390,9 @@
        </item>
        <item>
         <widget class="QCheckBox" name="semanticsLoadingCheckBox">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="font">
           <font>
            <weight>75</weight>
@@ -337,6 +406,9 @@
        </item>
        <item>
         <widget class="QCheckBox" name="semanticSurfacesStylingCheckBox">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="font">
           <font>
            <weight>75</weight>
