@@ -1,6 +1,8 @@
 """A module related to apply styling in QGIS layers"""
 
 from qgis.PyQt.QtGui import QColor
+from qgis.core import Qgis
+
 from .settings import load_settings
 
 try:
@@ -37,9 +39,9 @@ class Copy2dStyling:
 
         symbol = QgsPolygon3DSymbol()
         # setMaterial method renamed to setMaterialSettings in QGIS 3.30 and is API breaking
-        try:
+        if Qgis.versionInt() < 33000:
             symbol.setMaterial(material)
-        except AttributeError:
+        else:
             symbol.setMaterialSettings(material)
         symbol.setEdgesEnabled(True)
 
@@ -69,9 +71,9 @@ class SemanticSurfacesStyling:
 
             symbol = QgsPolygon3DSymbol()
             # setMaterial method renamed to setMaterialSettings in QGIS 3.30 and is API breaking
-            try:
+            if Qgis.versionInt() < 33000:
                 symbol.setMaterial(material)
-            except AttributeError:
+            else:
                 symbol.setMaterialSettings(material)
             symbol.setEdgesEnabled(True)
 
@@ -85,9 +87,9 @@ class SemanticSurfacesStyling:
 
         symbol = QgsPolygon3DSymbol()
         # setMaterial method renamed to setMaterialSettings in QGIS 3.30 and is API breaking
-        try:
+        if Qgis.versionInt() < 33000:
             symbol.setMaterial(material)
-        except AttributeError:
+        else:
             symbol.setMaterialSettings(material)
         symbol.setEdgesEnabled(True)
 
