@@ -156,7 +156,10 @@ def get_model_epsg(citymodel):
 
             p = re.compile(r"https:\/\/www.opengis.net\/def\/crs\/([A-Z]+)\/([0-9]+)\/([0-9]+)")
             m = p.match(ref_string)
-            return m.group(3)
+            if m:
+                return m.group(3)
+            else:
+                return "None"
         else:
             return "None"
 
