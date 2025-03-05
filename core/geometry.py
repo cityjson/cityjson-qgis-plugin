@@ -9,6 +9,7 @@ class VerticesCache:
         self._scale = scale
         self._translate = translate
         self._vertices = []
+
         if vertices is not None:
             for vertex in vertices:
                 self.add_vertex(vertex)
@@ -39,9 +40,7 @@ class VerticesCache:
         return self._vertices[index]
 
 class TransformedVerticesCache:
-    """A class that decorates a VerticesCache applying a decoration when
-    vertices are requested.
-    """
+    """A class that decorates a VerticesCache applying a decoration when vertices are requested"""
 
     def __init__(self, decorated, translation, transformation_matrix=None):
         """Initiates the transformed vertices cache with the provided
@@ -54,6 +53,7 @@ class TransformedVerticesCache:
         """
         self._decorated = decorated
         self._translation = translation
+
         if transformation_matrix is None:
             self._transformation_matrix = [1.0, 0.0, 0.0, 0.0,
                                            0.0, 1.0, 0.0, 0.0,
@@ -68,15 +68,18 @@ class TransformedVerticesCache:
         x = original_vertex.x() + self._translation.x()
         y = original_vertex.y() + self._translation.y()
         z = original_vertex.z() + self._translation.z()
+
         return QgsPoint(x, y, z)
 
 class GeometryReader:
     """A class that translates CityJSON geometries to QgsGeometry"""
 
-    def __init__(self, vertices_cache, geometry_templates=None):
+    def __init__(self, vertices_cache, geometry_templates=None, lod="All"):
         self._vertices_cache = vertices_cache
         self._skipped_geometries = 0
         self._geometry_templates = geometry_templates
+        self.lod = lod
+
         if self._geometry_templates is None:
             self._templates_vertices_cache = VerticesCache()
         else:
@@ -85,20 +88,26 @@ class GeometryReader:
                 template_vertex_cache.add_vertex(vertex)
             self._templates_vertices_cache = template_vertex_cache
 
-    def read_geometry(self, geometry):
-        """Reads a CityJSON geometry and returns it as QgsGeometry
-        """
-        polygons, _ = self.get_polygons(geometry)
+    def read_geometry(self, geometry, lod="All"):
+        """Reads a CityJSON geometry and returns it as QgsGeometry"""
+        polygons, _ = self.get_polygons(geometry, lod)
 
         return self.polygons_to_geometry(polygons)
+
+    def has_lod(self, geometries, target_lod):
+        """Checks if any geometry in the list matches the specified LoD"""
+        if target_lod == "All":
+            return True
+
+        return any(self.get_lod(geom) == target_lod for geom in geometries)
 
     def get_lod(self, geometry):
         """Returns the lod of a give geometry"""
         if geometry["type"] == "GeometryInstance":
             geom_index = geometry["template"]
-            return self._geometry_templates["templates"][geom_index]["lod"]
+            return self._geometry_templates["templates"][geom_index].get("lod", None)
         else:
-            return geometry["lod"]
+            return geometry.get("lod", None)
 
     def polygons_to_geometry(self, polygons):
         """Returns a QgsGeometry object from a list of polygons"""
@@ -106,16 +115,21 @@ class GeometryReader:
         for polygon in polygons:
             g = self.read_polygon(polygon)
             geoms.addGeometry(g)
+
         return QgsGeometry(geoms)
 
-    def get_polygons(self, geometry):
-        """Returns a dictionary where keys are polygons and values
-        are the semantic surfaces
-        """
+    def get_polygons(self, geometry, attributes={}):
+        """Returns a dictionary where keys are polygons and values are the semantic surfaces"""
+        if geometry is None:
+            return [], []
+        
         polygons = []
         semantics = []
 
         for geom in geometry:
+            if not self.has_lod([geom], self.lod) or not self.get_lod(geom):
+                continue
+
             if geom["type"] == "GeometryInstance":
                 template_index = geom["template"]
                 temp_geom = self._geometry_templates["templates"][template_index]
@@ -125,17 +139,36 @@ class GeometryReader:
                 temp_geom = geom
                 temp_vertices_cache = self._vertices_cache
 
+            additional_semantics = {}
             try:
                 if "semantics" in temp_geom:
                     surfaces = temp_geom["semantics"]["surfaces"]
                     values = temp_geom["semantics"]["values"]
+
+                    if len(attributes) > 2:
+                        for attr in attributes:
+                            attr = '+' + attr
+                            if attr.lstrip("+") not in ['type','on_footprint_edge'] and attr in temp_geom["semantics"]:
+                                additional_semantics[attr.lstrip("+")] = temp_geom["semantics"][attr][0]
                 else:
                     surfaces = None
                     values = None
+
                 new_polygons, new_semantics = read_boundaries(temp_geom["boundaries"], surfaces, values)
                 new_polygons = self.indexes_to_points(new_polygons, temp_vertices_cache)
-                polygons = polygons + new_polygons
-                semantics = semantics + new_semantics
+                polygons += new_polygons
+
+                if len(additional_semantics) > 0:
+                    combined_semantics = []
+                    for i, semantic in enumerate(new_semantics):
+                        combined_semantics.append({
+                            **semantic,
+                            **{key: str(additional_semantics[key][i]) for key in additional_semantics.keys()}
+                        })
+
+                    semantics += combined_semantics
+                else:
+                    semantics += new_semantics
 
             except Exception as e:
                 self._skipped_geometries += 1
@@ -190,8 +223,8 @@ def read_boundaries(boundaries, surfaces, values):
             values_iter = iter([None for i in range(len(boundaries))])
         for boundary in boundaries:
             new_polygons, new_semantic_surfaces = read_boundaries(boundary, surfaces, next(values_iter))
-            polygons = polygons + new_polygons
-            semantic_surfaces = semantic_surfaces + new_semantic_surfaces
+            polygons += new_polygons
+            semantic_surfaces += new_semantic_surfaces
     else:
         polygons.append(boundaries)
         if surfaces is None or values is None:

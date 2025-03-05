@@ -4,12 +4,12 @@ QGIS processing algorithms"""
 from qgis.core import QgsProcessingProvider
 from PyQt5.QtGui import QIcon
 
-from .cityjson_load_algorithm import CityJsonLoadAlrogithm
+from .cityjson_load_algorithm import CityJsonLoadAlgorithm
 
 class Provider(QgsProcessingProvider):
 
     def loadAlgorithms(self, *args, **kwargs):
-        self.addAlgorithm(CityJsonLoadAlrogithm())
+        self.addAlgorithm(CityJsonLoadAlgorithm())
 
     def id(self, *args, **kwargs):
         """The ID of your plugin, used for identifying the provider.
