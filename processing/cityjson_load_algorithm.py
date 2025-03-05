@@ -103,6 +103,9 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
         """
         return self.tr("Imports a CityJSON file to QGIS")
 
+    def flags(self):
+        return super().flags() | QgsProcessingAlgorithm.FlagNoThreading
+
     def initAlgorithm(self, config=None):
         """
         Here we define the inputs and output of the algorithm, along
