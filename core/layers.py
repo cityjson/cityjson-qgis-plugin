@@ -11,7 +11,7 @@ class BaseLayerManager:
     def __init__(self, citymodel, fields_builder, srid):
         self._citymodel = citymodel
         self._fields_builder = fields_builder
-        self._geom_type = "MultiPolygon"
+        self._geom_type = "MultiPolygonZ"
         self._fields = QgsFields()
         if srid is None:
             if "crs" in self._citymodel["metadata"]:
