@@ -54,7 +54,7 @@ PY_FILES = \
 
 UI_FILES = gui/cityjson_loader_dialog_base.ui
 
-EXTRAS = metadata.txt icon.png cityjson_logo_big.png cityjson_logo.svg Changelog.md
+EXTRAS = metadata.txt icon.png cityjson_logo_big.png cityjson_logo.svg Changelog.md LICENSE cityjson_logo_load.svg cityjson_logo_export.svg 
 
 EXTRA_DIRS = 
 
@@ -170,7 +170,6 @@ zip: deploy dclean
 	# The zip target deploys the plugin and creates a zip file with the deployed
 	# content. You can then upload the zip file on http://plugins.qgis.org
 	rm -f $(PLUGINNAME).zip
-	cp  LICENSE "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/LICENSE"
 	cd "$(HOME)/$(QGISDIR)/python/plugins"; zip -9r $(CURDIR)/$(PLUGINNAME).zip $(PLUGINNAME) -x ".*" "__pycache__/*" "**/__pycache__/*"
 
 package: compile
