@@ -331,11 +331,18 @@ class CityJsonLoader:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/plugins/cityjson_loader/cityjson_logo.svg'
+        load_icon_path = ':/plugins/cityjson_loader/cityjson_logo_load.svg'
+        export_icon_path = ':/plugins/cityjson_loader/cityjson_logo_export.svg'
         self.add_action(
-            icon_path,
+            load_icon_path,
             text=self.tr(u'Load CityJSON...'),
             callback=self.run,
+            parent=self.iface.mainWindow())
+        
+        self.add_action(
+            export_icon_path,
+            text=self.tr(u'Export CityJSON...'),
+            callback=self.write,
             parent=self.iface.mainWindow())
 
         self.initProcessing()
@@ -351,6 +358,9 @@ class CityJsonLoader:
         del self.toolbar
 
         QgsApplication.processingRegistry().removeProvider(self.provider)
+    
+    def write(self):
+        pass
 
     def run(self):
         """Run method that performs all the real work"""
