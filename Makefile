@@ -38,7 +38,7 @@ LOCALES =
 # translation
 SOURCES = \
 	__init__.py \
-	cityjson_loader.py gui/cityjson_loader_dialog.py \
+	cityjson_loader.py gui/cityjson_loader_dialog.py gui/cityjson_writer_dialog.py \
 	core/layers.py core/geometry.py core/styling.py core/settings.py \
 	core/subset.py core/utils.py
 
@@ -46,13 +46,14 @@ PLUGINNAME = CityJSON-loader
 
 PY_FILES = \
 	__init__.py \
-	cityjson_loader.py gui/cityjson_loader_dialog.py \
+	cityjson_loader.py gui/cityjson_loader_dialog.py gui/cityjson_writer_dialog.py \
 	core/__init__.py core/layers.py core/geometry.py core/styling.py \
 	core/settings.py core/helpers/treemodel.py core/loading.py \
 	processing/__init__.py processing/cityjson_load_algorithm.py \
 	processing/provider.py core/subset.py core/utils.py
 
-UI_FILES = gui/cityjson_loader_dialog_base.ui
+UI_FILES = gui/cityjson_loader_dialog_base.ui \
+		   gui/cityjson_writer_dialog_base.ui \
 
 EXTRAS = metadata.txt icon.png cityjson_logo_big.png cityjson_logo.svg Changelog.md LICENSE cityjson_logo_load.svg cityjson_logo_export.svg 
 
