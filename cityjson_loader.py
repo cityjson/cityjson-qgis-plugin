@@ -46,6 +46,7 @@ from .core.styling import (Copy2dStyling, NullStyling, SemanticSurfacesStyling,
                            is_rule_based_3d_styling_available)
 # Import the code for the dialog
 from .gui.cityjson_loader_dialog import CityJsonLoaderDialog
+from .gui.cityjson_writer_dialog import CityJsonWriterDialog
 from .resources import *
 from .processing.provider import Provider
 
@@ -81,6 +82,9 @@ class CityJsonLoader:
 
         # Create the dialog (after translation) and keep reference
         self.dlg = CityJsonLoaderDialog()
+
+                # Create the dialog (after translation) and keep reference
+        self.dlg_wrt = CityJsonWriterDialog()
 
         # Declare instance attributes
         self.actions = []
@@ -360,7 +364,8 @@ class CityJsonLoader:
         QgsApplication.processingRegistry().removeProvider(self.provider)
     
     def write(self):
-        pass
+        self.dlg_wrt.reset_fields()
+        self.dlg_wrt.show()
 
     def run(self):
         """Run method that performs all the real work"""
