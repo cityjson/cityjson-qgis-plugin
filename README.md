@@ -14,6 +14,7 @@
      - Fixed error: 'QgsPolygon3DSymbol' object has no attribute 'setMaterial'.
      - Fixed an issue where empty layer(s) with *[LoD: None]* were unnecessarily created when the option to load LoD "As layers" was selected.
      - Removed the behavior where a group layer was created even when only a single layer was loaded.
+     - Changed layer insertion to place new layers or groups at the top of the QGIS Layer Panel for improved visibility.
 
 ## Installation
 Open the Command Prompt (CMD) and navigate to the directory where your QGIS plugins are stored. For example:
