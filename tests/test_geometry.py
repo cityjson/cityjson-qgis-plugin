@@ -7,7 +7,7 @@ class TestReadBoundaries:
     """A class to test the read_boundaries function"""
 
     def test_multisurface_reading(self):
-        """Does read_boundaries retuns the correct polygons for
+        """Does read_boundaries return the correct polygons for
         a multisurface?
         """
         boundaries = example_multisurface_with_semantics[0]["boundaries"]
