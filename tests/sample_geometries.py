@@ -2,6 +2,7 @@
 
 example_multisurface_with_semantics = [{
     "type": "MultiSurface",
+    "lod": 2,
     "boundaries": [
         [[0, 3, 2, 1]], [[4, 5, 6, 7]], [[0, 1, 5, 4]], [[0, 2, 3, 8]], [[10, 12, 23, 48]]
     ],
