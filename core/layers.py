@@ -5,14 +5,19 @@ import abc
 from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVariant
 from qgis.core import QgsFeature, QgsField, QgsFields, QgsVectorLayer
 
+CORE_FIELD_NAMES = ["uid", "type", "parents", "children", "lod"]
+SURFACE_PREFIX = "surface."
+DEFAULT_GEOM_TYPE = "MultiPolygonZ"
+
 class BaseLayerManager:
     """A base layer manager for the common functionality between current ones"""
 
     def __init__(self, citymodel, fields_builder, srid):
         self._citymodel = citymodel
         self._fields_builder = fields_builder
-        self._geom_type = "MultiPolygonZ"
+        self._geom_type = DEFAULT_GEOM_TYPE
         self._fields = QgsFields()
+        
         if srid is None:
             if "crs" in self._citymodel["metadata"]:
                 srid = self._citymodel["metadata"]["crs"]["epsg"]
@@ -24,27 +29,22 @@ class BaseLayerManager:
         """Prepares the attributes of the vector layer."""
         all_fields = self._fields_builder.get_fields()
 
-        core_field_names = ["uid", "type", "parents", "children", "lod"]
-        surface_prefix = "surface."
         core_fields = QgsFields()
         surface_fields = QgsFields()
         attribute_fields = QgsFields()
 
         for field in all_fields:
-            if field.name() in core_field_names:
+            if field.name() in CORE_FIELD_NAMES:
                 core_fields.append(field)
-            elif field.name().startswith(surface_prefix):
+            elif field.name().startswith(SURFACE_PREFIX):
                 surface_fields.append(field)
             else:
                 attribute_fields.append(field)
 
         reordered_fields = QgsFields()
-        for field in core_fields:
-            reordered_fields.append(field)
-        for field in surface_fields:
-            reordered_fields.append(field)
-        for field in attribute_fields:
-            reordered_fields.append(field)
+        for field_collection in [core_fields, surface_fields, attribute_fields]:
+            for field in field_collection:
+                reordered_fields.append(field)
 
         self._fields = reordered_fields
 
