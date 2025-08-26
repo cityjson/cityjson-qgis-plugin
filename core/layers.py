@@ -75,7 +75,7 @@ class DynamicLayerManager(BaseLayerManager):
     def add_object(self, object_key, cityobject):
         """Adds a cityobject in the respective vector layer"""
         new_features = self._feature_builder.create_features(self._fields, object_key, cityobject)
-
+        
         for feature in new_features:
             layer_name = self._layer_iterator.get_feature_layer(feature)
             provider = self._vectorlayers[layer_name].dataProvider()
@@ -84,7 +84,7 @@ class DynamicLayerManager(BaseLayerManager):
                 provider.addFeature(feature)
 
     def get_all_layers(self):
-        """Returns all the vector layers from this manager."""
+        """Returns all the vector layers from this manager"""
         valid_layers = []
         for layer_name, layer in self._vectorlayers.items():
             provider = layer.dataProvider()
@@ -438,9 +438,7 @@ class ParentFeatureDecorator:
         """Get parent attributes for city objects."""
         objs = self._citymodel["CityObjects"]
 
-        return {obj: data["attributes"]
-            for obj, data in objs.items()
-            if data.get("attributes")}
+        return {obj: data["attributes"] for obj, data in objs.items() if data.get("attributes")}
 
     def create_features(self, fields, object_key, cityobject, read_geometry=True):
         """Creates a feature based on the city object's semantics"""
