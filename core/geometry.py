@@ -2,10 +2,13 @@
 
 from qgis.core import QgsPoint, QgsGeometry, QgsLineString, QgsPolygon, QgsMultiPolygon
 
+DEFAULT_SCALE = (1, 1, 1)
+DEFAULT_TRANSLATE = (0, 0, 0)
+
 class VerticesCache:
     """A class to hold the list of vertices of the city model"""
 
-    def __init__(self, scale=(1, 1, 1), translate=(0, 0, 0), vertices=None):
+    def __init__(self, scale=DEFAULT_SCALE, translate=DEFAULT_TRANSLATE, vertices=None):
         self._scale = scale
         self._translate = translate
         self._vertices = []
