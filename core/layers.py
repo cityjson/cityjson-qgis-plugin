@@ -181,7 +181,31 @@ class AttributeFieldsDecorator:
     def __init__(self, decorated, citymodel):
         self._decorated = decorated
         self._citymodel = citymodel
+        self._attribute_types = self._get_attribute_types()
 
+    def _get_qgis_type(self, value):
+        if isinstance(value, bool):
+            return QVariant.Bool
+        elif isinstance(value, int):
+            return QVariant.Int
+        elif isinstance(value, float):
+            return QVariant.Double
+        else:
+            return QVariant.String
+
+    def _get_attribute_types(self):
+        attribute_types = {}
+        for obj in self._citymodel["CityObjects"].values():
+            if "attributes" in obj:
+                for att_key, att_value in obj["attributes"].items():
+                    qtype = self._get_qgis_type(att_value)
+                    if att_key not in attribute_types or (qtype == QVariant.Double and attribute_types[att_key] != QVariant.Double) or (qtype == QVariant.String and attribute_types[att_key] != QVariant.String):
+                        attribute_types[att_key] = qtype
+                    elif qtype == QVariant.Int and attribute_types[att_key] == QVariant.Bool:
+                            attribute_types[att_key] = qtype
+
+        return attribute_types
+    
     def get_attribute_keys(self, objs):
         """Returns the list of (unique) attributes found in all city objects."""
         atts = []
@@ -196,11 +220,10 @@ class AttributeFieldsDecorator:
     def get_fields(self):
         """Create and returns fields"""
         fields = self._decorated.get_fields()
-        attributes = self.get_attribute_keys(self._citymodel["CityObjects"])
+        attributes = self._attribute_types.items()
 
-        for att in attributes:
-            fields.append(QgsField("attribute.{}".format(att),
-                                   QVariant.String))
+        for att, qtype in attributes:
+            fields.append(QgsField("attribute.{}".format(att), qtype))
 
         return fields
 
@@ -218,12 +241,22 @@ class LodFieldsDecorator:
         return fields
 
 class SemanticSurfaceFieldsDecorator:
-    """A class that creates an LoD field"""
+    """A class that create fields based on the surface attributes of the city model"""
 
     def __init__(self, decorated, citymodel):
         self._decorated = decorated
         self._citymodel = citymodel
 
+    def _get_qgis_type(self, value):
+        if isinstance(value, bool):
+            return QVariant.Bool
+        elif isinstance(value, int):
+            return QVariant.Int
+        elif isinstance(value, float):
+            return QVariant.Double
+        else:
+            return QVariant.String
+    
     def get_semantic_attributes(self, objs):
         """Returns the list of (unique) attributes found in all city objects."""
         atts = []
@@ -233,7 +266,7 @@ class SemanticSurfaceFieldsDecorator:
                     if "semantics" in geom:
                         for surface in geom["semantics"]["surfaces"]:
                             for att_key in surface:
-                                if not att_key in atts:
+                                if att_key not in atts:
                                     atts.append(att_key)
 
                         for key, _ in geom["semantics"].items():
@@ -243,23 +276,37 @@ class SemanticSurfaceFieldsDecorator:
 
         return atts
 
+    def _find_sample_value(self, att_key):
+        """Find a sample value for a given attribute key in citymodel"""
+        for obj in self._citymodel["CityObjects"].values():
+            if "geometry" in obj:
+                for geom in obj["geometry"]:
+                    if "semantics" in geom:
+                        for surface in geom["semantics"]["surfaces"]:
+                            if att_key in surface:
+                                return surface[att_key]
+                        # Also check other keys besides "surfaces"
+                        for key, value in geom["semantics"].items():
+                            key_clean = key.lstrip("+")
+                            if key_clean == att_key:
+                                return value
+        return None
+    
     def get_fields(self):
         """Create and returns fields"""
         fields = self._decorated.get_fields()
         attributes = self.get_semantic_attributes(self._citymodel["CityObjects"])
 
         for att in attributes:
-            fields.append(QgsField("surface.{}".format(att),
-                                   QVariant.String))
+            sample_value = self._find_sample_value(att)
+            qtype = self._get_qgis_type(sample_value)
+            fields.append(QgsField(f"surface.{att}", qtype))
 
         return fields
 
     def get_attributes(self):
         """Create and returns fields"""
-        fields = self._decorated.get_fields()
-        attributes = self.get_semantic_attributes(self._citymodel["CityObjects"])
-
-        return attributes
+        return self.get_semantic_attributes(self._citymodel["CityObjects"])
 
 class SimpleFeatureBuilder:
     """A class that create features according to their attributes"""
