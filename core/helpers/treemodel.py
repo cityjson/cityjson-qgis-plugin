@@ -1,7 +1,7 @@
 from qgis.PyQt.QtCore import QAbstractItemModel, QModelIndex, Qt, QSize, QRect, QPoint
 from qgis.PyQt.QtGui import QFontMetrics, QFont
 
-metadata_realnames = {
+METADATA_REALNAMES = {
     "citymodelIdentifier": "City Model Identifier",
     "datasetTitle": "Dataset Title",
     "datasetReferenceDate": "Dataset Reference Date",
@@ -129,10 +129,10 @@ class MetadataElement(object): # your internal structure
                 }
             elif value_pair[0] in ["keywords", "thematicModels"]:
                 self.subelements = {v: "" for v in value_pair[1]}
-            elif value_pair[0] in metadata_realnames:
+            elif value_pair[0] in METADATA_REALNAMES:
                 self.subelements = {
                     "{metadata_name} ({index})".format(
-                        metadata_name=metadata_realnames[value_pair[0]],
+                        metadata_name=METADATA_REALNAMES[value_pair[0]],
                         index=i): v
                     for i, v in enumerate(value_pair[1], start=1)
                 }
@@ -206,7 +206,4 @@ class MetadataModel(TreeModel):
         return None
 
 def get_real_key(key_name):
-    if key_name in metadata_realnames:
-        return metadata_realnames[key_name]
-    else:
-        return key_name
+    return METADATA_REALNAMES.get(key_name, key_name)
