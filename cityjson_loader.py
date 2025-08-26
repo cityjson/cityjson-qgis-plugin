@@ -89,6 +89,8 @@ class CityJsonLoader:
         self.toolbar = self.iface.addToolBar(u'CityJsonLoader')
         self.toolbar.setObjectName(u'CityJsonLoader')
 
+        self._cancel_requested = False
+     
         self.file_epsg_map = {}
      
         self.delete_shortcut = QShortcut(QKeySequence(Qt.Key_Delete), self.dlg)
@@ -102,6 +104,10 @@ class CityJsonLoader:
         self.dlg.changeCrsPushButton.clicked.connect(self.select_crs)
         self.dlg.semanticsLoadingCheckBox.stateChanged.connect(self.semantics_loading_changed)
 
+        self.dlg.cancelButton.clicked.connect(self.request_cancel)
+        self.dlg.loadButton.clicked.connect(self.process_files)
+        self.dlg.closeButton.clicked.connect(self.dlg.reject)
+     
         self.provider = None
     
     def initProcessing(self):
@@ -109,6 +115,9 @@ class CityJsonLoader:
         self.provider = Provider()
         QgsApplication.processingRegistry().addProvider(self.provider)
 
+    def request_cancel(self):
+        self._cancel_requested = True
+ 
     def add_cityjson_files(self, filepaths):
         """adds given CityJSON files to the widget and processes them."""
         for filename in filepaths:
@@ -126,7 +135,7 @@ class CityJsonLoader:
  
     def select_cityjson_files(self):
         """Shows a dialog to select CityJSON file(s)"""
-        filenames, _ = QFileDialog.getOpenFileNames(self.dlg, "Select CityJSON File(s)", "", "*.json")
+        filenames, _ = QFileDialog.getOpenFileNames(self.dlg, "Select CityJSON File(s)", "", "*.city.json")
 
         if filenames:
             self.add_cityjson_files(filenames)
@@ -136,7 +145,7 @@ class CityJsonLoader:
         directory = QFileDialog.getExistingDirectory(self.dlg, "Select Directory", "", QFileDialog.ShowDirsOnly)
 
         if directory:
-            filenames = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.json')]
+            filenames = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.city.json')]
             if filenames:
                 self.dlg.listWidget.clear()
                 self.add_cityjson_files(filenames)
@@ -147,13 +156,16 @@ class CityJsonLoader:
         """Removes CityJSON file(s) from the list"""
         selected_items = self.dlg.listWidget.selectedItems()
         if selected_items:
+            current_row = self.dlg.listWidget.currentRow()
             for item in selected_items:
                 self.dlg.listWidget.takeItem(self.dlg.listWidget.row(item))
                 filename = item.text()
                 self.file_epsg_map.pop(filename, None)
 
-            if self.dlg.listWidget.count() > 0:
-                self.dlg.listWidget.setCurrentRow(0)
+            count = self.dlg.listWidget.count()
+            if count > 0:
+                new_row = current_row if current_row < count else count - 1
+                self.dlg.listWidget.setCurrentRow(new_row)
                 self.update_file_list()
             else:
                 self.clear_file_information()
@@ -177,11 +189,29 @@ class CityJsonLoader:
  
     def update_file_list(self):
         """Update metadata fields according to the file selected"""
-        selected_item = self.dlg.listWidget.currentItem()
-        if selected_item:
-            self.update_file_information(selected_item.text())
-        else:
-            self.clear_file_information()
+        self.dlg.listWidget.blockSignals(True)
+        try:
+            selected_item = self.dlg.listWidget.currentItem()
+            if selected_item:
+                filename = selected_item.text()
+                if not os.path.exists(filename):
+                    items = self.dlg.listWidget.findItems(filename, Qt.MatchExactly)
+                    for item in items:
+                        self.dlg.listWidget.takeItem(self.dlg.listWidget.row(item))
+                    self.file_epsg_map.pop(filename, None)
+                    self.update_file_count_label()
+                    
+                    if self.dlg.listWidget.count() > 0:
+                        self.dlg.listWidget.setCurrentRow(0)
+                        self.update_file_list()
+                    else:
+                        self.clear_file_information()
+                else:
+                    self.update_file_information(filename)
+            else:
+                self.clear_file_information()
+        finally:
+            self.dlg.listWidget.blockSignals(False)
 
     def select_crs(self):
         """Shows a dialog to select a new CRS for the model"""
@@ -222,7 +252,6 @@ class CityJsonLoader:
             line_edit.setText("")
         self.dlg.metadataTreeView.setModel(None)
         self.dlg.changeCrsPushButton.setEnabled(False)
-        self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
 
     def update_file_information(self, filename):
         """Update metadata fields according to the file provided"""
@@ -242,7 +271,6 @@ class CityJsonLoader:
                 metadata.update(model["+metadata-extended"])
 
             self.dlg.changeCrsPushButton.setEnabled(True)
-            self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
             self.dlg.removeFilesButton.setEnabled(True)
 
             model = MetadataModel(metadata, self.dlg.metadataTreeView)
@@ -378,32 +406,52 @@ class CityJsonLoader:
 
     def run(self):
         """Run method that performs all the real work"""
+        if self.dlg.isVisible():
+            self.dlg.raise_()
+            self.dlg.activateWindow()
+            return        
+     
         self.dlg.reset_fields()
         self.update_file_count_label()
-        self.dlg.show()
+        self.dlg.progressBar.setValue(0)
+        self.dlg.progressBar.setFormat("%p%")
         self.dlg.changeCrsPushButton.setEnabled(False)
-        self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
         self.dlg.semanticSurfacesStylingCheckBox.setEnabled(False)
-
-        result = self.dlg.exec_()
-
-        if result:
-            filepaths = [self.dlg.listWidget.item(i).text() for i in range(self.dlg.listWidget.count())]
-            for filepath in filepaths:
-                skipped_geometries = self.load_cityjson(filepath)
-                msg = QMessageBox()
-
-                if skipped_geometries > 0:
-                    msg.setIcon(QMessageBox.Warning)
-                    msg.setText("CityJSON loaded with issues.")
-                    msg.setInformativeText("Some geometries were skipped.")
-                    msg.setDetailedText("{} geometries could not be loaded (p.s. GeometryInstances are not supported yet).".format(skipped_geometries))
-
-            msg.setIcon(QMessageBox.Information)
-            msg.setText("CityJSON loaded successfully.")
-            msg.setWindowTitle("CityJSON loading finished")
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.exec_()
+        self.dlg.show()
+     
+    def process_files(self):
+        """Process files in the list widget. Dialog always stays open after processing. Updates progress bar in percent."""
+        self.dlg.cancelButton.setEnabled(True)
+        
+        filepaths = [self.dlg.listWidget.item(i).text() for i in range(self.dlg.listWidget.count())]
+        if not filepaths:
+            QMessageBox.warning(self.dlg, "No files", "No CityJSON files selected.")
+            self.dlg.progressBar.setValue(0)
+            return
+        
+        total = len(filepaths)
+        any_skipped = False
+        for idx, filepath in enumerate(filepaths, 1):
+            if self._cancel_requested:
+                self.dlg.progressBar.setFormat("Cancelled")
+                break
+            
+            skipped_geometries = self.load_cityjson(filepath)
+            percent = int((idx / total) * 100)
+            self.dlg.progressBar.setValue(percent)
+            if skipped_geometries > 0:
+                any_skipped = True
+                msg = QMessageBox(self.dlg)
+                msg.setIcon(QMessageBox.Warning)
+                msg.setText("CityJSON loaded with issues.")
+                msg.setInformativeText("Some geometries were skipped.")
+                msg.setDetailedText(f"{skipped_geometries} geometries could not be loaded (p.s. GeometryInstances are not supported yet).")
+                msg.exec_()
+        
+        self._cancel_requested = False
+        self.dlg.cancelButton.setEnabled(False)
+        self.dlg.progressBar.setValue(self.dlg.progressBar.maximum())
+        self.dlg.progressBar.setFormat("Complete")
 
     def load_cityjson(self, filepath):
         """Loads the given CityJSON"""
