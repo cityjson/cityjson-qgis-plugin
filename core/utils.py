@@ -4,15 +4,18 @@ import copy
 
 from .subset import *
 
+CITYJSON_VERSION = "1.0"
+CITYJSON_TYPE = "CityJSON"
+COORDINATE_DIMENSIONS = 3
+
 def createCityJSON():
     """Returns an empty CityJSON file"""
-    cm = {}
-    cm["type"] = "CityJSON"
-    cm["version"] = "1.0"
-    cm["CityObjects"] = {}
-    cm["vertices"] = []
-
-    return cm
+    return {
+        "type": CITYJSON_TYPE,
+        "version": CITYJSON_VERSION,
+        "CityObjects": {},
+        "vertices": []
+    }
 
 def get_centroid(cm, coid):
     def recusionvisit(a, vs):
@@ -21,7 +24,8 @@ def get_centroid(cm, coid):
                 recusionvisit(each, vs)
             else:
                 vs.append(each)
-    #-- find the 3D centroid
+    
+    # Find the 3D centroid
     centroid = [0, 0, 0]
     total = 0
     for g in cm['CityObjects'][coid]['geometry']:
@@ -33,17 +37,21 @@ def get_centroid(cm, coid):
             centroid[0] += v[0]
             centroid[1] += v[1]
             centroid[2] += v[2]
-    if (total != 0):
-        centroid[0] /= total
-        centroid[1] /= total
-        centroid[2] /= total
-        if "transform" in cm:
-            centroid[0] = (centroid[0] * cm["transform"]["scale"][0]) + cm["transform"]["translate"][0]
-            centroid[1] = (centroid[1] * cm["transform"]["scale"][1]) + cm["transform"]["translate"][1]
-            centroid[2] = (centroid[2] * cm["transform"]["scale"][2]) + cm["transform"]["translate"][2]
-        return centroid
-    else:
+    
+    if total == 0:
         return None
+        
+    # Calculate average
+    for i in range(COORDINATE_DIMENSIONS):
+        centroid[i] /= total
+    
+    # Apply transformation if present
+    if "transform" in cm:
+        transform = cm["transform"]
+        for i in range(COORDINATE_DIMENSIONS):
+            centroid[i] = (centroid[i] * transform["scale"][i]) + transform["translate"][i]
+    
+    return centroid
 
 def get_subset_cotype(cm, cotype, invert=False):
     # print ('get_subset_cotype')
