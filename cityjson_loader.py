@@ -187,7 +187,11 @@ class CityJsonLoader:
         self.dlg.removeFilesButton.setEnabled(count > 0)
         self.dlg.clearAllButton.setEnabled(count > 0)
         self.dlg.changeCrsButton.setEnabled(count > 0)
-        
+        self.dlg.inheritParentAttributesCheckBox.setEnabled(count > 0)
+        self.dlg.splitByTypeCheckBox.setEnabled(count > 0)
+        self.dlg.semanticsLoadingCheckBox.setEnabled(count > 0)
+        self.dlg.loDLoadingComboBox.setEnabled(count > 0)
+        self.dlg.loDSelectionComboBox.setEnabled(count > 0)
  
     def load_file_crs(self, filename):
         """Load the CRS for the CityJSON file"""
@@ -266,39 +270,29 @@ class CityJsonLoader:
 
     def update_file_information(self, filename):
         """Update metadata fields according to the file provided"""
-        try:
-            with open(filename, encoding='utf-8-sig') as fstream:
-                model = json.load(fstream)
 
-            lods = {geom['lod'] for city_object in model['CityObjects'].values() if 'geometry' in city_object for geom in city_object['geometry'] if 'lod' in geom}
-            
-            self.dlg.cityjsonVersionLineEdit.setText(model["version"])
-            self.dlg.compressedLineEdit.setText("Yes" if "transform" in model else "No")
-            self.dlg.crsLineEdit.setText(self.file_epsg_map[filename])
-            
-            metadata = model.get("metadata", {"metadata missing": "There is no metadata in this file"})
+        with open(filename, encoding='utf-8-sig') as fstream:
+            model = json.load(fstream)
 
-            if "+metadata-extended" in model:
-                metadata.update(model["+metadata-extended"])
+        lods = {geom['lod'] for city_object in model['CityObjects'].values() if 'geometry' in city_object for geom in city_object['geometry'] if 'lod' in geom}
+        
+        self.dlg.cityjsonVersionLineEdit.setText(model["version"])
+        self.dlg.compressedLineEdit.setText("Yes" if "transform" in model else "No")
+        self.dlg.crsLineEdit.setText(self.file_epsg_map[filename])
+        
+        metadata = model.get("metadata", {"metadata missing": "There is no metadata in this file"})
 
-            model = MetadataModel(metadata, self.dlg.metadataTreeView)
-            self.dlg.metadataTreeView.setModel(model)
-            self.dlg.metadataTreeView.setColumnWidth(0, model.getKeyColumnWidth())
+        if "+metadata-extended" in model:
+            metadata.update(model["+metadata-extended"])
 
-            self.dlg.inheritParentAttributesCheckBox.setEnabled(True)
-            self.dlg.splitByTypeCheckBox.setEnabled(True)
-            self.dlg.semanticsLoadingCheckBox.setEnabled(True)
+        model = MetadataModel(metadata, self.dlg.metadataTreeView)
+        self.dlg.metadataTreeView.setModel(model)
+        self.dlg.metadataTreeView.setColumnWidth(0, model.getKeyColumnWidth())
 
-            self.dlg.loDLoadingComboBox.setEnabled(True)
-            self.dlg.loDSelectionComboBox.clear()
-            self.dlg.loDSelectionComboBox.addItem("All")
-            self.dlg.loDSelectionComboBox.addItems(sorted(lods) if lods else [])
-            self.dlg.loDSelectionComboBox.setEnabled(len(lods) > 0)
-
-        except Exception as exp:
-            self.dlg.changeCrsButton.setEnabled(False)
-            self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
-            raise exp
+        self.dlg.loDSelectionComboBox.clear()
+        self.dlg.loDSelectionComboBox.addItem("All")
+        self.dlg.loDSelectionComboBox.addItems(sorted(lods) if lods else [])
+        self.dlg.loDSelectionComboBox.setEnabled(len(lods) > 0)
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -423,8 +417,7 @@ class CityJsonLoader:
         self.update_file_count_label()
         self.dlg.progressBar.setValue(0)
         self.dlg.progressBar.setFormat("%p%")
-        self.dlg.changeCrsButton.setEnabled(False)
-        self.dlg.semanticSurfacesStylingCheckBox.setEnabled(False)
+
         self.dlg.show()
      
     def process_files(self):
