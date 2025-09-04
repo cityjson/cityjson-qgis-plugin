@@ -422,14 +422,13 @@ class CityJsonLoader:
      
     def process_files(self):
         """Process files in the list widget. Dialog always stays open after processing. Updates progress bar in percent."""
-        self.dlg.cancelButton.setEnabled(True)
-        
         filepaths = [self.dlg.listWidget.item(i).text() for i in range(self.dlg.listWidget.count())]
         if not filepaths:
             QMessageBox.warning(self.dlg, "No files", "No CityJSON files selected.")
             self.dlg.progressBar.setValue(0)
             return
         
+        self.dlg.cancelButton.setEnabled(True)
         total = len(filepaths)
         any_skipped = False
         for idx, filepath in enumerate(filepaths, 1):
