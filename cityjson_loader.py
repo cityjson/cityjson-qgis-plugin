@@ -102,7 +102,7 @@ class CityJsonLoader:
         self.dlg.removeFilesButton.clicked.connect(self.remove_cityjson_files)
         self.dlg.clearAllButton.clicked.connect(self.clear_all_files)
 
-        self.dlg.changeCrsPushButton.clicked.connect(self.select_crs)
+        self.dlg.changeCrsButton.clicked.connect(self.select_crs)
         self.dlg.semanticsLoadingCheckBox.stateChanged.connect(self.semantics_loading_changed)
 
         self.dlg.cancelButton.clicked.connect(self.request_cancel)
@@ -258,7 +258,7 @@ class CityJsonLoader:
         for line_edit in line_edits:
             line_edit.setText("")
         self.dlg.metadataTreeView.setModel(None)
-        self.dlg.changeCrsPushButton.setEnabled(False)
+        self.dlg.changeCrsButton.setEnabled(False)
         self.dlg.removeFilesButton.setEnabled(False)
         self.dlg.clearAllButton.setEnabled(False)
 
@@ -279,7 +279,7 @@ class CityJsonLoader:
             if "+metadata-extended" in model:
                 metadata.update(model["+metadata-extended"])
 
-            self.dlg.changeCrsPushButton.setEnabled(True)
+            self.dlg.changeCrsButton.setEnabled(True)
             self.dlg.removeFilesButton.setEnabled(True)
             self.dlg.clearAllButton.setEnabled(True)
 
@@ -298,7 +298,7 @@ class CityJsonLoader:
             self.dlg.loDSelectionComboBox.setEnabled(len(lods) > 0)
 
         except Exception as exp:
-            self.dlg.changeCrsPushButton.setEnabled(False)
+            self.dlg.changeCrsButton.setEnabled(False)
             self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
             raise exp
 
@@ -425,7 +425,7 @@ class CityJsonLoader:
         self.update_file_count_label()
         self.dlg.progressBar.setValue(0)
         self.dlg.progressBar.setFormat("%p%")
-        self.dlg.changeCrsPushButton.setEnabled(False)
+        self.dlg.changeCrsButton.setEnabled(False)
         self.dlg.semanticSurfacesStylingCheckBox.setEnabled(False)
         self.dlg.show()
      
