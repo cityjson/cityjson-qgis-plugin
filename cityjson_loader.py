@@ -100,6 +100,7 @@ class CityJsonLoader:
         self.dlg.browseFilesButton.clicked.connect(self.select_cityjson_files)
         self.dlg.browseDirectoryButton.clicked.connect(self.select_cityjson_files_directory)
         self.dlg.removeFilesButton.clicked.connect(self.remove_cityjson_files)
+        self.dlg.clearAllButton.clicked.connect(self.clear_all_files)
 
         self.dlg.changeCrsPushButton.clicked.connect(self.select_crs)
         self.dlg.semanticsLoadingCheckBox.stateChanged.connect(self.semantics_loading_changed)
@@ -172,6 +173,12 @@ class CityJsonLoader:
 
         self.update_file_count_label()
 
+    def clear_all_files(self):
+        """Removes all CityJSON files from the list"""
+        self.dlg.listWidget.clear()
+        self.clear_file_information()
+        self.update_file_count_label()
+ 
     def update_file_count_label(self):
         """Updates the file count label to reflect the number of selected files"""
         count = self.dlg.listWidget.count()
@@ -252,6 +259,8 @@ class CityJsonLoader:
             line_edit.setText("")
         self.dlg.metadataTreeView.setModel(None)
         self.dlg.changeCrsPushButton.setEnabled(False)
+        self.dlg.removeFilesButton.setEnabled(False)
+        self.dlg.clearAllButton.setEnabled(False)
 
     def update_file_information(self, filename):
         """Update metadata fields according to the file provided"""
@@ -272,6 +281,7 @@ class CityJsonLoader:
 
             self.dlg.changeCrsPushButton.setEnabled(True)
             self.dlg.removeFilesButton.setEnabled(True)
+            self.dlg.clearAllButton.setEnabled(True)
 
             model = MetadataModel(metadata, self.dlg.metadataTreeView)
             self.dlg.metadataTreeView.setModel(model)
@@ -452,6 +462,7 @@ class CityJsonLoader:
         self.dlg.cancelButton.setEnabled(False)
         self.dlg.progressBar.setValue(self.dlg.progressBar.maximum())
         self.dlg.progressBar.setFormat("Complete")
+        self.dlg.progressBar.setValue(0)
 
     def load_cityjson(self, filepath):
         """Loads the given CityJSON"""
