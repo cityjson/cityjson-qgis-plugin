@@ -245,7 +245,10 @@
            <number>7</number>
           </property>
           <item row="0" column="4">
-           <widget class="QPushButton" name="changeCrsPushButton">
+           <widget class="QPushButton" name="changeCrsButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="font">
              <font>
               <weight>50</weight>
