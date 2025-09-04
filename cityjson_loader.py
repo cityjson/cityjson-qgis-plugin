@@ -183,6 +183,11 @@ class CityJsonLoader:
         """Updates the file count label to reflect the number of selected files"""
         count = self.dlg.listWidget.count()
         self.dlg.fileCountLabel.setText(f"{count} file(s) selected")
+     
+        self.dlg.removeFilesButton.setEnabled(count > 0)
+        self.dlg.clearAllButton.setEnabled(count > 0)
+        self.dlg.changeCrsButton.setEnabled(count > 0)
+        
  
     def load_file_crs(self, filename):
         """Load the CRS for the CityJSON file"""
@@ -258,9 +263,6 @@ class CityJsonLoader:
         for line_edit in line_edits:
             line_edit.setText("")
         self.dlg.metadataTreeView.setModel(None)
-        self.dlg.changeCrsButton.setEnabled(False)
-        self.dlg.removeFilesButton.setEnabled(False)
-        self.dlg.clearAllButton.setEnabled(False)
 
     def update_file_information(self, filename):
         """Update metadata fields according to the file provided"""
@@ -278,10 +280,6 @@ class CityJsonLoader:
 
             if "+metadata-extended" in model:
                 metadata.update(model["+metadata-extended"])
-
-            self.dlg.changeCrsButton.setEnabled(True)
-            self.dlg.removeFilesButton.setEnabled(True)
-            self.dlg.clearAllButton.setEnabled(True)
 
             model = MetadataModel(metadata, self.dlg.metadataTreeView)
             self.dlg.metadataTreeView.setModel(model)
