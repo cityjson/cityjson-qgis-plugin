@@ -192,6 +192,11 @@ class CityJsonLoader:
         self.dlg.semanticsLoadingCheckBox.setEnabled(count > 0)
         self.dlg.loDLoadingComboBox.setEnabled(count > 0)
         self.dlg.loDSelectionComboBox.setEnabled(count > 0)
+
+        if count == 0:
+            self.dlg.inheritParentAttributesCheckBox.setChecked(False)
+            self.dlg.splitByTypeCheckBox.setChecked(False)
+            self.dlg.semanticsLoadingCheckBox.setChecked(False)
  
     def load_file_crs(self, filename):
         """Load the CRS for the CityJSON file"""
@@ -257,7 +262,11 @@ class CityJsonLoader:
     def semantics_loading_changed(self):
         """Update the GUI according to the new state of semantic surfaces loading"""
         if is_rule_based_3d_styling_available():
-            self.dlg.semanticSurfacesStylingCheckBox.setEnabled(self.dlg.semanticsLoadingCheckBox.isChecked())
+            checked = self.dlg.semanticsLoadingCheckBox.isChecked()
+            self.dlg.semanticSurfacesStylingCheckBox.setEnabled(checked)
+            if not checked:
+                self.dlg.semanticSurfacesStylingCheckBox.setChecked(False)
+                self.dlg.semanticSurfacesStylingCheckBox.setEnabled(False)
 
     def clear_file_information(self):
         """Clear all fields related to file information"""
