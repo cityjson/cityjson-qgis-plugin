@@ -148,10 +148,7 @@ class CityJsonLoader:
         if directory:
             filenames = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.city.json')]
             if filenames:
-                self.dlg.listWidget.clear()
                 self.add_cityjson_files(filenames)
-            else:
-                self.dlg.listWidget.clear()
 
     def remove_cityjson_files(self):
         """Removes CityJSON file(s) from the list"""
