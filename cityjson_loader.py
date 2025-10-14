@@ -92,6 +92,15 @@ class CityJsonLoader:
         self._cancel_requested = False
      
         self.file_epsg_map = {}
+
+        self.citymodel_cache = {}
+        self.max_cache_size = 10  # Limit cache to prevent memory issues
+
+        # Variables for asynchronous file processing
+        self.file_queue = []
+        self.current_file_index = 0
+        self.process_timer = None
+        self.any_skipped = False
      
         self.delete_shortcut = QShortcut(QKeySequence(Qt.Key_Delete), self.dlg)
         self.delete_shortcut.activated.connect(self.remove_cityjson_files)
@@ -99,6 +108,7 @@ class CityJsonLoader:
         self.dlg.listWidget.itemSelectionChanged.connect(self.update_file_list)
         self.dlg.browseFilesButton.clicked.connect(self.select_cityjson_files)
         self.dlg.browseDirectoryButton.clicked.connect(self.select_cityjson_files_directory)
+        
         self.dlg.removeFilesButton.clicked.connect(self.remove_cityjson_files)
         self.dlg.clearAllButton.clicked.connect(self.clear_all_files)
 
@@ -117,7 +127,11 @@ class CityJsonLoader:
         QgsApplication.processingRegistry().addProvider(self.provider)
 
     def request_cancel(self):
+        """Request cancellation of the current processing operation"""
         self._cancel_requested = True
+        if self.process_timer is not None:
+            # The timer will check _cancel_requested on next iteration
+            pass
  
     def add_cityjson_files(self, filepaths):
         """adds given CityJSON files to the widget and processes them."""
@@ -159,6 +173,7 @@ class CityJsonLoader:
                 self.dlg.listWidget.takeItem(self.dlg.listWidget.row(item))
                 filename = item.text()
                 self.file_epsg_map.pop(filename, None)
+                self.citymodel_cache.pop(filename, None)
 
             count = self.dlg.listWidget.count()
             if count > 0:
@@ -174,6 +189,7 @@ class CityJsonLoader:
         """Removes all CityJSON files from the list"""
         self.dlg.listWidget.clear()
         self.clear_file_information()
+        self.citymodel_cache.clear()   
         self.update_file_count_label()
  
     def update_file_count_label(self):
@@ -194,15 +210,29 @@ class CityJsonLoader:
             self.dlg.inheritParentAttributesCheckBox.setChecked(False)
             self.dlg.splitByTypeCheckBox.setChecked(False)
             self.dlg.semanticsLoadingCheckBox.setChecked(False)
+
+    def _manage_cache_size(self):
+        """Manage cache size to prevent memory issues"""
+        if len(self.citymodel_cache) > self.max_cache_size:
+            # Remove oldest entry (FIFO)
+            oldest_key = next(iter(self.citymodel_cache))
+            del self.citymodel_cache[oldest_key]
  
     def load_file_crs(self, filename):
         """Load the CRS for the CityJSON file"""
         try:
-            with open(filename, encoding='utf-8-sig') as fstream:
-                model = json.load(fstream)
-                epsg = get_model_epsg(model)
-                return epsg
-        except Exception as e:
+            if filename in self.citymodel_cache:
+                model = self.citymodel_cache[filename]
+            else:
+                with open(filename, encoding='utf-8-sig') as fstream:
+                    model = json.load(fstream)
+                    # Cache the model for reuse
+                    self.citymodel_cache[filename] = model
+                    self._manage_cache_size()
+            
+            epsg = get_model_epsg(model)
+            return epsg
+        except (IOError, OSError, json.JSONDecodeError, KeyError) as e:
             return "None"
  
     def update_file_list(self):
@@ -277,8 +307,14 @@ class CityJsonLoader:
     def update_file_information(self, filename):
         """Update metadata fields according to the file provided"""
 
-        with open(filename, encoding='utf-8-sig') as fstream:
-            model = json.load(fstream)
+        if filename in self.citymodel_cache:
+            model = self.citymodel_cache[filename]
+        else:
+            with open(filename, encoding='utf-8-sig') as fstream:
+                model = json.load(fstream)
+                # Cache the model for reuse
+                self.citymodel_cache[filename] = model
+                self._manage_cache_size()
 
         lods = {geom['lod'] for city_object in model['CityObjects'].values() if 'geometry' in city_object for geom in city_object['geometry'] if 'lod' in geom}
         
@@ -402,6 +438,10 @@ class CityJsonLoader:
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI"""
+        if self.process_timer is not None:
+            self.process_timer.stop()
+            self.process_timer = None        
+     
         for action in self.actions:
             self.iface.removePluginVectorMenu(
                 self.tr(u'&CityJSON Loader'),
@@ -434,35 +474,95 @@ class CityJsonLoader:
             self.dlg.progressBar.setValue(0)
             return
         
+        # Initialize asynchronous processing
+        self.file_queue = filepaths
+        self.current_file_index = 0
+        self.any_skipped = False
+        self._cancel_requested = False
+        
+        # Update UI state for processing
         self.dlg.cancelButton.setEnabled(True)
-        total = len(filepaths)
-        any_skipped = False
-        for idx, filepath in enumerate(filepaths, 1):
-            if self._cancel_requested:
-                self.dlg.progressBar.setFormat("Cancelled")
-                break
+        self.dlg.loadButton.setEnabled(False)
+        self.dlg.progressBar.setValue(0)
+        self.dlg.progressBar.setFormat("Processing... %p%")
+        
+        # Start the timer for asynchronous processing
+        if self.process_timer is not None:
+            self.process_timer.stop()
+        
+        self.process_timer = QTimer()
+        self.process_timer.timeout.connect(self.process_next_file)
+        self.process_timer.start(50)
+
+     def process_next_file(self):
+        """Process the next file in the queue asynchronously"""
+        # Check for cancellation
+        if self._cancel_requested:
+            self.finish_processing("Cancelled")
+            return
             
+        # Check if we've processed all files
+        if self.current_file_index >= len(self.file_queue):
+            self.finish_processing("Complete")
+            return
+            
+        # Process current file
+        filepath = self.file_queue[self.current_file_index]
+        try:
             skipped_geometries = self.load_cityjson(filepath)
-            percent = int((idx / total) * 100)
-            self.dlg.progressBar.setValue(percent)
+            
+            # Update progress
+            progress = int(((self.current_file_index + 1) / len(self.file_queue)) * 100)
+            self.dlg.progressBar.setValue(progress)
+            
+            # Handle skipped geometries
             if skipped_geometries > 0:
-                any_skipped = True
+                self.any_skipped = True
+                # Show warning message without blocking the UI
                 msg = QMessageBox(self.dlg)
                 msg.setIcon(QMessageBox.Warning)
                 msg.setText("CityJSON loaded with issues.")
                 msg.setInformativeText("Some geometries were skipped.")
                 msg.setDetailedText(f"{skipped_geometries} geometries could not be loaded (p.s. GeometryInstances are not supported yet).")
-                msg.exec_()
+                msg.setModal(False)  # Non-blocking
+                msg.show()
+                
+        except Exception as e:
+            # Handle any errors gracefully
+            QMessageBox.critical(self.dlg, "Error", f"Error processing file {filepath}: {str(e)}")
         
+        # Move to next file
+        self.current_file_index += 1
+    
+    def finish_processing(self, status_text):
+        """Clean up and finish the asynchronous processing"""
+        if self.process_timer is not None:
+            self.process_timer.stop()
+            self.process_timer = None
+        
+        # Reset state
         self._cancel_requested = False
         self.dlg.cancelButton.setEnabled(False)
-        self.dlg.progressBar.setValue(self.dlg.progressBar.maximum())
-        self.dlg.progressBar.setFormat("Complete")
-        self.dlg.progressBar.setValue(0)
-
+        self.dlg.loadButton.setEnabled(True)
+        
+        # Update progress bar
+        if status_text == "Complete":
+            self.dlg.progressBar.setValue(100)
+        self.dlg.progressBar.setFormat(status_text)
+        
+        # Reset progress bar after a short delay
+        QTimer.singleShot(2000, lambda: self.dlg.progressBar.setValue(0))
+        QTimer.singleShot(2000, lambda: self.dlg.progressBar.setFormat("%p%"))
+ 
     def load_cityjson(self, filepath):
         """Loads the given CityJSON"""
-        citymodel = load_cityjson_model(filepath)
+        if filepath in self.citymodel_cache:
+            citymodel = self.citymodel_cache[filepath]
+        else:
+            citymodel = load_cityjson_model(filepath)
+            # Cache the model for potential reuse
+            self.citymodel_cache[filepath] = citymodel
+            self._manage_cache_size()
 
         lod_as = 'NONE'
         if self.dlg.loDLoadingComboBox.currentIndex() == 1:
