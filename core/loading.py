@@ -110,8 +110,14 @@ class CityJSONLoader:
 
         verts = self.citymodel["vertices"]
 
-        for v in verts:
-            self.vertices_cache.add_vertex(v)
+        if len(verts) > 100:  # Only for larger datasets
+            scale = self.vertices_cache._scale
+            translate = self.vertices_cache._translate
+            self.vertices_cache = VerticesCache(scale, translate, verts)
+        else:
+            # For smaller datasets, use the original method
+            for v in verts:
+                self.vertices_cache.add_vertex(v)
 
     def load(self, feedback=None):
         """Loads a specified CityJSON file and returns the number of skipped geometries"""
@@ -149,10 +155,8 @@ class CityJSONLoader:
 
 def load_cityjson_model(filepath):
     """Returns the citymodel for the given filepath"""
-    file = open(filepath, encoding='utf-8-sig')
-    citymodel = json.load(file)
-    file.close()
-
+    with open(filepath, encoding='utf-8-sig', buffering=8192) as fstream:
+        citymodel = json.load(fstream)
     return citymodel
 
 def get_model_epsg(citymodel):
