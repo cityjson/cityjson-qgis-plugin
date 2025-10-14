@@ -144,10 +144,27 @@ class LodNamingDecorator:
         self._lods = set(lods)
 
     def all_layers(self):
-        """Returns all layer names with LoD"""
+        """Returns all layer names with LoD sorted by LoD in descending order"""
+        layer_names = []
         for lod in self._lods:
             for layer in self._decorated.all_layers():
-                yield "{} [LoD{}]".format(layer, str(lod))
+                layer_names.append("{} [LoD{}]".format(layer, str(lod)))
+        
+        # Sort by LoD value in descending order (highest first)
+        def extract_lod_for_sorting(layer_name):
+            import re
+            lod_match = re.search(r'\[LoD([0-9]*\.?[0-9]*|None)\]', layer_name)
+            if lod_match:
+                lod_str = lod_match.group(1)
+                if lod_str == 'None':
+                    return -1  # Put None LoD at the end
+                try:
+                    return float(lod_str)
+                except ValueError:
+                    return -1
+            return 0
+        
+        return sorted(layer_names, key=extract_lod_for_sorting, reverse=True)
 
     def get_feature_layer(self, feature):
         """Returns the layer name for the given city object"""
