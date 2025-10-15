@@ -4,7 +4,6 @@ import os
 import re
 import json
 
-from PyQt5.QtWidgets import QMessageBox
 from qgis.core import QgsProject
 
 from .geometry import GeometryReader, VerticesCache
@@ -170,7 +169,7 @@ def get_model_epsg(citymodel):
         if "referenceSystem" in metadata:
             ref_string = str(metadata["referenceSystem"])
 
-            if ref_string.__contains__("::"):
+            if "::" in ref_string:
                 return ref_string.split("::")[1]
 
             p = re.compile(r"https:\/\/www.opengis.net\/def\/crs\/([A-Z]+)\/([0-9]+)\/([0-9]+)")
