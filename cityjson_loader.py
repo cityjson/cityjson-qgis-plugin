@@ -26,25 +26,17 @@ import json
 
 from PyQt5.QtCore import (QCoreApplication, QSettings, QTranslator, QVariant, Qt,
                           qVersion, QTimer)
-from PyQt5.QtGui import QColor, QIcon, QKeySequence
-from PyQt5.QtWidgets import QAction, QDialogButtonBox, QFileDialog, QMessageBox, QShortcut
+from PyQt5.QtGui import QIcon, QKeySequence
+from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox, QShortcut
 from qgis.core import QgsApplication, QgsCoordinateReferenceSystem
 from qgis.gui import QgsProjectionSelectionDialog
 
-from .core.geometry import GeometryReader, VerticesCache
-from .core.helpers.treemodel import (MetadataElement, MetadataModel,
-                                     MetadataNode)
-from .core.layers import (AttributeFieldsDecorator, BaseFieldsBuilder,
-                          BaseNamingIterator, DynamicLayerManager, ParentFeatureDecorator,
-                          LodFeatureDecorator, LodFieldsDecorator,
-                          LodNamingDecorator, SemanticSurfaceFeatureDecorator,
-                          SemanticSurfaceFieldsDecorator, SimpleFeatureBuilder,
-                          TypeNamingIterator)
+from .core.helpers.treemodel import (MetadataModel)
 from .core.loading import CityJSONLoader, load_cityjson_model, get_model_epsg
 from .core.styling import (Copy2dStyling, NullStyling, SemanticSurfacesStyling,
                            is_3d_styling_available,
                            is_rule_based_3d_styling_available)
-# Import the code for the dialog
+
 from .gui.cityjson_loader_dialog import CityJsonLoaderDialog
 from .resources import *
 from .processing.provider import Provider
@@ -100,7 +92,6 @@ class CityJsonLoader:
         self.file_queue = []
         self.current_file_index = 0
         self.process_timer = None
-        self.any_skipped = False
      
         self.delete_shortcut = QShortcut(QKeySequence(Qt.Key_Delete), self.dlg)
         self.delete_shortcut.activated.connect(self.remove_cityjson_files)
@@ -477,7 +468,6 @@ class CityJsonLoader:
         # Initialize asynchronous processing
         self.file_queue = filepaths
         self.current_file_index = 0
-        self.any_skipped = False
         self._cancel_requested = False
         
         # Update UI state for processing
@@ -517,7 +507,6 @@ class CityJsonLoader:
             
             # Handle skipped geometries
             if skipped_geometries > 0:
-                self.any_skipped = True
                 # Show warning message without blocking the UI
                 msg = QMessageBox(self.dlg)
                 msg.setIcon(QMessageBox.Warning)
