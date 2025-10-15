@@ -1,8 +1,8 @@
 """A module that provides the logic for loading CityJSON in QGIS"""
 
-import json
 import os
 import re
+import json
 
 from PyQt5.QtWidgets import QMessageBox
 from qgis.core import QgsProject
@@ -140,7 +140,7 @@ class CityJSONLoader:
         if len(self.layer_manager.get_all_layers()) > 1:
             group = root.addGroup(self.filename)
 
-            for vl in reversed(self.layer_manager.get_all_layers()):
+            for vl in self.layer_manager.get_all_layers():
                 QgsProject.instance().addMapLayer(vl, False)
                 group.addLayer(vl)
                 self.styler.apply(vl)
