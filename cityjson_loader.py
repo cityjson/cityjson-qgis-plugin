@@ -574,7 +574,7 @@ class CityJsonLoader:
                                 lod_as=lod_as,
                                 lod=lod,
                                 load_semantic_surfaces=self.dlg.semanticsLoadingCheckBox.isChecked(),
-                                style_semantic_surfaces=self.dlg.semanticsLoadingCheckBox.isChecked()
+                                style_semantic_surfaces=self.dlg.semanticSurfacesStylingCheckBox.isChecked()
                                )
 
         skipped_geometries = loader.load()
