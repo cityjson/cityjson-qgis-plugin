@@ -7,15 +7,13 @@ import json
 from qgis.core import QgsProject
 
 from .geometry import GeometryReader, VerticesCache
-from .layers import (AttributeFieldsDecorator, BaseFieldsBuilder,
-                     BaseNamingIterator, DynamicLayerManager, ParentFeatureDecorator,
-                     LodFeatureDecorator, LodFieldsDecorator,
-                     LodNamingDecorator, SemanticSurfaceFeatureDecorator,
-                     SemanticSurfaceFieldsDecorator, SimpleFeatureBuilder,
-                     TypeNamingIterator)
+from .layers import (DynamicLayerManager, BaseFieldsBuilder, TypeNamingIterator,
+                     BaseNamingIterator, AttributeFieldsDecorator, SimpleFeatureBuilder,
+                     ParentFeatureDecorato,
+                     LodNamingDecorator, LodFieldsDecorator, LodFeatureDecorator,
+                     SemanticSurfaceFieldsDecorator, SemanticSurfaceFeatureDecorator)
 from .styling import (Copy2dStyling, NullStyling, SemanticSurfacesStyling,
-                      is_3d_styling_available,
-                      is_rule_based_3d_styling_available)
+                      is_3d_styling_available, is_rule_based_3d_styling_available)
 
 
 class CityJSONLoader:
