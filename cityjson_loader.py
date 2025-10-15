@@ -25,7 +25,7 @@ import os.path
 import json
 
 from PyQt5.QtCore import (QCoreApplication, QSettings, QTranslator, QVariant, Qt,
-                          qVersion)
+                          qVersion, QTimer)
 from PyQt5.QtGui import QColor, QIcon, QKeySequence
 from PyQt5.QtWidgets import QAction, QDialogButtonBox, QFileDialog, QMessageBox, QShortcut
 from qgis.core import QgsApplication, QgsCoordinateReferenceSystem
