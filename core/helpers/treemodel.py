@@ -1,5 +1,5 @@
 from qgis.PyQt.QtCore import QAbstractItemModel, QModelIndex, Qt, QSize, QRect, QPoint
-from qgis.PyQt.QtGui import QFontMetrics, QFont
+from qgis.PyQt.QtGui import QFontMetrics
 
 METADATA_REALNAMES = {
     "citymodelIdentifier": "City Model Identifier",
