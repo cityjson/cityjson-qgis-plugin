@@ -9,7 +9,7 @@ from qgis.core import QgsProject
 from .geometry import GeometryReader, VerticesCache
 from .layers import (DynamicLayerManager, BaseFieldsBuilder, TypeNamingIterator,
                      BaseNamingIterator, AttributeFieldsDecorator, SimpleFeatureBuilder,
-                     ParentFeatureDecorato,
+                     ParentFeatureDecorator,
                      LodNamingDecorator, LodFieldsDecorator, LodFeatureDecorator,
                      SemanticSurfaceFieldsDecorator, SemanticSurfaceFeatureDecorator)
 from .styling import (Copy2dStyling, NullStyling, SemanticSurfacesStyling,
