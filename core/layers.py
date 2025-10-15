@@ -2,7 +2,7 @@
 
 import abc
 
-from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVariant
+from PyQt5.QtCore import QVariant
 from qgis.core import QgsFeature, QgsField, QgsFields, QgsVectorLayer
 
 CORE_FIELD_NAMES = ["uid", "type", "parents", "children", "lod"]
