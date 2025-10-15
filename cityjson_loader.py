@@ -494,7 +494,7 @@ class CityJsonLoader:
         self.process_timer.timeout.connect(self.process_next_file)
         self.process_timer.start(50)
 
-     def process_next_file(self):
+    def process_next_file(self):
         """Process the next file in the queue asynchronously"""
         # Check for cancellation
         if self._cancel_requested:
