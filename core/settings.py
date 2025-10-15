@@ -54,7 +54,7 @@ def save_defaults():
         settings.setValue("diffuse", get_color_int(colors["diffuse"]))
         settings.setValue("ambient", get_color_int(colors["ambient"]))
         settings.setValue("specular", get_color_int(colors["specular"]))
-        i = i + 1
+        i += 1
     settings.endArray()
     settings.endGroup()
 
