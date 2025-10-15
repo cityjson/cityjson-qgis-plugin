@@ -33,9 +33,7 @@ from qgis.gui import QgsProjectionSelectionDialog
 
 from .core.helpers.treemodel import (MetadataModel)
 from .core.loading import CityJSONLoader, load_cityjson_model, get_model_epsg
-from .core.styling import (Copy2dStyling, NullStyling, SemanticSurfacesStyling,
-                           is_3d_styling_available,
-                           is_rule_based_3d_styling_available)
+from .core.styling import is_rule_based_3d_styling_available
 
 from .gui.cityjson_loader_dialog import CityJsonLoaderDialog
 from .resources import *
