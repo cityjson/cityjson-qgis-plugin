@@ -135,17 +135,17 @@ class CityJSONLoader:
         root = QgsProject.instance().layerTreeRoot()
 
         if len(self.layer_manager.get_all_layers()) > 1:
-            group = root.addGroup(self.filename)
+            group = root.insertGroup(0, self.filename)
 
             for vl in self.layer_manager.get_all_layers():
                 QgsProject.instance().addMapLayer(vl, False)
-                group.addLayer(vl)
+                group.insertLayer(0, vl)
                 self.styler.apply(vl)
 
         elif len(self.layer_manager.get_all_layers()) == 1:
             for vl in self.layer_manager.get_all_layers():
                 QgsProject.instance().addMapLayer(vl, False)
-                root.addLayer(vl)
+                root.insertLayer(0, vl)
                 self.styler.apply(vl)
 
         return self.geometry_reader.skipped_geometries()
