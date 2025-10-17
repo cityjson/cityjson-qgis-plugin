@@ -2,7 +2,7 @@
 import json
 
 def select_co_bbox(j, bbox):
-    """Select the city objects whose geometry intersects with the bounding box"""
+    """Select city objects whose geometry intersects with the bounding box"""
     # TODO: Implement bounding box selection
     pass
 
