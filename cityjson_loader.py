@@ -124,6 +124,7 @@ class CityJsonLoader:
  
     def add_cityjson_files(self, filepaths):
         """adds given CityJSON files to the widget and processes them."""
+        self.reset_progress_format_on_ui_change()
         for filename in filepaths:
             existing_items = self.dlg.listWidget.findItems(filename, Qt.MatchExactly)
             if not existing_items:
@@ -159,6 +160,7 @@ class CityJsonLoader:
         """Removes CityJSON file(s) from the list"""
         selected_items = self.dlg.listWidget.selectedItems()
         if selected_items:
+            self.reset_progress_format_on_ui_change()
             current_row = self.dlg.listWidget.currentRow()
             for item in selected_items:
                 self.dlg.listWidget.takeItem(self.dlg.listWidget.row(item))
@@ -178,6 +180,8 @@ class CityJsonLoader:
 
     def clear_all_files(self):
         """Removes all CityJSON files from the list"""
+        if self.dlg.listWidget.count() > 0:
+            self.reset_progress_format_on_ui_change()
         self.dlg.listWidget.clear()
         self.clear_file_information()
         self.citymodel_cache.clear()   
@@ -541,7 +545,11 @@ class CityJsonLoader:
         
         # Reset progress bar after a short delay
         QTimer.singleShot(2000, lambda: self.dlg.progressBar.setValue(0))
-        QTimer.singleShot(2000, lambda: self.dlg.progressBar.setFormat("%p%"))
+
+    def reset_progress_format_on_ui_change(self):
+        """Reset progress bar format when UI elements change"""           
+        if self.dlg.progressBar.format() == "Complete":
+            self.dlg.progressBar.setFormat("%p%")
  
     def load_cityjson(self, filepath):
         """Loads the given CityJSON"""
