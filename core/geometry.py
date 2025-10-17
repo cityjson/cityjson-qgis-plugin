@@ -34,11 +34,7 @@ class VerticesCache:
         self._translate = translate
 
     def add_vertex(self, vertex):
-        """Adds a vertex to the list
-
-        Keywords:
-        vertex - The original vertex coords from CityJSON
-        """
+        """Add a vertex to the list"""
         point = self._transform_vertex(vertex)
         self._vertices.append(point)
 
@@ -50,24 +46,15 @@ class TransformedVerticesCache:
     """A class that decorates a VerticesCache applying a decoration when vertices are requested"""
 
     def __init__(self, decorated, translation, transformation_matrix=None):
-        """Initiates the transformed vertices cache with the provided
-        transformation paremeters.
-
-        Keyword arguments:
-        decorated -- the original VerticesCache
-        translation -- a QgsPoint to translation all coordinates by
-        transformation_matrix -- a 4x4 matrix to rotate and scale coords
-        """
+        """Initialize with transformation parameters"""
         self._decorated = decorated
         self._translation = translation
-
-        if transformation_matrix is None:
-            self._transformation_matrix = [1.0, 0.0, 0.0, 0.0,
-                                           0.0, 1.0, 0.0, 0.0,
-                                           0.0, 0.0, 1.0, 0.0,
-                                           0.0, 0.0, 0.0, 1.0]
-        else:
-            self._transformation_matrix = transformation_matrix
+        self._transformation_matrix = transformation_matrix or [
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0
+        ]
 
     def get_vertex(self, index):
         """Get the vertex at the specified index"""
