@@ -33,18 +33,14 @@ semantic_colors = {
 
 def get_color_int(color):
     """Returns the int representation of a QColor"""
-    if color is None:
-        return None
-    else:
-        return color.getRgb()
+    return None if color is None else color.getRgb()
 
 def get_color_from_tuple(data):
     """Returns a color created from a tuple"""
     if data is None:
         return None
-    else:
-        r, g, b, a = data
-        return QColor(r, g, b, a)
+    r, g, b, a = data
+    return QColor(r, g, b, a)
 
 def save_defaults():
     """Saves the default values"""
@@ -58,7 +54,7 @@ def save_defaults():
         settings.setValue("diffuse", get_color_int(colors["diffuse"]))
         settings.setValue("ambient", get_color_int(colors["ambient"]))
         settings.setValue("specular", get_color_int(colors["specular"]))
-        i = i + 1
+        i += 1
     settings.endArray()
     settings.endGroup()
 

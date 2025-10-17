@@ -12,10 +12,10 @@
 """
 
 from PyQt5.QtCore import QCoreApplication
-from qgis.core import (QgsFeatureSink, QgsProcessing, QgsProcessingAlgorithm,
-                       QgsProcessingException, QgsProcessingParameterBoolean,
-                       QgsProcessingParameterCrs, QgsProcessingParameterEnum,
-                       QgsProcessingParameterFile, QgsProcessingParameterExtent)
+from qgis.core import (QgsProcessingAlgorithm, QgsProcessingException,
+                       QgsProcessingParameterBoolean, QgsProcessingParameterCrs,
+                       QgsProcessingParameterEnum, QgsProcessingParameterFile,
+                       QgsProcessingParameterExtent)
 
 from ..core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
 from ..core.utils import get_subset_bbox, get_subset_cotype

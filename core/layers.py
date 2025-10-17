@@ -2,8 +2,12 @@
 
 import abc
 
-from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVariant
+from PyQt5.QtCore import QVariant
 from qgis.core import QgsFeature, QgsField, QgsFields, QgsVectorLayer
+
+CORE_FIELD_NAMES = ["uid", "type", "parents", "children", "lod"]
+SURFACE_PREFIX = "surface."
+DEFAULT_GEOM_TYPE = "MultiPolygonZ"
 
 class BaseLayerManager:
     """A base layer manager for the common functionality between current ones"""
@@ -11,8 +15,9 @@ class BaseLayerManager:
     def __init__(self, citymodel, fields_builder, srid):
         self._citymodel = citymodel
         self._fields_builder = fields_builder
-        self._geom_type = "MultiPolygonZ"
+        self._geom_type = DEFAULT_GEOM_TYPE
         self._fields = QgsFields()
+        
         if srid is None:
             if "crs" in self._citymodel["metadata"]:
                 srid = self._citymodel["metadata"]["crs"]["epsg"]
@@ -24,27 +29,22 @@ class BaseLayerManager:
         """Prepares the attributes of the vector layer."""
         all_fields = self._fields_builder.get_fields()
 
-        core_field_names = ["uid", "type", "parents", "children", "lod"]
-        surface_prefix = "surface."
         core_fields = QgsFields()
         surface_fields = QgsFields()
         attribute_fields = QgsFields()
 
         for field in all_fields:
-            if field.name() in core_field_names:
+            if field.name() in CORE_FIELD_NAMES:
                 core_fields.append(field)
-            elif field.name().startswith(surface_prefix):
+            elif field.name().startswith(SURFACE_PREFIX):
                 surface_fields.append(field)
             else:
                 attribute_fields.append(field)
 
         reordered_fields = QgsFields()
-        for field in core_fields:
-            reordered_fields.append(field)
-        for field in surface_fields:
-            reordered_fields.append(field)
-        for field in attribute_fields:
-            reordered_fields.append(field)
+        for field_collection in [core_fields, surface_fields, attribute_fields]:
+            for field in field_collection:
+                reordered_fields.append(field)
 
         self._fields = reordered_fields
 
@@ -75,7 +75,7 @@ class DynamicLayerManager(BaseLayerManager):
     def add_object(self, object_key, cityobject):
         """Adds a cityobject in the respective vector layer"""
         new_features = self._feature_builder.create_features(self._fields, object_key, cityobject)
-
+        
         for feature in new_features:
             layer_name = self._layer_iterator.get_feature_layer(feature)
             provider = self._vectorlayers[layer_name].dataProvider()
@@ -84,7 +84,7 @@ class DynamicLayerManager(BaseLayerManager):
                 provider.addFeature(feature)
 
     def get_all_layers(self):
-        """Returns all the vector layers from this manager."""
+        """Returns all the vector layers from this manager"""
         valid_layers = []
         for layer_name, layer in self._vectorlayers.items():
             provider = layer.dataProvider()
@@ -144,10 +144,15 @@ class LodNamingDecorator:
         self._lods = set(lods)
 
     def all_layers(self):
-        """Returns all layer names with LoD"""
-        for lod in self._lods:
+        """Returns all layer names with LoD sorted by LoD in descending order"""
+        sorted_lods = sorted(self._lods, key=lambda x: float(x) if x is not None else -1, reverse=True)
+        
+        layer_names = []
+        for lod in sorted_lods:
             for layer in self._decorated.all_layers():
-                yield "{} [LoD{}]".format(layer, str(lod))
+                layer_names.append("{} [LoD{}]".format(layer, str(lod)))
+        
+        return layer_names
 
     def get_feature_layer(self, feature):
         """Returns the layer name for the given city object"""
@@ -181,7 +186,31 @@ class AttributeFieldsDecorator:
     def __init__(self, decorated, citymodel):
         self._decorated = decorated
         self._citymodel = citymodel
+        self._attribute_types = self._get_attribute_types()
 
+    def _get_qgis_type(self, value):
+        if isinstance(value, bool):
+            return QVariant.Bool
+        elif isinstance(value, int):
+            return QVariant.Int
+        elif isinstance(value, float):
+            return QVariant.Double
+        else:
+            return QVariant.String
+
+    def _get_attribute_types(self):
+        attribute_types = {}
+        for obj in self._citymodel["CityObjects"].values():
+            if "attributes" in obj:
+                for att_key, att_value in obj["attributes"].items():
+                    qtype = self._get_qgis_type(att_value)
+                    if att_key not in attribute_types or (qtype == QVariant.Double and attribute_types[att_key] != QVariant.Double) or (qtype == QVariant.String and attribute_types[att_key] != QVariant.String):
+                        attribute_types[att_key] = qtype
+                    elif qtype == QVariant.Int and attribute_types[att_key] == QVariant.Bool:
+                            attribute_types[att_key] = qtype
+
+        return attribute_types
+    
     def get_attribute_keys(self, objs):
         """Returns the list of (unique) attributes found in all city objects."""
         atts = []
@@ -196,11 +225,10 @@ class AttributeFieldsDecorator:
     def get_fields(self):
         """Create and returns fields"""
         fields = self._decorated.get_fields()
-        attributes = self.get_attribute_keys(self._citymodel["CityObjects"])
+        attributes = self._attribute_types.items()
 
-        for att in attributes:
-            fields.append(QgsField("attribute.{}".format(att),
-                                   QVariant.String))
+        for att, qtype in attributes:
+            fields.append(QgsField("attribute.{}".format(att), qtype))
 
         return fields
 
@@ -218,12 +246,22 @@ class LodFieldsDecorator:
         return fields
 
 class SemanticSurfaceFieldsDecorator:
-    """A class that creates an LoD field"""
+    """A class that create fields based on the surface attributes of the city model"""
 
     def __init__(self, decorated, citymodel):
         self._decorated = decorated
         self._citymodel = citymodel
 
+    def _get_qgis_type(self, value):
+        if isinstance(value, bool):
+            return QVariant.Bool
+        elif isinstance(value, int):
+            return QVariant.Int
+        elif isinstance(value, float):
+            return QVariant.Double
+        else:
+            return QVariant.String
+    
     def get_semantic_attributes(self, objs):
         """Returns the list of (unique) attributes found in all city objects."""
         atts = []
@@ -233,7 +271,7 @@ class SemanticSurfaceFieldsDecorator:
                     if "semantics" in geom:
                         for surface in geom["semantics"]["surfaces"]:
                             for att_key in surface:
-                                if not att_key in atts:
+                                if att_key not in atts:
                                     atts.append(att_key)
 
                         for key, _ in geom["semantics"].items():
@@ -243,23 +281,37 @@ class SemanticSurfaceFieldsDecorator:
 
         return atts
 
+    def _find_sample_value(self, att_key):
+        """Find a sample value for a given attribute key in citymodel"""
+        for obj in self._citymodel["CityObjects"].values():
+            if "geometry" in obj:
+                for geom in obj["geometry"]:
+                    if "semantics" in geom:
+                        for surface in geom["semantics"]["surfaces"]:
+                            if att_key in surface:
+                                return surface[att_key]
+                        # Also check other keys besides "surfaces"
+                        for key, value in geom["semantics"].items():
+                            key_clean = key.lstrip("+")
+                            if key_clean == att_key:
+                                return value
+        return None
+    
     def get_fields(self):
         """Create and returns fields"""
         fields = self._decorated.get_fields()
         attributes = self.get_semantic_attributes(self._citymodel["CityObjects"])
 
         for att in attributes:
-            fields.append(QgsField("surface.{}".format(att),
-                                   QVariant.String))
+            sample_value = self._find_sample_value(att)
+            qtype = self._get_qgis_type(sample_value)
+            fields.append(QgsField(f"surface.{att}", qtype))
 
         return fields
 
     def get_attributes(self):
         """Create and returns fields"""
-        fields = self._decorated.get_fields()
-        attributes = self.get_semantic_attributes(self._citymodel["CityObjects"])
-
-        return attributes
+        return self.get_semantic_attributes(self._citymodel["CityObjects"])
 
 class SimpleFeatureBuilder:
     """A class that create features according to their attributes"""
@@ -359,8 +411,6 @@ class SemanticSurfaceFeatureDecorator:
             polygons, semantics = self._geometry_reader.get_polygons(feature_geom, self._attributes)
 
             if len(polygons) > 1:
-                surf_geom_dict = {}
-
                 for polygon, semantic in zip(polygons, semantics):
                     new_feature = QgsFeature(feature)
 
@@ -391,9 +441,7 @@ class ParentFeatureDecorator:
         """Get parent attributes for city objects."""
         objs = self._citymodel["CityObjects"]
 
-        return {obj: data["attributes"]
-            for obj, data in objs.items()
-            if data.get("attributes")}
+        return {obj: data["attributes"] for obj, data in objs.items() if data.get("attributes")}
 
     def create_features(self, fields, object_key, cityobject, read_geometry=True):
         """Creates a feature based on the city object's semantics"""
