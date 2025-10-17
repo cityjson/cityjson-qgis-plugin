@@ -323,19 +323,8 @@ class CityJsonLoader:
         self.dlg.loDSelectionComboBox.addItems(sorted(lods) if lods else [])
         self.dlg.loDSelectionComboBox.setEnabled(len(lods) > 0)
 
-    # noinspection PyMethodMayBeStatic
     def tr(self, message):
-        """Get the translation for a string using Qt translation API.
-
-        We implement this ourselves since we do not inherit QObject.
-
-        :param message: String for translation.
-        :type message: str, QString
-
-        :returns: Translated version of message.
-        :rtype: QString
-        """
-        # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
+        """Get translation for a string using Qt translation API"""
         return QCoreApplication.translate('CityJsonLoader', message)
 
     def add_action(self, icon_path, text, callback, enabled_flag=True, 
@@ -367,7 +356,7 @@ class CityJsonLoader:
         return action
 
     def initGui(self):
-        """Create the menu entries and toolbar icons inside the QGIS GUI."""
+        """Create the menu entries and toolbar icons inside the QGIS GUI"""
 
         icon_path = ':/plugins/cityjson_loader/cityjson_logo.svg'
         self.add_action(
@@ -409,7 +398,7 @@ class CityJsonLoader:
         self.dlg.show()
      
     def process_files(self):
-        """Process files in the list widget. Dialog always stays open after processing. Updates progress bar in percent."""
+        """Process files in the list widget. Dialog always stays open after processing. Updates progress bar in percent"""
         filepaths = [self.dlg.listWidget.item(i).text() for i in range(self.dlg.listWidget.count())]
         if not filepaths:
             QMessageBox.warning(self.dlg, "No files", "No CityJSON files selected.")
