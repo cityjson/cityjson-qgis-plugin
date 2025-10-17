@@ -24,7 +24,7 @@
 import os.path
 import json
 
-from PyQt5.QtCore import (QCoreApplication, QSettings, QTranslator, QVariant, Qt,
+from PyQt5.QtCore import (QCoreApplication, QSettings, QTranslator, Qt,
                           qVersion, QTimer)
 from PyQt5.QtGui import QIcon, QKeySequence
 from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox, QShortcut
@@ -41,16 +41,10 @@ from .processing.provider import Provider
 
 
 class CityJsonLoader:
-    """QGIS Plugin Implementation."""
+    """QGIS Plugin Implementation"""
 
     def __init__(self, iface):
-        """Constructor.
-
-        :param iface: An interface instance that will be passed to this class
-            which provides the hook by which you can manipulate the QGIS
-            application at run time.
-        :type iface: QgsInterface
-        """
+        """Initialize the CityJSON Loader plugin"""
         # Save reference to the QGIS interface
         self.iface = iface
         # initialize plugin directory
@@ -111,7 +105,7 @@ class CityJsonLoader:
         self.provider = None
     
     def initProcessing(self):
-        """Initialises the processing provider"""
+        """Initialises the processing provider."""
         self.provider = Provider()
         QgsApplication.processingRegistry().addProvider(self.provider)
 
@@ -123,7 +117,7 @@ class CityJsonLoader:
             pass
  
     def add_cityjson_files(self, filepaths):
-        """adds given CityJSON files to the widget and processes them."""
+        """Add CityJSON files to the file list"""
         self.reset_progress_format_on_ui_change()
         for filename in filepaths:
             existing_items = self.dlg.listWidget.findItems(filename, Qt.MatchExactly)
@@ -139,7 +133,7 @@ class CityJsonLoader:
         self.update_file_count_label()
  
     def select_cityjson_files(self):
-        """Shows a dialog to select CityJSON file(s)"""
+        """Open file dialog to select CityJSON files"""
         file_filter = "CityJSON files (*.city.json *.json);;CityJSON files (*.city.json);;JSON files (*.json);;All files (*.*)"
         filenames, _ = QFileDialog.getOpenFileNames(self.dlg, "Select CityJSON File(s)", "", file_filter)
 
@@ -147,7 +141,7 @@ class CityJsonLoader:
             self.add_cityjson_files(filenames)
 
     def select_cityjson_files_directory(self):
-        """Shows a dialog to select CityJSON file(s)"""
+        """Select CityJSON files from a directory"""
         directory = QFileDialog.getExistingDirectory(self.dlg, "Select Directory", "", QFileDialog.ShowDirsOnly)
 
         if directory:
@@ -291,12 +285,10 @@ class CityJsonLoader:
                 self.dlg.semanticSurfacesStylingCheckBox.setEnabled(False)
 
     def clear_file_information(self):
-        """Clear all fields related to file information"""
-        line_edits = [self.dlg.cityjsonVersionLineEdit,
-                      self.dlg.compressedLineEdit,
-                      self.dlg.crsLineEdit]
-        for line_edit in line_edits:
-            line_edit.setText("")
+        """Clear all file information fields"""
+        self.dlg.cityjsonVersionLineEdit.clear()
+        self.dlg.compressedLineEdit.clear()
+        self.dlg.crsLineEdit.clear()
         self.dlg.metadataTreeView.setModel(None)
 
     def update_file_information(self, filename):
@@ -346,55 +338,10 @@ class CityJsonLoader:
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
         return QCoreApplication.translate('CityJsonLoader', message)
 
-    def add_action(
-        self,
-        icon_path,
-        text,
-        callback,
-        enabled_flag=True,
-        add_to_menu=True,
-        add_to_toolbar=True,
-        status_tip=None,
-        whats_this=None,
-        parent=None):
-        """Add a toolbar icon to the toolbar.
-
-        :param icon_path: Path to the icon for this action. Can be a resource
-            path (e.g. ':/plugins/foo/bar.png') or a normal file system path.
-        :type icon_path: str
-
-        :param text: Text that should be shown in menu items for this action.
-        :type text: str
-
-        :param callback: Function to be called when the action is triggered.
-        :type callback: function
-
-        :param enabled_flag: A flag indicating if the action should be enabled
-            by default. Defaults to True.
-        :type enabled_flag: bool
-
-        :param add_to_menu: Flag indicating whether the action should also
-            be added to the menu. Defaults to True.
-        :type add_to_menu: bool
-
-        :param add_to_toolbar: Flag indicating whether the action should also
-            be added to the toolbar. Defaults to True.
-        :type add_to_toolbar: bool
-
-        :param status_tip: Optional text to show in a popup when mouse pointer
-            hovers over the action.
-        :type status_tip: str
-
-        :param parent: Parent widget for the new action. Defaults None.
-        :type parent: QWidget
-
-        :param whats_this: Optional text to show in the status bar when the
-            mouse pointer hovers over the action.
-
-        :returns: The action that was created. Note that the action is also
-            added to self.actions list.
-        :rtype: QAction
-        """
+    def add_action(self, icon_path, text, callback, enabled_flag=True, 
+                   add_to_menu=True, add_to_toolbar=True, status_tip=None, 
+                   whats_this=None, parent=None):
+        """Add an action to the toolbar and/or menu"""
 
         icon = QIcon(icon_path)
         action = QAction(icon, text, parent)
