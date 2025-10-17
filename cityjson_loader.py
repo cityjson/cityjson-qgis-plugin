@@ -139,7 +139,8 @@ class CityJsonLoader:
  
     def select_cityjson_files(self):
         """Shows a dialog to select CityJSON file(s)"""
-        filenames, _ = QFileDialog.getOpenFileNames(self.dlg, "Select CityJSON File(s)", "", "*.city.json")
+        file_filter = "CityJSON files (*.city.json *.json);;CityJSON files (*.city.json);;JSON files (*.json);;All files (*.*)"
+        filenames, _ = QFileDialog.getOpenFileNames(self.dlg, "Select CityJSON File(s)", "", file_filter)
 
         if filenames:
             self.add_cityjson_files(filenames)
@@ -149,7 +150,8 @@ class CityJsonLoader:
         directory = QFileDialog.getExistingDirectory(self.dlg, "Select Directory", "", QFileDialog.ShowDirsOnly)
 
         if directory:
-            filenames = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.city.json')]
+            filenames = [os.path.join(directory, f) for f in os.listdir(directory) 
+                        if f.endswith('.city.json') or f.endswith('.json')]
             if filenames:
                 self.add_cityjson_files(filenames)
 
