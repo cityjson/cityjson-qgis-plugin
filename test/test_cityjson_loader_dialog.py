@@ -14,7 +14,7 @@ __copyright__ = 'Copyright 2018, 3D Geoinformation'
 
 import unittest
 
-from PyQt5.QtWidgets import QDialogButtonBox, QDialog
+from qgis.PyQt.QtWidgets import QDialogButtonBox, QDialog
 
 from gui.cityjson_loader_dialog import CityJsonLoaderDialog
 
@@ -36,17 +36,17 @@ class CityJsonLoaderDialogTest(unittest.TestCase):
     def test_dialog_ok(self):
         """Test we can click OK."""
 
-        button = self.dialog.button_box.button(QDialogButtonBox.Ok)
+        button = self.dialog.button_box.button(QDialogButtonBox.StandardButton.Ok)
         button.click()
         result = self.dialog.result()
-        self.assertEqual(result, QDialog.Accepted)
+        self.assertEqual(result, QDialog.DialogCode.Accepted)
 
     def test_dialog_cancel(self):
         """Test we can click cancel."""
-        button = self.dialog.button_box.button(QDialogButtonBox.Cancel)
+        button = self.dialog.button_box.button(QDialogButtonBox.StandardButton.Cancel)
         button.click()
         result = self.dialog.result()
-        self.assertEqual(result, QDialog.Rejected)
+        self.assertEqual(result, QDialog.DialogCode.Rejected)
 
 if __name__ == "__main__":
     suite = unittest.makeSuite(CityJsonLoaderDialogTest)

@@ -11,7 +11,7 @@
 ***************************************************************************
 """
 
-from PyQt5.QtCore import QCoreApplication
+from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (QgsFeatureSink, QgsProcessing, QgsProcessingAlgorithm,
                        QgsProcessingException, QgsProcessingParameterBoolean,
                        QgsProcessingParameterCrs, QgsProcessingParameterEnum,
@@ -104,7 +104,7 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
         return self.tr("Imports a CityJSON file to QGIS")
 
     def flags(self):
-        return super().flags() | QgsProcessingAlgorithm.FlagNoThreading
+        return super().flags() | QgsProcessingAlgorithm.Flag.FlagNoThreading
 
     def initAlgorithm(self, config=None):
         """

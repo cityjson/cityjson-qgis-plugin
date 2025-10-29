@@ -4,7 +4,7 @@ import json
 import os
 import re
 
-from PyQt5.QtWidgets import QMessageBox
+from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.core import QgsProject
 
 from .geometry import GeometryReader, VerticesCache

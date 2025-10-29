@@ -182,15 +182,15 @@ class MetadataModel(TreeModel):
         if not index.isValid():
             return None
         node = index.internalPointer()
-        if role == Qt.DisplayRole and index.column() == 0:
+        if role == Qt.ItemDataRole.DisplayRole and index.column() == 0:
             return get_real_key(node.ref.key)
-        elif role == Qt.DisplayRole and index.column() == 1:
+        elif role == Qt.ItemDataRole.DisplayRole and index.column() == 1:
             return node.ref.value
-        elif role == Qt.SizeHintRole and index.column() == 1:
+        elif role == Qt.ItemDataRole.SizeHintRole and index.column() == 1:
             baseSize = QSize(self.treeview.columnWidth(index.column()), 16)
 
             metrics = QFontMetrics(self.treeview.font())
-            outRect = metrics.boundingRect(QRect(QPoint(0, 0), baseSize), Qt.AlignLeft + Qt.TextWordWrap, str(self.data(index, Qt.DisplayRole)))
+            outRect = metrics.boundingRect(QRect(QPoint(0, 0), baseSize), Qt.AlignmentFlag.AlignLeft + Qt.TextFlag.TextWordWrap, str(self.data(index, Qt.ItemDataRole.DisplayRole)))
             baseSize.setHeight(outRect.height())
 
             return baseSize
@@ -198,7 +198,7 @@ class MetadataModel(TreeModel):
         return None
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             if section == 0:
                 return 'Property'
             elif section == 1:

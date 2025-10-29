@@ -14,7 +14,7 @@ __copyright__ = 'Copyright 2018, 3D Geoinformation'
 
 import unittest
 
-from PyQt5.QtGui import QIcon
+from qgis.PyQt.QtGui import QIcon
 
 
 

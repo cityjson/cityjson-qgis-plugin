@@ -2,7 +2,7 @@
 
 import abc
 
-from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVariant
+from qgis.PyQt.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, QVariant
 from qgis.core import QgsFeature, QgsField, QgsFields, QgsVectorLayer
 
 class BaseLayerManager:

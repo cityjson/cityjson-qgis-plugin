@@ -24,10 +24,10 @@
 import os.path
 import json
 
-from PyQt5.QtCore import (QCoreApplication, QSettings, QTranslator, QVariant, Qt,
+from qgis.PyQt.QtCore import (QCoreApplication, QSettings, QTranslator, QVariant, Qt,
                           qVersion)
-from PyQt5.QtGui import QColor, QIcon, QKeySequence
-from PyQt5.QtWidgets import QAction, QDialogButtonBox, QFileDialog, QMessageBox, QShortcut
+from qgis.PyQt.QtGui import QColor, QIcon, QKeySequence
+from qgis.PyQt.QtWidgets import QAction, QDialogButtonBox, QFileDialog, QMessageBox, QShortcut
 from qgis.core import QgsApplication, QgsCoordinateReferenceSystem
 from qgis.gui import QgsProjectionSelectionDialog
 
@@ -89,7 +89,7 @@ class CityJsonLoader:
         self.toolbar = self.iface.addToolBar(u'CityJsonLoader')
         self.toolbar.setObjectName(u'CityJsonLoader')
 
-        self.delete_shortcut = QShortcut(QKeySequence(Qt.Key_Delete), self.dlg)
+        self.delete_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Delete), self.dlg)
         self.delete_shortcut.activated.connect(self.remove_cityjson_files)
 
         self.dlg.browseFilesButton.clicked.connect(self.select_cityjson_files)
@@ -113,7 +113,7 @@ class CityJsonLoader:
 
         if filenames:
             for filename in filenames:
-                existing_items = self.dlg.listWidget.findItems(filename, QtCore.Qt.MatchExactly)
+                existing_items = self.dlg.listWidget.findItems(filename, Qt.MatchFlag.MatchExactly)
 
                 if not existing_items:
                     self.dlg.listWidget.addItem(filename)
@@ -122,7 +122,7 @@ class CityJsonLoader:
 
     def select_cityjson_files_directory(self):
         """Shows a dialog to select CityJSON file(s)"""
-        directory = QFileDialog.getExistingDirectory(self.dlg, "Select Directory", "", QFileDialog.ShowDirsOnly)
+        directory = QFileDialog.getExistingDirectory(self.dlg, "Select Directory", "", QFileDialog.Option.ShowDirsOnly)
 
         if not directory:
             self.dlg.listWidget.clear()
@@ -186,7 +186,7 @@ class CityJsonLoader:
             line_edit.setText("")
         self.dlg.metadataTreeView.setModel(None)
         self.dlg.changeCrsPushButton.setEnabled(False)
-        self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+        self.dlg.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
 
     def update_file_information(self, filename):
         """Update metadata fields according to the file provided"""
@@ -215,7 +215,7 @@ class CityJsonLoader:
                 metadata = {"Medata missing": "There is no metadata in this file"}
 
             self.dlg.changeCrsPushButton.setEnabled(True)
-            self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(True)
+            self.dlg.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
             self.dlg.removeFilesButton.setEnabled(True)
 
             model = MetadataModel(metadata, self.dlg.metadataTreeView)
@@ -237,7 +237,7 @@ class CityJsonLoader:
 
         except Exception as exp:
             self.dlg.changeCrsPushButton.setEnabled(False)
-            self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+            self.dlg.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
             raise exp
 
     # noinspection PyMethodMayBeStatic
@@ -357,10 +357,10 @@ class CityJsonLoader:
         self.dlg.reset_fields()
         self.dlg.show()
         self.dlg.changeCrsPushButton.setEnabled(False)
-        self.dlg.button_box.button(QDialogButtonBox.Ok).setEnabled(False)
+        self.dlg.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
         self.dlg.semanticSurfacesStylingCheckBox.setEnabled(False)
 
-        result = self.dlg.exec_()
+        result = self.dlg.exec()
 
         if result:
             filepaths = [self.dlg.listWidget.item(i).text() for i in range(self.dlg.listWidget.count())]
@@ -369,16 +369,16 @@ class CityJsonLoader:
                 msg = QMessageBox()
 
                 if skipped_geometries > 0:
-                    msg.setIcon(QMessageBox.Warning)
+                    msg.setIcon(QMessageBox.Icon.Warning)
                     msg.setText("CityJSON loaded with issues.")
                     msg.setInformativeText("Some geometries were skipped.")
                     msg.setDetailedText("{} geometries could not be loaded (p.s. GeometryInstances are not supported yet).".format(skipped_geometries))
 
-            msg.setIcon(QMessageBox.Information)
+            msg.setIcon(QMessageBox.Icon.Information)
             msg.setText("CityJSON loaded successfully.")
             msg.setWindowTitle("CityJSON loading finished")
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.exec_()
+            msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+            msg.exec()
 
     def load_cityjson(self, filepath):
         """Loads the given CityJSON"""

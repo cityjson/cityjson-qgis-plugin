@@ -2,7 +2,7 @@
 QGIS processing algorithms"""
 
 from qgis.core import QgsProcessingProvider
-from PyQt5.QtGui import QIcon
+from qgis.PyQt.QtGui import QIcon
 
 from .cityjson_load_algorithm import CityJsonLoadAlgorithm
 
