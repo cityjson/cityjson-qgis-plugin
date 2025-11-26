@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>746</width>
-    <height>728</height>
+    <height>702</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -49,7 +49,7 @@
         <x>0</x>
         <y>0</y>
         <width>746</width>
-        <height>642</height>
+        <height>616</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,1,0,0,0,0,0">
@@ -402,7 +402,7 @@
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="lodLoadingHorizontalLayout" stretch="0,1,0,0">
+        <layout class="QHBoxLayout" name="lodLoadingHorizontalLayout" stretch="0,0,0,0">
          <property name="sizeConstraint">
           <enum>QLayout::SetDefaultConstraint</enum>
          </property>
@@ -414,6 +414,12 @@
          </property>
          <item>
           <widget class="QLabel" name="loDLoadingLabel">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="font">
             <font>
              <weight>75</weight>
@@ -429,6 +435,12 @@
           <widget class="QComboBox" name="loDLoadingComboBox">
            <property name="enabled">
             <bool>false</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
            <item>
             <property name="text">
@@ -449,6 +461,12 @@
          </item>
          <item>
           <widget class="QLabel" name="loDFilterLabel">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="font">
             <font>
              <weight>75</weight>
@@ -464,6 +482,24 @@
           <widget class="QComboBox" name="loDSelectionComboBox">
            <property name="enabled">
             <bool>false</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>200</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>16777215</height>
+            </size>
            </property>
            <item>
             <property name="text">
