@@ -93,6 +93,9 @@ class GeometryReader:
         if target_lod == "All":
             return True
 
+        if isinstance(target_lod, list):
+            return any(self.get_lod(geom) in target_lod for geom in geometries)
+
         return any(self.get_lod(geom) == target_lod for geom in geometries)
 
     def get_lod(self, geometry):
