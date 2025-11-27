@@ -40,6 +40,7 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
     KEEP_PARENT_ATTRIBUTES = 'KEEP_PARENT_ATTRIBUTES'
     DIVIDE_BY_OBJECT_TYPE = 'DIVIDE_BY_OBJECT_TYPE'
     LOD_AS = 'LOD_AS'
+    LOD_SELECTION = 'LOD_SELECTION'
     LOAD_SEMANTIC_SURFACES = 'LOAD_SEMANTIC_SURFACES'
     STYLE_BY_SEMANTIC_SURFACES = 'STYLE_BY_SEMANTIC_SURFACES'
     SRID = 'SRID'
@@ -47,6 +48,7 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
     OBJECT_TYPE = 'OBJECT_TYPE'
 
     LODLOADINGTYPES = ['NONE', 'ATTRIBUTES', 'LAYERS']
+    LODSELECTIONTYPES = ['0', '1.1', '1.2', '1.3', '2.0', '2.1', '2.2', '2.3', '3.0', '3.1', '3.2', '3.3']
     OBJECTTYPES = ['Building', 'Bridge', 'Road', 'TransportSquare', 'LandUse', 'Railway', 'TINRelief', 'WaterBody', 'PlantCover', 'SolitaryVegetationObject', 'CityFurniture', 'GenericCityObject', 'Tunnel']
 
     def tr(self, string):
@@ -146,6 +148,16 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
+            QgsProcessingParameterEnum(
+                self.LOD_SELECTION,
+                self.tr('Select specific LoD(s) (leave empty for all)'),
+                self.LODSELECTIONTYPES,
+                allowMultiple=True,
+                optional=True
+            )
+        )
+
+        self.addParameter(
             QgsProcessingParameterBoolean(
                 self.LOAD_SEMANTIC_SURFACES,
                 self.tr('Load semantic surfaces'),
@@ -222,6 +234,22 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
 
         lod_as = self.LODLOADINGTYPES[lod_as]
 
+        lod_selection = self.parameterAsEnums(
+            parameters,
+            self.LOD_SELECTION,
+            context
+        )
+
+        if len(lod_selection) == 0:
+            lod = 'All'
+            feedback.pushInfo("Loading all LoDs")
+        elif len(lod_selection) == 1:
+            lod = self.LODSELECTIONTYPES[lod_selection[0]]
+            feedback.pushInfo("Loading LoD: {}".format(lod))
+        else:
+            lod = [self.LODSELECTIONTYPES[idx] for idx in lod_selection]
+            feedback.pushInfo("Loading multiple LoDs: {}".format(', '.join(lod)))
+      
         load_semantic_surfaces = self.parameterAsBoolean(
             parameters,
             self.LOAD_SEMANTIC_SURFACES,
@@ -296,6 +324,7 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
                                 keep_parent_attributes=keep_parent_attributes,
                                 divide_by_object=divide_by_type,
                                 lod_as=lod_as,
+                                lod=lod,
                                 load_semantic_surfaces=load_semantic_surfaces,
                                 style_semantic_surfaces=style_semantic_surfaces)
         loader.load(feedback=feedback)
