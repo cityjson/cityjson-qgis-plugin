@@ -234,7 +234,7 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
 
         lod_as = self.LODLOADINGTYPES[lod_as]
 
-                lod_selection = self.parameterAsEnums(
+        lod_selection = self.parameterAsEnums(
             parameters,
             self.LOD_SELECTION,
             context
