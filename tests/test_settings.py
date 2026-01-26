@@ -1,6 +1,5 @@
-import pytest
-
 from core.settings import save_defaults, load_settings
+
 
 class TestSettings:
     """A class to test handling of settings for the plugin"""

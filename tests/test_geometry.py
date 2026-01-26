@@ -1,13 +1,12 @@
-import pytest
-
 from core.geometry import GeometryReader, VerticesCache, read_boundaries
 from tests.sample_geometries import *
+
 
 class TestReadBoundaries:
     """A class to test the read_boundaries function"""
 
     def test_multisurface_reading(self):
-        """Does read_boundaries retuns the correct polygons for
+        """Does read_boundaries return the correct polygons for
         a multisurface?
         """
         boundaries = example_multisurface_with_semantics[0]["boundaries"]
@@ -21,19 +20,21 @@ class TestReadBoundaries:
         assert polygons[0] == [[0, 3, 2, 1]]
 
         assert len(semantic_surfaces) == 5
-        assert [surface["type"] if surface is not None else None for surface in semantic_surfaces] \
-                == ["WallSurface", "WallSurface", None, "RoofSurface", "Door"]
+        assert [
+            surface["type"] if surface is not None else None
+            for surface in semantic_surfaces
+        ] == ["WallSurface", "WallSurface", None, "RoofSurface", "Door"]
+
 
 class TestGeometryReader:
     """A class that tests the geometry reader."""
 
     def create_vertices(self, number_of_vertices):
         """Creates an array with the specified number of vertices"""
-        vertices = [[float(i), float(i), float(i)]
-                    for i in range(number_of_vertices)]
+        vertices = [[float(i), float(i), float(i)] for i in range(number_of_vertices)]
 
         return vertices
-    
+
     def test_create_vertices(self):
         """Tests the create_vertices function"""
         vertices = self.create_vertices(50)
@@ -47,7 +48,9 @@ class TestGeometryReader:
         vertices_cache = VerticesCache(vertices=self.create_vertices(50))
         geometry_reader = GeometryReader(vertices_cache)
 
-        polygons, semantics = geometry_reader.get_polygons(example_multisurface_with_semantics)
+        polygons, semantics = geometry_reader.get_polygons(
+            example_multisurface_with_semantics
+        )
 
         assert len(polygons) == 5
         assert len(semantics) == 5
@@ -74,7 +77,7 @@ class TestGeometryReader:
         polygons, _ = geometry_reader.get_polygons(example_composite_solid)
 
         assert len(polygons) == 12
-    
+
     def test_get_lod_with_geometry_template(self):
         """Tests if the get_lod function works for geometry instances"""
         empty_vertices = VerticesCache()
@@ -85,7 +88,7 @@ class TestGeometryReader:
         lod = geometry_reader.get_lod(geom)
 
         assert lod == 2
-    
+
     def test_get_polygons_with_geometry_instance(self):
         """Tests if the geometry of a geometry instance is read properly"""
         empty_vertices = VerticesCache(vertices=self.create_vertices(900))
@@ -98,13 +101,13 @@ class TestGeometryReader:
         assert len(polygons) == 3
         for semantic in semantics:
             assert semantic is None
-    
+
     def test_indices_to_points(self):
         """Tests the indexes_to_points function"""
         vertices = VerticesCache(vertices=[[0, 0, 0], [1, 1, 1], [2, 2, 2], [3, 3, 3]])
         geometry_reader = GeometryReader(vertices)
-        
+
         polygons = [[[0, 1, 2, 3]]]
         new_polygons = geometry_reader.indexes_to_points(polygons, vertices)
-        
+
         assert len(new_polygons) == 1
