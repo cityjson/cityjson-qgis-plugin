@@ -1,4 +1,3 @@
-import pytest
 from core.helpers import treemodel
 
 

@@ -1,5 +1,5 @@
-import pytest
 from core import subset
+
 
 def test_select_co_ids_basic():
     cm = {
@@ -17,14 +17,14 @@ def test_select_co_ids_basic():
 
 def test_process_geometry_updates_vertices():
     cm = {
-        "vertices": [[0,0,0],[1,0,0],[0,1,0]],
+        "vertices": [[0, 0, 0], [1, 0, 0], [0, 1, 0]],
         "CityObjects": {
-            "id1": {"geometry": [{"boundaries": [[0,1,2]], "type": "Solid"}]}
-        }
+            "id1": {"geometry": [{"boundaries": [[0, 1, 2]], "type": "Solid"}]}
+        },
     }
     cm2 = {
         "CityObjects": {
-            "id1": {"geometry": [{"boundaries": [[0,1,2]], "type": "Solid"}]}
+            "id1": {"geometry": [{"boundaries": [[0, 1, 2]], "type": "Solid"}]}
         }
     }
     subset.process_geometry(cm, cm2)
@@ -33,14 +33,22 @@ def test_process_geometry_updates_vertices():
 
 
 def test_process_templates_handles_empty():
-    cm = {"geometry-templates": {"vertices-templates": [], "templates": []}, "CityObjects": {}}
+    cm = {
+        "geometry-templates": {"vertices-templates": [], "templates": []},
+        "CityObjects": {},
+    }
     cm2 = {"CityObjects": {}}
     subset.process_templates(cm, cm2)
-    assert "geometry-templates" not in cm2 or "vertices-templates" in cm2.get("geometry-templates", {})
+    assert "geometry-templates" not in cm2 or "vertices-templates" in cm2.get(
+        "geometry-templates", {}
+    )
 
 
 def test_process_appearance_handles_empty():
-    cm = {"appearance": {"materials": [], "textures": [], "vertices-texture": []}, "CityObjects": {}}
+    cm = {
+        "appearance": {"materials": [], "textures": [], "vertices-texture": []},
+        "CityObjects": {},
+    }
     cm2 = {"CityObjects": {}}
     subset.process_appearance(cm, cm2)
     assert "appearance" not in cm2 or "materials" in cm2.get("appearance", {})
