@@ -24,8 +24,7 @@
 """
 
 
-# noinspection PyPep8Naming
-def classFactory(iface):  # pylint: disable=invalid-name
+def classFactory(iface):
     """Load CityJsonLoader class from file CityJsonLoader.
 
     :param iface: A QGIS interface instance.
