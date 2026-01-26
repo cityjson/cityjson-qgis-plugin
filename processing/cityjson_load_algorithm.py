@@ -12,13 +12,19 @@
 """
 
 from PyQt5.QtCore import QCoreApplication
-from qgis.core import (QgsProcessingAlgorithm, QgsProcessingException,
-                       QgsProcessingParameterBoolean, QgsProcessingParameterCrs,
-                       QgsProcessingParameterEnum, QgsProcessingParameterFile,
-                       QgsProcessingParameterExtent)
+from qgis.core import (
+    QgsProcessingAlgorithm,
+    QgsProcessingException,
+    QgsProcessingParameterBoolean,
+    QgsProcessingParameterCrs,
+    QgsProcessingParameterEnum,
+    QgsProcessingParameterFile,
+    QgsProcessingParameterExtent,
+)
 
 from ..core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
 from ..core.utils import get_subset_bbox, get_subset_cotype
+
 
 class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
     """
@@ -36,26 +42,53 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
     # used when calling the algorithm from another algorithm, or when
     # calling from the QGIS console.
 
-    INPUT = 'INPUT'
-    KEEP_PARENT_ATTRIBUTES = 'KEEP_PARENT_ATTRIBUTES'
-    DIVIDE_BY_OBJECT_TYPE = 'DIVIDE_BY_OBJECT_TYPE'
-    LOD_AS = 'LOD_AS'
-    LOD_SELECTION = 'LOD_SELECTION'
-    LOAD_SEMANTIC_SURFACES = 'LOAD_SEMANTIC_SURFACES'
-    STYLE_BY_SEMANTIC_SURFACES = 'STYLE_BY_SEMANTIC_SURFACES'
-    SRID = 'SRID'
-    BBOX = 'BBOX'
-    OBJECT_TYPE = 'OBJECT_TYPE'
+    INPUT = "INPUT"
+    KEEP_PARENT_ATTRIBUTES = "KEEP_PARENT_ATTRIBUTES"
+    DIVIDE_BY_OBJECT_TYPE = "DIVIDE_BY_OBJECT_TYPE"
+    LOD_AS = "LOD_AS"
+    LOD_SELECTION = "LOD_SELECTION"
+    LOAD_SEMANTIC_SURFACES = "LOAD_SEMANTIC_SURFACES"
+    STYLE_BY_SEMANTIC_SURFACES = "STYLE_BY_SEMANTIC_SURFACES"
+    SRID = "SRID"
+    BBOX = "BBOX"
+    OBJECT_TYPE = "OBJECT_TYPE"
 
-    LODLOADINGTYPES = ['NONE', 'ATTRIBUTES', 'LAYERS']
-    LODSELECTIONTYPES = ['0', '1.1', '1.2', '1.3', '2.0', '2.1', '2.2', '2.3', '3.0', '3.1', '3.2', '3.3']
-    OBJECTTYPES = ['Building', 'Bridge', 'Road', 'TransportSquare', 'LandUse', 'Railway', 'TINRelief', 'WaterBody', 'PlantCover', 'SolitaryVegetationObject', 'CityFurniture', 'GenericCityObject', 'Tunnel']
+    LODLOADINGTYPES = ["NONE", "ATTRIBUTES", "LAYERS"]
+    LODSELECTIONTYPES = [
+        "0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "2.0",
+        "2.1",
+        "2.2",
+        "2.3",
+        "3.0",
+        "3.1",
+        "3.2",
+        "3.3",
+    ]
+    OBJECTTYPES = [
+        "Building",
+        "Bridge",
+        "Road",
+        "TransportSquare",
+        "LandUse",
+        "Railway",
+        "TINRelief",
+        "WaterBody",
+        "PlantCover",
+        "SolitaryVegetationObject",
+        "CityFurniture",
+        "GenericCityObject",
+        "Tunnel",
+    ]
 
     def tr(self, string):
         """
         Returns a translatable string with the self.tr() function.
         """
-        return QCoreApplication.translate('Processing', string)
+        return QCoreApplication.translate("Processing", string)
 
     def createInstance(self):
         """
@@ -71,21 +104,21 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return 'loadcityjson'
+        return "loadcityjson"
 
     def displayName(self):
         """
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return self.tr('Load CityJSON')
+        return self.tr("Load CityJSON")
 
     def group(self):
         """
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return self.tr('Import')
+        return self.tr("Import")
 
     def groupId(self):
         """
@@ -95,7 +128,7 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return 'import'
+        return "import"
 
     def shortHelpString(self):
         """
@@ -116,86 +149,76 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterFile(
-                self.INPUT,
-                self.tr('CityJSON file'),
-                extension='json'
+                self.INPUT, self.tr("CityJSON file"), extension="json"
             )
         )
 
         self.addParameter(
             QgsProcessingParameterBoolean(
-                self.KEEP_PARENT_ATTRIBUTES,
-                self.tr('Retain parent attributes'),
-                False
+                self.KEEP_PARENT_ATTRIBUTES, self.tr("Retain parent attributes"), False
             )
         )
-      
+
         self.addParameter(
             QgsProcessingParameterBoolean(
                 self.DIVIDE_BY_OBJECT_TYPE,
-                self.tr('Split city objects to layers by type'),
-                False
+                self.tr("Split city objects to layers by type"),
+                False,
             )
         )
 
         self.addParameter(
             QgsProcessingParameterEnum(
                 self.LOD_AS,
-                self.tr('Load LoD as'),
+                self.tr("Load LoD as"),
                 self.LODLOADINGTYPES,
-                defaultValue='NONE'
+                defaultValue="NONE",
             )
         )
 
         self.addParameter(
             QgsProcessingParameterEnum(
                 self.LOD_SELECTION,
-                self.tr('Select specific LoD(s) (leave empty for all)'),
+                self.tr("Select specific LoD(s) (leave empty for all)"),
                 self.LODSELECTIONTYPES,
                 allowMultiple=True,
-                optional=True
+                optional=True,
             )
         )
 
         self.addParameter(
             QgsProcessingParameterBoolean(
                 self.LOAD_SEMANTIC_SURFACES,
-                self.tr('Load semantic surfaces'),
-                defaultValue=False
+                self.tr("Load semantic surfaces"),
+                defaultValue=False,
             )
         )
 
         self.addParameter(
             QgsProcessingParameterBoolean(
                 self.STYLE_BY_SEMANTIC_SURFACES,
-                self.tr('Style by semantic surfaces'),
-                defaultValue=False
+                self.tr("Style by semantic surfaces"),
+                defaultValue=False,
             )
         )
 
         self.addParameter(
-            QgsProcessingParameterCrs(
-                self.SRID,
-                self.tr('CRS'),
-                optional=True
-            )
+            QgsProcessingParameterCrs(self.SRID, self.tr("CRS"), optional=True)
         )
 
         self.addParameter(
             QgsProcessingParameterExtent(
-                self.BBOX,
-                self.tr('Filter by area'),
-                optional=True
+                self.BBOX, self.tr("Filter by area"), optional=True
             )
         )
 
         self.addParameter(
             QgsProcessingParameterEnum(
                 self.OBJECT_TYPE,
-                self.tr('Filter by type'),
+                self.tr("Filter by type"),
                 self.OBJECTTYPES,
                 allowMultiple=True,
-                optional=True
+                optional=True,
             )
         )
 
@@ -204,69 +227,46 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
         Here is where the processing itself takes place.
         """
 
-        filepath = self.parameterAsFile(
-            parameters,
-            self.INPUT,
-            context
-        )
+        filepath = self.parameterAsFile(parameters, self.INPUT, context)
 
         if filepath is None:
             raise QgsProcessingException(
-                self.invalidSourceError(parameters, self.INPUT))
+                self.invalidSourceError(parameters, self.INPUT)
+            )
 
         keep_parent_attributes = self.parameterAsBoolean(
-            parameters,
-            self.KEEP_PARENT_ATTRIBUTES,
-            context
+            parameters, self.KEEP_PARENT_ATTRIBUTES, context
         )
 
         divide_by_type = self.parameterAsBoolean(
-            parameters,
-            self.DIVIDE_BY_OBJECT_TYPE,
-            context
+            parameters, self.DIVIDE_BY_OBJECT_TYPE, context
         )
 
-        lod_as = self.parameterAsEnum(
-            parameters,
-            self.LOD_AS,
-            context
-        )
+        lod_as = self.parameterAsEnum(parameters, self.LOD_AS, context)
 
         lod_as = self.LODLOADINGTYPES[lod_as]
 
-        lod_selection = self.parameterAsEnums(
-            parameters,
-            self.LOD_SELECTION,
-            context
-        )
+        lod_selection = self.parameterAsEnums(parameters, self.LOD_SELECTION, context)
 
         if len(lod_selection) == 0:
-            lod = 'All'
+            lod = "All"
             feedback.pushInfo("Loading all LoDs")
         elif len(lod_selection) == 1:
             lod = self.LODSELECTIONTYPES[lod_selection[0]]
             feedback.pushInfo("Loading LoD: {}".format(lod))
         else:
             lod = [self.LODSELECTIONTYPES[idx] for idx in lod_selection]
-            feedback.pushInfo("Loading multiple LoDs: {}".format(', '.join(lod)))
-      
+            feedback.pushInfo("Loading multiple LoDs: {}".format(", ".join(lod)))
+
         load_semantic_surfaces = self.parameterAsBoolean(
-            parameters,
-            self.LOAD_SEMANTIC_SURFACES,
-            context
+            parameters, self.LOAD_SEMANTIC_SURFACES, context
         )
 
         style_semantic_surfaces = self.parameterAsBoolean(
-            parameters,
-            self.STYLE_BY_SEMANTIC_SURFACES,
-            context
+            parameters, self.STYLE_BY_SEMANTIC_SURFACES, context
         )
 
-        crs = self.parameterAsCrs(
-            parameters,
-            self.SRID,
-            context
-        )
+        crs = self.parameterAsCrs(parameters, self.SRID, context)
 
         feedback.setProgressText("Loading city model...")
         cm = load_cityjson_model(filepath)
@@ -276,37 +276,26 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
         if crs.isValid():
             epsg = crs.postgisSrid()
         else:
-            feedback.pushInfo("No CRS selected! Looking for CRS definition in metadata...")
+            feedback.pushInfo(
+                "No CRS selected! Looking for CRS definition in metadata..."
+            )
             epsg = get_model_epsg(cm)
             if epsg:
                 feedback.pushInfo("CRS found: {}.".format(epsg))
             else:
                 feedback.pushInfo("No CRS found.")
-        
+
         if epsg is None:
-            extent = self.parameterAsExtent(
-                parameters,
-                self.BBOX,
-                context
-            )
+            extent = self.parameterAsExtent(parameters, self.BBOX, context)
         else:
-            extent = self.parameterAsExtent(
-                parameters,
-                self.BBOX,
-                context,
-                crs = crs
-            )
+            extent = self.parameterAsExtent(parameters, self.BBOX, context, crs=crs)
 
         if not extent.isNull():
             feedback.setProgressText("Filtering objects by extent...")
             cm = self.subset_bbox(cm, extent)
             feedback.pushInfo("Found {} objects.".format(len(cm["CityObjects"])))
-        
-        object_types = self.parameterAsEnums(
-            parameters,
-            self.OBJECT_TYPE,
-            context
-        )
+
+        object_types = self.parameterAsEnums(parameters, self.OBJECT_TYPE, context)
 
         if len(object_types) > 0:
             feedback.setProgressText("Filtering objects by type...")
@@ -315,21 +304,23 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
 
         if len(cm["CityObjects"]) == 0:
             feedback.pushInfo("No objects to load. Skipping!")
-            return {'STATUS': 'SUCCESS'}
+            return {"STATUS": "SUCCESS"}
 
         feedback.setProgressText("Transforming city objects...")
-        loader = CityJSONLoader(filepath,
-                                cm,
-                                epsg=epsg,
-                                keep_parent_attributes=keep_parent_attributes,
-                                divide_by_object=divide_by_type,
-                                lod_as=lod_as,
-                                lod=lod,
-                                load_semantic_surfaces=load_semantic_surfaces,
-                                style_semantic_surfaces=style_semantic_surfaces)
+        loader = CityJSONLoader(
+            filepath,
+            cm,
+            epsg=epsg,
+            keep_parent_attributes=keep_parent_attributes,
+            divide_by_object=divide_by_type,
+            lod_as=lod_as,
+            lod=lod,
+            load_semantic_surfaces=load_semantic_surfaces,
+            style_semantic_surfaces=style_semantic_surfaces,
+        )
         loader.load(feedback=feedback)
 
-        return {'STATUS': 'SUCCESS'}
+        return {"STATUS": "SUCCESS"}
 
     def subset_bbox(self, cm, rectangle):
         """
@@ -341,7 +332,7 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
             rectangle.xMinimum(),
             rectangle.yMinimum(),
             rectangle.xMaximum(),
-            rectangle.yMaximum()
+            rectangle.yMaximum(),
         ]
 
         sub_cm = get_subset_bbox(cm, bbox)
