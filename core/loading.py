@@ -5,6 +5,7 @@ import re
 import json
 
 from qgis.core import QgsProject
+from typing import Optional
 
 from .geometry import GeometryReader, VerticesCache
 from .layers import (DynamicLayerManager, BaseFieldsBuilder, TypeNamingIterator,
@@ -20,7 +21,7 @@ class CityJSONLoader:
     """Class that loads a CityJSON to a QGIS project"""
 
     def __init__(self, filepath, citymodel,
-                 epsg="None",
+                 epsg=None,
                  keep_parent_attributes=False,
                  divide_by_object=False,
                  lod_as='NONE',
@@ -78,7 +79,7 @@ class CityJSONLoader:
                                                       citymodel,
                                                       self.geometry_reader)
 
-        if epsg != "None":
+        if epsg:
             self.srid = epsg
 
         self.layer_manager = DynamicLayerManager(self.citymodel,
@@ -116,7 +117,7 @@ class CityJSONLoader:
             for v in verts:
                 self.vertices_cache.add_vertex(v)
 
-    def load(self, feedback=None):
+    def load(self, feedback=None) -> int:
         """Loads a specified CityJSON file and returns the number of skipped geometries"""
         city_objects = self.citymodel["CityObjects"]
 
@@ -156,28 +157,46 @@ def load_cityjson_model(filepath):
         citymodel = json.load(fstream)
     return citymodel
 
-def get_model_epsg(citymodel):
-    """Returns the EPSG of the city model, if exists it exists in the metadata"""
-    if "metadata" in citymodel:
-        metadata = citymodel["metadata"]
+def get_model_epsg(citymodel) -> Optional[str]:
+    """Returns the EPSG of the city model as a string, or None if not found"""
 
-        if "crs" in metadata:
-            return str(metadata["crs"]["epsg"])
+    if "metadata" not in citymodel:
+        return None
 
-        if "referenceSystem" in metadata:
+    metadata = citymodel["metadata"]
+
+    if "referenceSystem" not in metadata and "crs" not in metadata:
+        return None
+    
+    if "crs" in metadata:
+        try:
+            crs_string = str(metadata["crs"]["epsg"])
+            if crs_string is not None and  crs_string != "None":
+                return crs_string 
+            else:
+                pass
+        except (KeyError, TypeError):
+            pass
+
+    if "referenceSystem" in metadata:
+        try:
             ref_string = str(metadata["referenceSystem"])
 
             if "::" in ref_string:
                 return ref_string.split("::")[1]
 
-            p = re.compile(r"https:\/\/www.opengis.net\/def\/crs\/([A-Z]+)\/([0-9]+)\/([0-9]+)")
+            # Match CRS URL starting with 'https://www.opengis.net/def/crs/' and extract the last number
+            p = re.compile(r"^https://www\.opengis\.net/def/crs/.*/([0-9]+)$")
             m = p.match(ref_string)
 
-            if m:
-                return m.group(3)
-            else:
-                return "None"
-        else:
-            return "None"
+            print("Regex match result: ")
+            print(ref_string)
 
-    return "None"
+            if m is not None:
+                print("Matching CRS:", m)
+                return m.group(1)
+        except (KeyError, TypeError):
+            return None
+
+
+

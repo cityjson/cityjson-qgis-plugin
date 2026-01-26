@@ -18,11 +18,10 @@ class BaseLayerManager:
         self._geom_type = DEFAULT_GEOM_TYPE
         self._fields = QgsFields()
         
-        if srid is None:
-            if "crs" in self._citymodel["metadata"]:
-                srid = self._citymodel["metadata"]["crs"]["epsg"]
+        if not srid and "metadata" in self._citymodel and "crs" in self._citymodel["metadata"]:
+            srid = self._citymodel["metadata"]["crs"]["epsg"]
 
-        if srid is not None:
+        if srid:
             self._geom_type = "{}?crs=EPSG:{}".format(self._geom_type, srid)
 
     def prepare_attributes(self):
@@ -161,7 +160,8 @@ class LodNamingDecorator:
         return "{} [LoD{}]".format(layer, feature["lod"])
 
 class BaseFieldsBuilder:
-    """A class that create the basic fields of city objects (uid and type)"""
+    """A class that creates the basic fields of city objects
+    (uid, type, parents and children)"""
 
     def get_fields(self):
         """Creates and returns fields"""
