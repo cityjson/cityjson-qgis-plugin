@@ -8,27 +8,44 @@ from qgis.core import QgsProject
 from typing import Optional
 
 from .geometry import GeometryReader, VerticesCache
-from .layers import (DynamicLayerManager, BaseFieldsBuilder, TypeNamingIterator,
-                     BaseNamingIterator, AttributeFieldsDecorator, SimpleFeatureBuilder,
-                     ParentFeatureDecorator,
-                     LodNamingDecorator, LodFieldsDecorator, LodFeatureDecorator,
-                     SemanticSurfaceFieldsDecorator, SemanticSurfaceFeatureDecorator)
-from .styling import (Copy2dStyling, NullStyling, SemanticSurfacesStyling,
-                      is_3d_styling_available, is_rule_based_3d_styling_available)
+from .layers import (
+    DynamicLayerManager,
+    BaseFieldsBuilder,
+    TypeNamingIterator,
+    BaseNamingIterator,
+    AttributeFieldsDecorator,
+    SimpleFeatureBuilder,
+    ParentFeatureDecorator,
+    LodNamingDecorator,
+    LodFieldsDecorator,
+    LodFeatureDecorator,
+    SemanticSurfaceFieldsDecorator,
+    SemanticSurfaceFeatureDecorator,
+)
+from .styling import (
+    Copy2dStyling,
+    NullStyling,
+    SemanticSurfacesStyling,
+    is_3d_styling_available,
+    is_rule_based_3d_styling_available,
+)
 
 
 class CityJSONLoader:
     """Class that loads a CityJSON to a QGIS project"""
 
-    def __init__(self, filepath, citymodel,
-                 epsg=None,
-                 keep_parent_attributes=False,
-                 divide_by_object=False,
-                 lod_as='NONE',
-                 lod='All',
-                 load_semantic_surfaces=False,
-                 style_semantic_surfaces=False):
-
+    def __init__(
+        self,
+        filepath,
+        citymodel,
+        epsg=None,
+        keep_parent_attributes=False,
+        divide_by_object=False,
+        lod_as="NONE",
+        lod="All",
+        load_semantic_surfaces=False,
+        style_semantic_surfaces=False,
+    ):
         filename_with_ext = os.path.basename(filepath)
         filename, _ = os.path.splitext(filename_with_ext)
 
@@ -44,49 +61,51 @@ class CityJSONLoader:
         if "geometry-templates" in citymodel:
             geometry_templates = citymodel["geometry-templates"]
 
-        self.geometry_reader = GeometryReader(self.vertices_cache,
-                                              geometry_templates,
-                                              lod=self.lod)
-        self.fields_builder = AttributeFieldsDecorator(BaseFieldsBuilder(),
-                                                       citymodel)
+        self.geometry_reader = GeometryReader(
+            self.vertices_cache, geometry_templates, lod=self.lod
+        )
+        self.fields_builder = AttributeFieldsDecorator(BaseFieldsBuilder(), citymodel)
         self.feature_builder = SimpleFeatureBuilder(self.geometry_reader)
 
         if keep_parent_attributes:
-            self.feature_builder = ParentFeatureDecorator(self.feature_builder,
-                                                          self.geometry_reader,
-                                                          citymodel)
+            self.feature_builder = ParentFeatureDecorator(
+                self.feature_builder, self.geometry_reader, citymodel
+            )
 
-        if lod_as in ['ATTRIBUTES', 'LAYERS']:
+        if lod_as in ["ATTRIBUTES", "LAYERS"]:
             self.fields_builder = LodFieldsDecorator(self.fields_builder)
-            self.feature_builder = LodFeatureDecorator(self.feature_builder,
-                                                       self.geometry_reader)
+            self.feature_builder = LodFeatureDecorator(
+                self.feature_builder, self.geometry_reader
+            )
 
         if load_semantic_surfaces:
-            self.fields_builder = SemanticSurfaceFieldsDecorator(self.fields_builder,
-                                                                 citymodel)
-            self.feature_builder = SemanticSurfaceFeatureDecorator(self.feature_builder,
-                                                                   self.geometry_reader,
-                                                                   self.fields_builder)
+            self.fields_builder = SemanticSurfaceFieldsDecorator(
+                self.fields_builder, citymodel
+            )
+            self.feature_builder = SemanticSurfaceFeatureDecorator(
+                self.feature_builder, self.geometry_reader, self.fields_builder
+            )
 
         if divide_by_object:
             self.naming_iterator = TypeNamingIterator(filename, citymodel)
         else:
             self.naming_iterator = BaseNamingIterator(filename)
 
-        if lod_as == 'LAYERS':
-            self.naming_iterator = LodNamingDecorator(self.naming_iterator,
-                                                      filename,
-                                                      citymodel,
-                                                      self.geometry_reader)
+        if lod_as == "LAYERS":
+            self.naming_iterator = LodNamingDecorator(
+                self.naming_iterator, filename, citymodel, self.geometry_reader
+            )
 
         if epsg:
             self.srid = epsg
 
-        self.layer_manager = DynamicLayerManager(self.citymodel,
-                                                 self.feature_builder,
-                                                 self.naming_iterator,
-                                                 self.fields_builder,
-                                                 self.srid)
+        self.layer_manager = DynamicLayerManager(
+            self.citymodel,
+            self.feature_builder,
+            self.naming_iterator,
+            self.fields_builder,
+            self.srid,
+        )
 
         self.layer_manager.prepare_attributes()
 
@@ -95,7 +114,11 @@ class CityJSONLoader:
         else:
             self.styler = NullStyling()
 
-        if (load_semantic_surfaces and is_rule_based_3d_styling_available() and style_semantic_surfaces):
+        if (
+            load_semantic_surfaces
+            and is_rule_based_3d_styling_available()
+            and style_semantic_surfaces
+        ):
             self.styler = SemanticSurfacesStyling()
 
     def init_vertices(self):
@@ -104,7 +127,9 @@ class CityJSONLoader:
 
         if "transform" in self.citymodel:
             self.vertices_cache.set_scale(self.citymodel["transform"]["scale"])
-            self.vertices_cache.set_translation(self.citymodel["transform"]["translate"])
+            self.vertices_cache.set_translation(
+                self.citymodel["transform"]["translate"]
+            )
 
         verts = self.citymodel["vertices"]
 
@@ -151,11 +176,13 @@ class CityJSONLoader:
 
         return self.geometry_reader.skipped_geometries()
 
+
 def load_cityjson_model(filepath):
     """Returns the citymodel for the given filepath"""
-    with open(filepath, encoding='utf-8-sig', buffering=8192) as fstream:
+    with open(filepath, encoding="utf-8-sig", buffering=8192) as fstream:
         citymodel = json.load(fstream)
     return citymodel
+
 
 def get_model_epsg(citymodel) -> Optional[str]:
     """Returns the EPSG of the city model as a string, or None if not found"""
@@ -167,12 +194,12 @@ def get_model_epsg(citymodel) -> Optional[str]:
 
     if "referenceSystem" not in metadata and "crs" not in metadata:
         return None
-    
+
     if "crs" in metadata:
         try:
             crs_string = str(metadata["crs"]["epsg"])
-            if crs_string is not None and  crs_string != "None":
-                return crs_string 
+            if crs_string is not None and crs_string != "None":
+                return crs_string
             else:
                 pass
         except (KeyError, TypeError):
@@ -197,6 +224,3 @@ def get_model_epsg(citymodel) -> Optional[str]:
                 return m.group(1)
         except (KeyError, TypeError):
             return None
-
-
-
