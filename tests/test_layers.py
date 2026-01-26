@@ -7,6 +7,20 @@ from core.layers import (
     SemanticSurfaceFieldsDecorator,
 )
 
+    # cm = {
+    # "type": "CityJSON",
+    # "version": "2.0",
+    # "transform": {
+    #     "scale": [1.0, 1.0, 1.0],
+    #     "translate": [0.0, 0.0, 0.0]
+    # },
+    # "CityObjects": {
+    #             "id1": {"type": "Building"},
+    #             "id2": {"type": "Bridge"},
+    #             "id3": {"type": "Other"},},
+    # "vertices": []
+    # }
+
 SINGLE_CUBE_CITYMODEL = {
     "CityObjects": {
         "id-1": {
@@ -78,7 +92,7 @@ TWO_CUBES_CITYMODEL = {
         }
     },
     "type": "CityJSON",
-    "version": "0.9",
+    "version": "2.0",
     "vertices": [
         [1.0, 0.0, 1.0],
         [0.0, 1.0, 1.0],
@@ -93,7 +107,7 @@ TWO_CUBES_CITYMODEL = {
 }
 CITYMODEL_WITH_ATTRIBUTES = {
     "type": "CityJSON",
-    "version": "0.9",
+    "version": "2.0",
     "CityObjects": {
         "id-1": {"type": "Building", "attributes": {"attribute1": 1, "attribute2": 2}},
         "id-2": {"type": "Building", "attributes": {"attribute1": 1, "attribute3": 2}},

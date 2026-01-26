@@ -54,7 +54,7 @@ def get_centroid(cm, coid):
     return centroid
 
 def get_subset_cotype(cm, cotype, invert=False):
-    # print ('get_subset_cotype')
+
     if isinstance(cotype, list):
         lsCOtypes = cotype
     else:
