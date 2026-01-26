@@ -2,7 +2,7 @@
 
 import copy
 
-import subset
+from . import subset
 
 CITYJSON_VERSION = "1.0"
 CITYJSON_TYPE = "CityJSON"
