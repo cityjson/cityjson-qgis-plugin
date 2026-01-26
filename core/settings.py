@@ -7,33 +7,35 @@ semantic_colors = {
     "RoofSurface": {
         "diffuse": QColor(255, 0, 0),
         "ambient": QColor(255, 0, 0),
-        "specular": None
+        "specular": None,
     },
     "WallSurface": {
         "diffuse": QColor(200, 200, 200),
         "ambient": QColor(255, 255, 255),
-        "specular": None
+        "specular": None,
     },
     "GroundSurface": {
         "diffuse": QColor(0, 0, 0),
         "ambient": QColor(0, 0, 0),
-        "specular": None
+        "specular": None,
     },
     "Door": {
         "diffuse": QColor(255, 200, 0),
         "ambient": QColor(255, 200, 0),
-        "specular": None
+        "specular": None,
     },
     "Window": {
         "diffuse": QColor(0, 100, 255),
         "ambient": QColor(0, 100, 255),
-        "specular": None
-    }
+        "specular": None,
+    },
 }
+
 
 def get_color_int(color):
     """Returns the int representation of a QColor"""
     return None if color is None else color.getRgb()
+
 
 def get_color_from_tuple(data):
     """Returns a color created from a tuple"""
@@ -41,6 +43,7 @@ def get_color_from_tuple(data):
         return None
     r, g, b, a = data
     return QColor(r, g, b, a)
+
 
 def save_defaults():
     """Saves the default values"""
@@ -58,11 +61,10 @@ def save_defaults():
     settings.endArray()
     settings.endGroup()
 
+
 def load_settings():
     """Loads the settings from the app's registry"""
 
-    result = {
-        "semantic_colors": semantic_colors
-    }
+    result = {"semantic_colors": semantic_colors}
 
     return result

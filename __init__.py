@@ -33,4 +33,5 @@ def classFactory(iface):  # pylint: disable=invalid-name
     """
     #
     from .cityjson_loader import CityJsonLoader
+
     return CityJsonLoader(iface)

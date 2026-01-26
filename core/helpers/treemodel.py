@@ -68,6 +68,7 @@ METADATA_REALNAMES = {
     "aggregateFeatureCount": "Aggregate Feature Count",
 }
 
+
 class TreeNode(object):
     def __init__(self, parent, row):
         self.parent = parent
@@ -76,6 +77,7 @@ class TreeNode(object):
 
     def _getChildren(self):
         raise NotImplementedError()
+
 
 class TreeModel(QAbstractItemModel):
     def __init__(self):
@@ -110,7 +112,8 @@ class TreeModel(QAbstractItemModel):
         node = parent.internalPointer()
         return len(node.subnodes)
 
-class MetadataElement(object): # your internal structure
+
+class MetadataElement(object):  # your internal structure
     def __init__(self, value_pair):
         self.key = value_pair[0]
         if isinstance(value_pair[1], dict):
@@ -119,30 +122,29 @@ class MetadataElement(object): # your internal structure
         elif isinstance(value_pair[1], list):
             if value_pair[0] == "geographicalExtent":
                 self.subelements = {
-                    "min x":value_pair[1][0],
-                    "min y":value_pair[1][1],
-                    "min z":value_pair[1][2],
-                    "max x":value_pair[1][3],
-                    "max y":value_pair[1][4],
-                    "max z":value_pair[1][5]
+                    "min x": value_pair[1][0],
+                    "min y": value_pair[1][1],
+                    "min z": value_pair[1][2],
+                    "max x": value_pair[1][3],
+                    "max y": value_pair[1][4],
+                    "max z": value_pair[1][5],
                 }
             elif value_pair[0] in ["keywords", "thematicModels"]:
                 self.subelements = {v: "" for v in value_pair[1]}
             elif value_pair[0] in METADATA_REALNAMES:
                 self.subelements = {
                     "{metadata_name} ({index})".format(
-                        metadata_name=METADATA_REALNAMES[value_pair[0]],
-                        index=i): v
+                        metadata_name=METADATA_REALNAMES[value_pair[0]], index=i
+                    ): v
                     for i, v in enumerate(value_pair[1], start=1)
                 }
             else:
-                self.subelements = {
-                    i: v for i, v in enumerate(value_pair[1], start=1)
-                }
+                self.subelements = {i: v for i, v in enumerate(value_pair[1], start=1)}
             self.value = ""
         else:
             self.subelements = {}
             self.value = value_pair[1]
+
 
 class MetadataNode(TreeNode):
     def __init__(self, ref, parent, row):
@@ -150,15 +152,18 @@ class MetadataNode(TreeNode):
         TreeNode.__init__(self, parent, row)
 
     def _getChildren(self):
-        return [MetadataNode(MetadataElement(elem), self, index)
-            for index, elem in enumerate(self.ref.subelements.items())]
+        return [
+            MetadataNode(MetadataElement(elem), self, index)
+            for index, elem in enumerate(self.ref.subelements.items())
+        ]
+
 
 class MetadataModel(TreeModel):
     def __init__(self, rootElements, treeview):
         self.rootElements = rootElements
         self.treeview = treeview
         TreeModel.__init__(self)
-    
+
     def getKeyColumnWidth(self):
         width = 100
         padding = 30
@@ -167,12 +172,14 @@ class MetadataModel(TreeModel):
             outRect = metrics.boundingRect(get_real_key(key))
             if width < outRect.width() + padding:
                 width = outRect.width() + padding
-        
+
         return width
 
     def _getRootNodes(self):
-        return [MetadataNode(MetadataElement(elem), None, index)
-            for index, elem in enumerate(self.rootElements.items())]
+        return [
+            MetadataNode(MetadataElement(elem), None, index)
+            for index, elem in enumerate(self.rootElements.items())
+        ]
 
     def columnCount(self, parent):
         return 2
@@ -189,7 +196,11 @@ class MetadataModel(TreeModel):
             baseSize = QSize(self.treeview.columnWidth(index.column()), 16)
 
             metrics = QFontMetrics(self.treeview.font())
-            outRect = metrics.boundingRect(QRect(QPoint(0, 0), baseSize), Qt.AlignLeft + Qt.TextWordWrap, str(self.data(index, Qt.DisplayRole)))
+            outRect = metrics.boundingRect(
+                QRect(QPoint(0, 0), baseSize),
+                Qt.AlignLeft + Qt.TextWordWrap,
+                str(self.data(index, Qt.DisplayRole)),
+            )
             baseSize.setHeight(outRect.height())
 
             return baseSize
@@ -199,10 +210,11 @@ class MetadataModel(TreeModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return 'Property'
+                return "Property"
             elif section == 1:
-                return 'Value'
+                return "Value"
         return None
+
 
 def get_real_key(key_name):
     return METADATA_REALNAMES.get(key_name, key_name)

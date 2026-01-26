@@ -5,6 +5,7 @@ from qgis.core import QgsPoint, QgsGeometry, QgsLineString, QgsPolygon, QgsMulti
 DEFAULT_SCALE = (1, 1, 1)
 DEFAULT_TRANSLATE = (0, 0, 0)
 
+
 class VerticesCache:
     """A class to hold the list of vertices of the city model"""
 
@@ -17,7 +18,7 @@ class VerticesCache:
             self._vertices = [None] * len(vertices)
             for i, vertex in enumerate(vertices):
                 self._vertices[i] = self._transform_vertex(vertex)
-                
+
     def _transform_vertex(self, vertex):
         """Transform and create QgsPoint in one operation"""
         x = vertex[0] * self._scale[0] + self._translate[0]
@@ -42,6 +43,7 @@ class VerticesCache:
         """Get the vertex of a specified index"""
         return self._vertices[index]
 
+
 class TransformedVerticesCache:
     """A class that decorates a VerticesCache applying a decoration when vertices are requested"""
 
@@ -50,10 +52,22 @@ class TransformedVerticesCache:
         self._decorated = decorated
         self._translation = translation
         self._transformation_matrix = transformation_matrix or [
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0,
-            0.0, 0.0, 0.0, 1.0
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
         ]
 
     def get_vertex(self, index):
@@ -64,6 +78,7 @@ class TransformedVerticesCache:
         z = original_vertex.z() + self._translation.z()
 
         return QgsPoint(x, y, z)
+
 
 class GeometryReader:
     """A class that translates CityJSON geometries to QgsGeometry"""
@@ -119,7 +134,7 @@ class GeometryReader:
         """Returns a dictionary where keys are polygons and values are the semantic surfaces"""
         if geometry is None:
             return [], []
-        
+
         polygons = []
         semantics = []
 
@@ -131,7 +146,9 @@ class GeometryReader:
                 template_index = geom["template"]
                 temp_geom = self._geometry_templates["templates"][template_index]
                 translation = self._vertices_cache.get_vertex(geom["boundaries"][0])
-                temp_vertices_cache = TransformedVerticesCache(self._templates_vertices_cache, translation)
+                temp_vertices_cache = TransformedVerticesCache(
+                    self._templates_vertices_cache, translation
+                )
             else:
                 temp_geom = geom
                 temp_vertices_cache = self._vertices_cache
@@ -143,25 +160,37 @@ class GeometryReader:
 
                 if len(attributes) > 2:
                     for attr in attributes:
-                        attr = '+' + attr
-                        if attr.lstrip("+") not in ['type','on_footprint_edge'] and attr in temp_geom["semantics"]:
-                            additional_semantics[attr.lstrip("+")] = temp_geom["semantics"][attr][0]
+                        attr = "+" + attr
+                        if (
+                            attr.lstrip("+") not in ["type", "on_footprint_edge"]
+                            and attr in temp_geom["semantics"]
+                        ):
+                            additional_semantics[attr.lstrip("+")] = temp_geom[
+                                "semantics"
+                            ][attr][0]
             else:
                 surfaces = None
                 values = None
 
             try:
-                new_polygons, new_semantics = read_boundaries(temp_geom["boundaries"], surfaces, values)
+                new_polygons, new_semantics = read_boundaries(
+                    temp_geom["boundaries"], surfaces, values
+                )
                 new_polygons = self.indexes_to_points(new_polygons, temp_vertices_cache)
                 polygons += new_polygons
 
                 if len(additional_semantics) > 0:
                     combined_semantics = []
                     for i, semantic in enumerate(new_semantics):
-                        combined_semantics.append({
-                            **semantic,
-                            **{key: str(additional_semantics[key][i]) for key in additional_semantics.keys()}
-                        })
+                        combined_semantics.append(
+                            {
+                                **semantic,
+                                **{
+                                    key: str(additional_semantics[key][i])
+                                    for key in additional_semantics.keys()
+                                },
+                            }
+                        )
 
                     semantics += combined_semantics
                 else:
@@ -175,10 +204,7 @@ class GeometryReader:
     def indexes_to_points(self, polygons, vertices_cache):
         """Returns the indexed vertices to vertices with coordinates"""
         return [
-            [
-                [vertices_cache.get_vertex(index) for index in ring]
-                for ring in polygon
-            ]
+            [[vertices_cache.get_vertex(index) for index in ring] for ring in polygon]
             for polygon in polygons
         ]
 
@@ -199,6 +225,7 @@ class GeometryReader:
         """Returns the count of geometries that were skipped while reading"""
         return self._skipped_geometries
 
+
 def read_boundaries(boundaries, surfaces, values):
     """Return the polygons from a boundaries list"""
     polygons = []
@@ -210,7 +237,9 @@ def read_boundaries(boundaries, surfaces, values):
         else:
             values_iter = iter([None for i in range(len(boundaries))])
         for boundary in boundaries:
-            new_polygons, new_semantic_surfaces = read_boundaries(boundary, surfaces, next(values_iter))
+            new_polygons, new_semantic_surfaces = read_boundaries(
+                boundary, surfaces, next(values_iter)
+            )
             polygons += new_polygons
             semantic_surfaces += new_semantic_surfaces
     else:
