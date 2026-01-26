@@ -1,5 +1,5 @@
 from core.geometry import GeometryReader, VerticesCache, read_boundaries
-from tests.sample_geometries import *
+from tests import sample_geometries
 
 
 class TestReadBoundaries:
@@ -9,9 +9,15 @@ class TestReadBoundaries:
         """Does read_boundaries return the correct polygons for
         a multisurface?
         """
-        boundaries = example_multisurface_with_semantics[0]["boundaries"]
-        surfaces = example_multisurface_with_semantics[0]["semantics"]["surfaces"]
-        values = example_multisurface_with_semantics[0]["semantics"]["values"]
+        boundaries = sample_geometries.example_multisurface_with_semantics[0][
+            "boundaries"
+        ]
+        surfaces = sample_geometries.example_multisurface_with_semantics[0][
+            "semantics"
+        ]["surfaces"]
+        values = sample_geometries.example_multisurface_with_semantics[0]["semantics"][
+            "values"
+        ]
 
         polygons, semantic_surfaces = read_boundaries(boundaries, surfaces, values)
 
@@ -49,7 +55,7 @@ class TestGeometryReader:
         geometry_reader = GeometryReader(vertices_cache)
 
         polygons, semantics = geometry_reader.get_polygons(
-            example_multisurface_with_semantics
+            sample_geometries.example_multisurface_with_semantics
         )
 
         assert len(polygons) == 5
@@ -62,7 +68,9 @@ class TestGeometryReader:
         vertices_cache = VerticesCache(vertices=self.create_vertices(900))
         geometry_reader = GeometryReader(vertices_cache)
 
-        polygons, semantics = geometry_reader.get_polygons(example_solid_with_semantics)
+        polygons, semantics = geometry_reader.get_polygons(
+            sample_geometries.example_solid_with_semantics
+        )
 
         assert len(polygons) == 8
         assert len(semantics) == 8
@@ -74,17 +82,19 @@ class TestGeometryReader:
         vertices_cache = VerticesCache(vertices=self.create_vertices(900))
         geometry_reader = GeometryReader(vertices_cache)
 
-        polygons, _ = geometry_reader.get_polygons(example_composite_solid)
+        polygons, _ = geometry_reader.get_polygons(
+            sample_geometries.example_composite_solid
+        )
 
         assert len(polygons) == 12
 
     def test_get_lod_with_geometry_template(self):
         """Tests if the get_lod function works for geometry instances"""
         empty_vertices = VerticesCache()
-        geometry_template = example_geometry_template
+        geometry_template = sample_geometries.example_geometry_template
         geometry_reader = GeometryReader(empty_vertices, geometry_template)
 
-        geom = example_geometry_instance[0]
+        geom = sample_geometries.example_geometry_instance[0]
         lod = geometry_reader.get_lod(geom)
 
         assert lod == 2
@@ -92,10 +102,10 @@ class TestGeometryReader:
     def test_get_polygons_with_geometry_instance(self):
         """Tests if the geometry of a geometry instance is read properly"""
         empty_vertices = VerticesCache(vertices=self.create_vertices(900))
-        geometry_template = example_geometry_template
+        geometry_template = sample_geometries.example_geometry_template
         geometry_reader = GeometryReader(empty_vertices, geometry_template)
 
-        geom = example_geometry_instance
+        geom = sample_geometries.example_geometry_instance
         polygons, semantics = geometry_reader.get_polygons(geom)
 
         assert len(polygons) == 3

@@ -355,7 +355,7 @@ class TestCityJSONLoader:
         loader.layer_manager.get_all_layers = lambda: [layer]
 
         assert feedback.progress() == 0.0
-        result = loader.load(feedback=feedback)
+        _ = loader.load(feedback=feedback)
         assert feedback.progress() == 100.0
 
     @pytest.mark.parametrize(
