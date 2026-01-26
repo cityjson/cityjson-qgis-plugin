@@ -156,8 +156,8 @@ dclean:
 	@echo "-----------------------------------"
 	@echo "Removing any compiled python files."
 	@echo "-----------------------------------"
-	find "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)" -iname "*.pyc" -delete
-	find "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)" -iname ".git" -prune -exec rm -Rf {} \;
+	@find "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)" -iname "*.pyc" -delete
+	@find "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)" -iname ".git" -prune -exec rm -Rf {} \;
 
 
 derase:
@@ -165,18 +165,18 @@ derase:
 	@echo "-------------------------"
 	@echo "Removing deployed plugin."
 	@echo "-------------------------"
-	rm -Rf $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)
+	@rm -Rf $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)
 
 zip: deploy dclean
+# The zip target deploys the plugin and creates a zip file with the deployed
+# content. You can then upload the zip file on http://plugins.qgis.org
 	@echo
 	@echo "---------------------------"
 	@echo "Creating plugin zip bundle."
 	@echo "---------------------------"
-# The zip target deploys the plugin and creates a zip file with the deployed
-# content. You can then upload the zip file on http://plugins.qgis.org
-	rm -f $(PLUGINNAME).zip
-	cp  LICENSE "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/LICENSE"
-	cd "$(HOME)/$(QGISDIR)/python/plugins"; zip -9r $(CURDIR)/$(PLUGINNAME).zip $(PLUGINNAME) -x ".*" "__pycache__/*" "**/__pycache__/*"
+	@rm -f $(PLUGINNAME).zip
+	@cp  LICENSE "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/LICENSE"
+	@cd "$(HOME)/$(QGISDIR)/python/plugins"; zip -9r $(CURDIR)/$(PLUGINNAME).zip $(PLUGINNAME) -x ".*" "__pycache__/*" "**/__pycache__/*"
 
 package: compile
 # Create a zip package of the plugin named $(PLUGINNAME).zip.
@@ -188,16 +188,16 @@ package: compile
 	@echo "------------------------------------"
 	@echo "Exporting plugin to zip package.	"
 	@echo "------------------------------------"
-	rm -f $(PLUGINNAME).zip
-	git archive --prefix=$(PLUGINNAME)/ -o $(PLUGINNAME).zip $(VERSION)
-	echo "Created package: $(PLUGINNAME).zip"
+	@rm -f $(PLUGINNAME).zip
+	@git archive --prefix=$(PLUGINNAME)/ -o $(PLUGINNAME).zip $(VERSION)
+	@echo "Created package: $(PLUGINNAME).zip"
 
 upload: zip
 	@echo
 	@echo "-------------------------------------"
 	@echo "Uploading plugin to QGIS Plugin repo."
 	@echo "-------------------------------------"
-	$(PLUGIN_UPLOAD) $(PLUGINNAME).zip
+	@$(PLUGIN_UPLOAD) $(PLUGINNAME).zip
 
 transup:
 	@echo
@@ -220,32 +220,32 @@ transclean:
 	@echo "------------------------------------"
 	@echo "Removing compiled translation files."
 	@echo "------------------------------------"
-	rm -f i18n/*.qm
+	@rm -f i18n/*.qm
 
 clean:
 	@echo
 	@echo "------------------------------------"
 	@echo "Removing uic and rcc generated files"
 	@echo "------------------------------------"
-	rm $(COMPILED_UI_FILES) $(COMPILED_RESOURCE_FILES)
+	@rm $(COMPILED_UI_FILES) $(COMPILED_RESOURCE_FILES)
 
 doc:
 	@echo
 	@echo "------------------------------------"
 	@echo "Building documentation using sphinx."
 	@echo "------------------------------------"
-	cd help; make html
+	@cd help; make html
 
 format:
 	@echo
 	@echo "------------------------------------"
 	@echo "Formatting code using ruff"
 	@echo "------------------------------------"
-	@ruff format core/ tests/ processing/ gui/  cityjson_loader.py resources.py __init__.py
+	@ruff format core/ tests/ processing/ gui/  cityjson_loader.py resources.py __init__.py plugin_upload.py
 
 check:
 	@echo
 	@echo "------------------------------------"
 	@echo "Check issues with ruff"
 	@echo "------------------------------------"
-	@ruff check core/ tests/ processing/ gui/  cityjson_loader.py resources.py __init__.py || true
+	@ruff check core/ tests/ processing/ gui/  cityjson_loader.py resources.py __init__.py plugin_upload.py || true
