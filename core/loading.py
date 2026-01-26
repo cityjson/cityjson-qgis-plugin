@@ -1,22 +1,19 @@
 """A module that provides the logic for loading CityJSON in QGIS"""
 
-import json
 import os
 import re
+import json
 
-from PyQt5.QtWidgets import QMessageBox
 from qgis.core import QgsProject
 
 from .geometry import GeometryReader, VerticesCache
-from .layers import (AttributeFieldsDecorator, BaseFieldsBuilder,
-                     BaseNamingIterator, DynamicLayerManager, ParentFeatureDecorator,
-                     LodFeatureDecorator, LodFieldsDecorator,
-                     LodNamingDecorator, SemanticSurfaceFeatureDecorator,
-                     SemanticSurfaceFieldsDecorator, SimpleFeatureBuilder,
-                     TypeNamingIterator)
+from .layers import (DynamicLayerManager, BaseFieldsBuilder, TypeNamingIterator,
+                     BaseNamingIterator, AttributeFieldsDecorator, SimpleFeatureBuilder,
+                     ParentFeatureDecorator,
+                     LodNamingDecorator, LodFieldsDecorator, LodFeatureDecorator,
+                     SemanticSurfaceFieldsDecorator, SemanticSurfaceFeatureDecorator)
 from .styling import (Copy2dStyling, NullStyling, SemanticSurfacesStyling,
-                      is_3d_styling_available,
-                      is_rule_based_3d_styling_available)
+                      is_3d_styling_available, is_rule_based_3d_styling_available)
 
 
 class CityJSONLoader:
@@ -110,8 +107,14 @@ class CityJSONLoader:
 
         verts = self.citymodel["vertices"]
 
-        for v in verts:
-            self.vertices_cache.add_vertex(v)
+        if len(verts) > 100:  # Only for larger datasets
+            scale = self.vertices_cache._scale
+            translate = self.vertices_cache._translate
+            self.vertices_cache = VerticesCache(scale, translate, verts)
+        else:
+            # For smaller datasets, use the original method
+            for v in verts:
+                self.vertices_cache.add_vertex(v)
 
     def load(self, feedback=None):
         """Loads a specified CityJSON file and returns the number of skipped geometries"""
@@ -132,27 +135,25 @@ class CityJSONLoader:
         root = QgsProject.instance().layerTreeRoot()
 
         if len(self.layer_manager.get_all_layers()) > 1:
-            group = root.addGroup(self.filename)
+            group = root.insertGroup(0, self.filename)
 
             for vl in self.layer_manager.get_all_layers():
                 QgsProject.instance().addMapLayer(vl, False)
-                group.addLayer(vl)
+                group.insertLayer(0, vl)
                 self.styler.apply(vl)
 
         elif len(self.layer_manager.get_all_layers()) == 1:
             for vl in self.layer_manager.get_all_layers():
                 QgsProject.instance().addMapLayer(vl, False)
-                root.addLayer(vl)
+                root.insertLayer(0, vl)
                 self.styler.apply(vl)
 
         return self.geometry_reader.skipped_geometries()
 
 def load_cityjson_model(filepath):
     """Returns the citymodel for the given filepath"""
-    file = open(filepath, encoding='utf-8-sig')
-    citymodel = json.load(file)
-    file.close()
-
+    with open(filepath, encoding='utf-8-sig', buffering=8192) as fstream:
+        citymodel = json.load(fstream)
     return citymodel
 
 def get_model_epsg(citymodel):
@@ -166,7 +167,7 @@ def get_model_epsg(citymodel):
         if "referenceSystem" in metadata:
             ref_string = str(metadata["referenceSystem"])
 
-            if ref_string.__contains__("::"):
+            if "::" in ref_string:
                 return ref_string.split("::")[1]
 
             p = re.compile(r"https:\/\/www.opengis.net\/def\/crs\/([A-Z]+)\/([0-9]+)\/([0-9]+)")

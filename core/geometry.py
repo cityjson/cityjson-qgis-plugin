@@ -2,17 +2,28 @@
 
 from qgis.core import QgsPoint, QgsGeometry, QgsLineString, QgsPolygon, QgsMultiPolygon
 
+DEFAULT_SCALE = (1, 1, 1)
+DEFAULT_TRANSLATE = (0, 0, 0)
+
 class VerticesCache:
     """A class to hold the list of vertices of the city model"""
 
-    def __init__(self, scale=(1, 1, 1), translate=(0, 0, 0), vertices=None):
+    def __init__(self, scale=DEFAULT_SCALE, translate=DEFAULT_TRANSLATE, vertices=None):
         self._scale = scale
         self._translate = translate
         self._vertices = []
 
         if vertices is not None:
-            for vertex in vertices:
-                self.add_vertex(vertex)
+            self._vertices = [None] * len(vertices)
+            for i, vertex in enumerate(vertices):
+                self._vertices[i] = self._transform_vertex(vertex)
+                
+    def _transform_vertex(self, vertex):
+        """Transform and create QgsPoint in one operation"""
+        x = vertex[0] * self._scale[0] + self._translate[0]
+        y = vertex[1] * self._scale[1] + self._translate[1]
+        z = vertex[2] * self._scale[2] + self._translate[2]
+        return QgsPoint(x, y, z)
 
     def set_scale(self, scale):
         """Sets the scale for coordinates of the list"""
@@ -23,17 +34,9 @@ class VerticesCache:
         self._translate = translate
 
     def add_vertex(self, vertex):
-        """Adds a vertex to the list
-
-        Keywords:
-        vertex - The original vertex coords from CityJSON
-        """
-        x = vertex[0] * self._scale[0] + self._translate[0]
-        y = vertex[1] * self._scale[1] + self._translate[1]
-        z = vertex[2] * self._scale[2] + self._translate[2]
-
-        p = QgsPoint(x, y, z)
-        self._vertices.append(p)
+        """Add a vertex to the list"""
+        point = self._transform_vertex(vertex)
+        self._vertices.append(point)
 
     def get_vertex(self, index):
         """Get the vertex of a specified index"""
@@ -43,24 +46,15 @@ class TransformedVerticesCache:
     """A class that decorates a VerticesCache applying a decoration when vertices are requested"""
 
     def __init__(self, decorated, translation, transformation_matrix=None):
-        """Initiates the transformed vertices cache with the provided
-        transformation paremeters.
-
-        Keyword arguments:
-        decorated -- the original VerticesCache
-        translation -- a QgsPoint to translation all coordinates by
-        transformation_matrix -- a 4x4 matrix to rotate and scale coords
-        """
+        """Initialize with transformation parameters"""
         self._decorated = decorated
         self._translation = translation
-
-        if transformation_matrix is None:
-            self._transformation_matrix = [1.0, 0.0, 0.0, 0.0,
-                                           0.0, 1.0, 0.0, 0.0,
-                                           0.0, 0.0, 1.0, 0.0,
-                                           0.0, 0.0, 0.0, 1.0]
-        else:
-            self._transformation_matrix = transformation_matrix
+        self._transformation_matrix = transformation_matrix or [
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0
+        ]
 
     def get_vertex(self, index):
         """Get the vertex at the specified index"""
@@ -98,6 +92,9 @@ class GeometryReader:
         """Checks if any geometry in the list matches the specified LoD"""
         if target_lod == "All":
             return True
+
+        if isinstance(target_lod, list):
+            return any(self.get_lod(geom) in target_lod for geom in geometries)
 
         return any(self.get_lod(geom) == target_lod for geom in geometries)
 
@@ -140,20 +137,20 @@ class GeometryReader:
                 temp_vertices_cache = self._vertices_cache
 
             additional_semantics = {}
+            if "semantics" in temp_geom:
+                surfaces = temp_geom["semantics"]["surfaces"]
+                values = temp_geom["semantics"]["values"]
+
+                if len(attributes) > 2:
+                    for attr in attributes:
+                        attr = '+' + attr
+                        if attr.lstrip("+") not in ['type','on_footprint_edge'] and attr in temp_geom["semantics"]:
+                            additional_semantics[attr.lstrip("+")] = temp_geom["semantics"][attr][0]
+            else:
+                surfaces = None
+                values = None
+
             try:
-                if "semantics" in temp_geom:
-                    surfaces = temp_geom["semantics"]["surfaces"]
-                    values = temp_geom["semantics"]["values"]
-
-                    if len(attributes) > 2:
-                        for attr in attributes:
-                            attr = '+' + attr
-                            if attr.lstrip("+") not in ['type','on_footprint_edge'] and attr in temp_geom["semantics"]:
-                                additional_semantics[attr.lstrip("+")] = temp_geom["semantics"][attr][0]
-                else:
-                    surfaces = None
-                    values = None
-
                 new_polygons, new_semantics = read_boundaries(temp_geom["boundaries"], surfaces, values)
                 new_polygons = self.indexes_to_points(new_polygons, temp_vertices_cache)
                 polygons += new_polygons
@@ -170,40 +167,31 @@ class GeometryReader:
                 else:
                     semantics += new_semantics
 
-            except Exception as e:
+            except (KeyError, IndexError, TypeError) as e:
                 self._skipped_geometries += 1
 
         return polygons, semantics
 
     def indexes_to_points(self, polygons, vertices_cache):
         """Returns the indexed vertices to vertices with coordinates"""
-        new_polygons = []
-        for polygon in polygons:
-            new_polygon = []
-            for ring in polygon:
-                new_ring = []
-                for index in ring:
-                    new_ring.append(vertices_cache.get_vertex(index))
-                new_polygon.append(new_ring)
-            new_polygons.append(new_polygon)
-
-        return new_polygons
+        return [
+            [
+                [vertices_cache.get_vertex(index) for index in ring]
+                for ring in polygon
+            ]
+            for polygon in polygons
+        ]
 
     def read_polygon(self, boundary):
         """Reads the specified polygon"""
         g = QgsPolygon()
-        i = 0
-        for ring in boundary:
-            poly = []
-            for point in ring:
-                poly.append(point)
 
-            r = QgsLineString(poly)
+        for i, ring in enumerate(boundary):
+            r = QgsLineString(ring)
             if i == 0:
                 g.setExteriorRing(r)
             else:
                 g.addInteriorRing(r)
-            i = 1
 
         return g
 

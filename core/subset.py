@@ -2,7 +2,8 @@
 import json
 
 def select_co_bbox(j, bbox):
-    #-- select the CO whose
+    """Select city objects whose geometry intersects with the bounding box"""
+    # TODO: Implement bounding box selection
     pass
 
 def select_co_ids(j, IDs):
@@ -34,7 +35,6 @@ def select_co_ids(j, IDs):
                     for child in j['CityObjects'][id]['parent']:
                         re.add(child)
     return re                
-
 
 
 def process_geometry(j, j2):
