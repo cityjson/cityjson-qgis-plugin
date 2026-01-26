@@ -167,7 +167,7 @@ class GeometryReader:
                 else:
                     semantics += new_semantics
 
-            except (KeyError, IndexError, TypeError) as e:
+            except (KeyError, IndexError, TypeError):
                 self._skipped_geometries += 1
 
         return polygons, semantics

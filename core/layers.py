@@ -250,7 +250,7 @@ class AttributeFieldsDecorator:
         for obj in objs.values():
             if "attributes" in obj:
                 for att_key in obj["attributes"]:
-                    if not att_key in atts:
+                    if att_key not in atts:
                         atts.append(att_key)
 
         return atts

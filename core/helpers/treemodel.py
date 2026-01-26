@@ -47,7 +47,6 @@ METADATA_REALNAMES = {
     "reference": "Reference",
     "stepDateTime": "Step Date and Time",
     "thematicModels": "Thematic Models",
-    "geographicalExtent": "Geographical Extent",
     "temporalExtent": "Temporal Extent",
     "startDate": "Start Date",
     "endDate": "End Date",

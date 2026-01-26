@@ -2,7 +2,7 @@
 
 import copy
 
-from .subset import *
+import subset
 
 CITYJSON_VERSION = "1.0"
 CITYJSON_TYPE = "CityJSON"
@@ -85,13 +85,13 @@ def get_subset_cotype(cm, cotype, invert=False):
             if cm["CityObjects"][theid]["type"] not in lsCOtypes:
                 cm2["CityObjects"][theid] = cm["CityObjects"][theid]
     #-- geometry
-    process_geometry(cm, cm2)
+    subset.process_geometry(cm, cm2)
     #-- templates
-    process_templates(cm, cm2)
+    subset.process_templates(cm, cm2)
     #-- appearance
     if ("appearance" in cm):
         cm2["appearance"] = {}
-        process_appearance(cm, cm2)
+        subset.process_appearance(cm, cm2)
     #-- metadata
     if ("metadata" in cm):
         cm2["metadata"] = cm["metadata"]
@@ -115,7 +115,7 @@ def get_subset_bbox(cm, bbox, invert=False):
             (centroid[1] <  bbox[3]) ):
             re.add(coid)
     re2 = copy.deepcopy(re)
-    if invert == True:
+    if invert:
         allkeys = set(cm["CityObjects"].keys())
         re = allkeys ^ re
     #-- also add the parent-children
@@ -129,13 +129,13 @@ def get_subset_bbox(cm, bbox, invert=False):
     for each in re:
         cm2["CityObjects"][each] = cm["CityObjects"][each]
     #-- geometry
-    process_geometry(cm, cm2)
+    subset.process_geometry(cm, cm2)
     #-- templates
-    process_templates(cm, cm2)
+    subset.process_templates(cm, cm2)
     #-- appearance
     if ("appearance" in cm):
         cm2["appearance"] = {}
-        process_appearance(cm, cm2)
+        subset.process_appearance(cm, cm2)
     #-- metadata
     if ("metadata" in cm):
         cm2["metadata"] = cm["metadata"]
