@@ -36,7 +36,6 @@ from .core.loading import CityJSONLoader, load_cityjson_model, get_model_epsg
 from .core.styling import is_rule_based_3d_styling_available
 
 from .gui.cityjson_loader_dialog import CityJsonLoaderDialog
-from .resources import *
 from .processing.provider import Provider
 
 
@@ -221,7 +220,7 @@ class CityJsonLoader:
             
             epsg = get_model_epsg(model)
             return epsg
-        except (IOError, OSError, json.JSONDecodeError, KeyError) as e:
+        except (IOError, OSError, json.JSONDecodeError, KeyError):
             return "None"
  
     def update_file_list(self):
