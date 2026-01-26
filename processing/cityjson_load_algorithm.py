@@ -125,7 +125,7 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterBoolean(
                 self.KEEP_PARENT_ATTRIBUTES,
-                self.tr('Retain parent attributes for each children geometry'),
+                self.tr('Retain parent attributes'),
                 False
             )
         )
@@ -278,12 +278,12 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
         else:
             feedback.pushInfo("No CRS selected! Looking for CRS definition in metadata...")
             epsg = get_model_epsg(cm)
-            if epsg != 'None':
+            if epsg:
                 feedback.pushInfo("CRS found: {}.".format(epsg))
             else:
                 feedback.pushInfo("No CRS found.")
         
-        if epsg == 'None':
+        if epsg is None:
             extent = self.parameterAsExtent(
                 parameters,
                 self.BBOX,
