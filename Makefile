@@ -120,7 +120,7 @@ test: compile transcompile
 	@echo " Running tests"
 	@echo "------------------------------------------"
 	export QGIS_DEBUG=0; \
-	export QGIS_LOG_FILE=/dev/null; 
+	export QGIS_LOG_FILE=/dev/null; \
 	$(QGIS_PYTHON) -m pytest tests  -v -s --cov=core/
 	@echo "------------------------------------------"
 	@echo "Test suite completed"
