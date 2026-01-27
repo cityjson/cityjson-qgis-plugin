@@ -1,3 +1,6 @@
+# Copyright © 2018–2026 3D geoinformation group, TU Delft, S. Vitalis and G. Stavropoulou.
+# Licensed under the Apache License, Version 2.0. See LICENSE file for details.
+
 from PyQt5.QtWidgets import QDialog, QApplication
 
 from gui.cityjson_loader_dialog import CityJsonLoaderDialog
@@ -67,9 +70,3 @@ class TestCityJsonLoaderDialog:
             assert checkbox.isChecked()
             checkbox.setChecked(False)
             assert not checkbox.isChecked()
-
-
-if __name__ == "__main__":
-    test = TestCityJsonLoaderDialog()
-
-    print("All tests passed.")
