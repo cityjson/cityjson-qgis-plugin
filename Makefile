@@ -235,17 +235,3 @@ doc:
 	@echo "Building documentation using sphinx."
 	@echo "------------------------------------"
 	@cd help; make html
-
-format:
-	@echo
-	@echo "------------------------------------"
-	@echo "Formatting code using ruff"
-	@echo "------------------------------------"
-	@ruff format core/ tests/ processing/ gui/  cityjson_loader.py resources.py __init__.py plugin_upload.py
-
-check:
-	@echo
-	@echo "------------------------------------"
-	@echo "Check issues with ruff"
-	@echo "------------------------------------"
-	@ruff check core/ tests/ processing/ gui/  cityjson_loader.py resources.py __init__.py plugin_upload.py || true
