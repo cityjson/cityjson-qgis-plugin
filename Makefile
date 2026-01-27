@@ -2,12 +2,6 @@
 # Edit the following to match your sources lists
 #################################################
 
-SOURCES = \
-	__init__.py \
-	cityjson_loader.py gui/cityjson_loader_dialog.py \
-	core/layers.py core/geometry.py core/styling.py core/settings.py \
-	core/subset.py core/utils.py
-
 PLUGINNAME = CityJSON-loader
 
 PY_FILES = \
@@ -64,7 +58,7 @@ endif
 # Normally you would not need to edit below here
 #################################################
 
-PLUGIN_UPLOAD = plugin_upload.py
+PLUGIN_UPLOAD = scripts/plugin_upload.py
 
 RESOURCE_SRC=$(shell grep '^ *<file' resources.qrc | sed 's@</file>@@g;s/.*>//g' | tr '\n' ' ')
 
@@ -131,7 +125,7 @@ package: compile
 # This requires use of git (your plugin development directory must be a
 # git repository).
 # To use, pass a valid commit or tag as follows:
-#   make package VERSION=v1.0.0
+#   make package VERSION=v1
 	@echo
 	@echo "------------------------------------"
 	@echo "Exporting plugin to zip package.	"
