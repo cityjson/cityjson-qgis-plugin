@@ -1,4 +1,3 @@
-
 # CityJSON Loader for QGIS
 
 This is a Python plugin for QGIS 3 which adds support for loading [CityJSON](http://www.cityjson.org) datasets in QGIS.
@@ -44,3 +43,24 @@ The following rules can be useful:
 * `make deploy`: will automatically copy the required files to your QGIS plugins' folder. **BEWARE:** *it only works out-of-the-box for macOS. For other operating systems you might have to change the `QGISDIR` variable in `Makefile`.*
 
 * `make package VERSION=GIT_REF`: (where *GIT_REF* is a branch, tag or any other git ref) will make a zip package to be installed manually from QGIS or uploaded to the QGIS plugins' repository.
+
+### Code style and pre-commit hooks
+
+This project uses [ruff](https://docs.astral.sh/ruff/) for linting/formatting and [pre-commit](https://pre-commit.com/) to automate code quality checks.
+
+To set up code style checks and pre-commit hooks after cloning the repository:
+
+1. Install ruff and pre-commit (ideally in a virtual environment):
+   ```sh
+   pip install ruff pre-commit
+   ```
+2. Install the pre-commit hooks:
+   ```sh
+   pre-commit install
+   ```
+3. (Optional) Run all hooks on all files to check/fix issues:
+   ```sh
+   pre-commit run --all-files
+   ```
+
+Now, every time you commit, pre-commit will automatically run ruff and other checks to help keep the codebase clean and consistent.
