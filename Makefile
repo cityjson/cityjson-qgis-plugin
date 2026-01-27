@@ -3,16 +3,7 @@
 #################################################
 
 
-#Add iso code for any locales you want to support here (space separated)
-# default is no locales
-# LOCALES = af
-LOCALES =
 
-# If locales are enabled, set the name of the lrelease binary on your system. If
-# you have trouble compiling the translations, you may have to specify the full path to
-# lrelease
-#LRELEASE = lrelease
-#LRELEASE = lrelease-qt4
 
 
 # translation
@@ -89,11 +80,11 @@ compile: $(COMPILED_RESOURCE_FILES)
 %.py : %.qrc $(RESOURCES_SRC)
 	pyrcc5 -o $*.py  $<
 
-%.qm : %.ts
-	$(LRELEASE) $<
 
 
-deploy: compile doc transcompile
+
+
+deploy: compile
 # The deploy  target only works on unix like operating system where
 # the Python plugin directory is located at:
 # $(HOME)/$(QGISDIR)/python/plugins
@@ -107,7 +98,6 @@ deploy: compile doc transcompile
 	@rsync -R $(UI_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
 	@cp -f $(COMPILED_RESOURCE_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
 	@cp -f $(EXTRAS) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
-	@cp -fr i18n "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
 
 # Copy extra directories if any
 	$(foreach EXTRA_DIR,$(EXTRA_DIRS), cp -R $(EXTRA_DIR) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"/;)
@@ -166,28 +156,7 @@ upload: zip
 	@echo "-------------------------------------"
 	@$(PLUGIN_UPLOAD) $(PLUGINNAME).zip
 
-transup:
-	@echo
-	@echo "------------------------------------------------"
-	@echo "Updating translation files with any new strings."
-	@echo "------------------------------------------------"
-	@chmod +x scripts/update-strings.sh
-	@scripts/update-strings.sh $(LOCALES)
 
-transcompile:
-	@echo
-	@echo "----------------------------------------"
-	@echo "Compiled translation files to .qm files."
-	@echo "----------------------------------------"
-	@chmod +x scripts/compile-strings.sh
-	@scripts/compile-strings.sh $(LRELEASE) $(LOCALES)
-
-transclean:
-	@echo
-	@echo "------------------------------------"
-	@echo "Removing compiled translation files."
-	@echo "------------------------------------"
-	@rm -f i18n/*.qm
 
 clean:
 	@echo
@@ -216,15 +185,3 @@ test-344:
 		$(MAKE) docker-build-344; \
 	fi
 	docker run --rm cityjson-qgis-plugin-test-344
-
-test: compile transcompile
-
-	@echo "------------------------------------------"
-	@echo " Running tests"
-	@echo "------------------------------------------"
-	export QGIS_DEBUG=0; \
-	export QGIS_LOG_FILE=/dev/null; \
-	$(QGIS_PYTHON) -m pytest tests  -v -s --cov=core/ --cov=gui
-	@echo "------------------------------------------"
-	@echo "Test suite completed"
-	@echo "------------------------------------------"
