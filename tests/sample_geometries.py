@@ -1,4 +1,7 @@
-"""A module that contains sample geometries for tests"""
+# Copyright © 2018–2026 3D geoinformation group, TU Delft, S. Vitalis and G. Stavropoulou.
+# Licensed under the Apache License, Version 2.0. See LICENSE file for details.
+
+"""Sample geometries for tests"""
 
 example_multisurface_with_semantics = [
     {
