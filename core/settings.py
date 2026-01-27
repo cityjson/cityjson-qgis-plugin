@@ -1,3 +1,28 @@
+# ******************************************************************************
+# Project: CityJsonLoader - A QGIS Plugin.
+#
+# Purpose: This plugin allows for CityJSON files to be loaded in QGIS.
+#
+# GitHub page: https://github.com/cityjson/cityjson-qgis-plugin
+#
+# Contact: G.Stavropoulou@tudelft.nl
+# ******************************************************************************
+#
+# Copyright © 2018–2026 3D geoinformation group, TU Delft, S. Vitalis and G. Stavropoulou. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# ******************************************************************************
 """A module to manage the settings of the plugin"""
 
 from qgis.PyQt.QtCore import QSettings
@@ -7,44 +32,43 @@ semantic_colors = {
     "RoofSurface": {
         "diffuse": QColor(255, 0, 0),
         "ambient": QColor(255, 0, 0),
-        "specular": None
+        "specular": None,
     },
     "WallSurface": {
         "diffuse": QColor(200, 200, 200),
         "ambient": QColor(255, 255, 255),
-        "specular": None
+        "specular": None,
     },
     "GroundSurface": {
         "diffuse": QColor(0, 0, 0),
         "ambient": QColor(0, 0, 0),
-        "specular": None
+        "specular": None,
     },
     "Door": {
         "diffuse": QColor(255, 200, 0),
         "ambient": QColor(255, 200, 0),
-        "specular": None
+        "specular": None,
     },
     "Window": {
         "diffuse": QColor(0, 100, 255),
         "ambient": QColor(0, 100, 255),
-        "specular": None
-    }
+        "specular": None,
+    },
 }
+
 
 def get_color_int(color):
     """Returns the int representation of a QColor"""
-    if color is None:
-        return None
-    else:
-        return color.getRgb()
+    return None if color is None else color.getRgb()
+
 
 def get_color_from_tuple(data):
     """Returns a color created from a tuple"""
     if data is None:
         return None
-    else:
-        r, g, b, a = data
-        return QColor(r, g, b, a)
+    r, g, b, a = data
+    return QColor(r, g, b, a)
+
 
 def save_defaults():
     """Saves the default values"""
@@ -58,15 +82,14 @@ def save_defaults():
         settings.setValue("diffuse", get_color_int(colors["diffuse"]))
         settings.setValue("ambient", get_color_int(colors["ambient"]))
         settings.setValue("specular", get_color_int(colors["specular"]))
-        i = i + 1
+        i += 1
     settings.endArray()
     settings.endGroup()
+
 
 def load_settings():
     """Loads the settings from the app's registry"""
 
-    result = {
-        "semantic_colors": semantic_colors
-    }
+    result = {"semantic_colors": semantic_colors}
 
     return result

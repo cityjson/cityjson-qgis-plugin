@@ -1,8 +1,32 @@
-#!/usr/bin/env python
-# coding=utf-8
+# ******************************************************************************
+# Project: CityJsonLoader - A QGIS Plugin.
+#
+# Purpose: This plugin allows for CityJSON files to be loaded in QGIS.
+#
+# GitHub page: https://github.com/cityjson/cityjson-qgis-plugin
+#
+# Contact: G.Stavropoulou@tudelft.nl
+# ******************************************************************************
+#
+# Copyright © 2018–2026 3D geoinformation group, TU Delft, S. Vitalis and G. Stavropoulou. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# ******************************************************************************
+
 """This script uploads a plugin package on the server.
-        Authors: A. Pasotti, V. Picavet
-        git sha              : $TemplateVCSFormat
+Authors: A. Pasotti, V. Picavet
+git sha              : $TemplateVCSFormat
 """
 
 import sys
@@ -11,10 +35,10 @@ import xmlrpc.client
 from optparse import OptionParser
 
 # Configuration
-PROTOCOL = 'http'
-SERVER = 'plugins.qgis.org'
-PORT = '80'
-ENDPOINT = '/plugins/RPC2/'
+PROTOCOL = "http"
+SERVER = "plugins.qgis.org"
+PORT = "80"
+ENDPOINT = "/plugins/RPC2/"
 VERBOSE = False
 
 
@@ -30,14 +54,16 @@ def main(parameters, arguments):
         parameters.password,
         parameters.server,
         parameters.port,
-        ENDPOINT)
+        ENDPOINT,
+    )
     print("Connecting to: %s" % hide_password(address))
 
     server = xmlrpc.client.ServerProxy(address, verbose=VERBOSE)
 
     try:
         plugin_id, version_id = server.plugin.upload(
-            xmlrpc.client.Binary(open(arguments[0]).read()))
+            xmlrpc.client.Binary(open(arguments[0]).read())
+        )
         print("Plugin ID: %s" % plugin_id)
         print("Version ID: %s" % version_id)
     except xmlrpc.client.ProtocolError as err:
@@ -61,28 +87,41 @@ def hide_password(url, start=6):
     :param start: Position of start of password.
     :type start: int
     """
-    start_position = url.find(':', start) + 1
-    end_position = url.find('@')
+    start_position = url.find(":", start) + 1
+    end_position = url.find("@")
     return "%s%s%s" % (
         url[:start_position],
-        '*' * (end_position - start_position),
-        url[end_position:])
+        "*" * (end_position - start_position),
+        url[end_position:],
+    )
 
 
 if __name__ == "__main__":
     parser = OptionParser(usage="%prog [options] plugin.zip")
     parser.add_option(
-        "-w", "--password", dest="password",
-        help="Password for plugin site", metavar="******")
+        "-w",
+        "--password",
+        dest="password",
+        help="Password for plugin site",
+        metavar="******",
+    )
     parser.add_option(
-        "-u", "--username", dest="username",
-        help="Username of plugin site", metavar="user")
+        "-u",
+        "--username",
+        dest="username",
+        help="Username of plugin site",
+        metavar="user",
+    )
     parser.add_option(
-        "-p", "--port", dest="port",
-        help="Server port to connect to", metavar="80")
+        "-p", "--port", dest="port", help="Server port to connect to", metavar="80"
+    )
     parser.add_option(
-        "-s", "--server", dest="server",
-        help="Specify server name", metavar="plugins.qgis.org")
+        "-s",
+        "--server",
+        dest="server",
+        help="Specify server name",
+        metavar="plugins.qgis.org",
+    )
     options, args = parser.parse_args()
     if len(args) != 1:
         print("Please specify zip file.\n")
@@ -95,7 +134,7 @@ if __name__ == "__main__":
     if not options.username:
         # interactive mode
         username = getpass.getuser()
-        print("Please enter user name [%s] :" % username, end=' ')
+        print("Please enter user name [%s] :" % username, end=" ")
         res = input()
         if res != "":
             options.username = res

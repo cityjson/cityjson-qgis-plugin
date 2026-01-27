@@ -1,135 +1,184 @@
+# ******************************************************************************
+# Project: CityJsonLoader - A QGIS Plugin.
+#
+# Purpose: This plugin allows for CityJSON files to be loaded in QGIS.
+#
+# GitHub page: https://github.com/cityjson/cityjson-qgis-plugin
+#
+# Contact: G.Stavropoulou@tudelft.nl
+# ******************************************************************************
+#
+# Copyright © 2018–2026 3D geoinformation group, TU Delft, S. Vitalis and G. Stavropoulou. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# ******************************************************************************
 """This module contains functions that originate from cjio"""
 
 import copy
+from typing import Any, Dict, List, Optional, Union
+from . import subset
 
-from .subset import *
+CITYJSON_VERSION = "1.0"
+CITYJSON_TYPE = "CityJSON"
+COORDINATE_DIMENSIONS = 3
 
-def createCityJSON():
+
+def createCityJSON() -> Dict[str, Any]:
     """Returns an empty CityJSON file"""
-    cm = {}
-    cm["type"] = "CityJSON"
-    cm["version"] = "1.0"
-    cm["CityObjects"] = {}
-    cm["vertices"] = []
+    return {
+        "type": CITYJSON_TYPE,
+        "version": CITYJSON_VERSION,
+        "CityObjects": {},
+        "vertices": [],
+    }
 
-    return cm
 
-def get_centroid(cm, coid):
-    def recusionvisit(a, vs):
-        for each in a:
-            if isinstance(each, list):
-                recusionvisit(each, vs)
+def get_centroid(cm: Dict[str, Any], coid: str) -> Optional[List[float]]:
+    """Calculate the 3D centroid of a city object"""
+
+    def collect_vertex_indices(boundaries: Any, vertex_indices: List[int]) -> None:
+        for boundary in boundaries:
+            if isinstance(boundary, list):
+                collect_vertex_indices(boundary, vertex_indices)
             else:
-                vs.append(each)
-    #-- find the 3D centroid
+                vertex_indices.append(boundary)
+
+    # Calculate centroid
     centroid = [0, 0, 0]
-    total = 0
-    for g in cm['CityObjects'][coid]['geometry']:
-        vs = []
-        recusionvisit(g["boundaries"], vs)
-        for each in vs:
-            v = cm["vertices"][each]
-            total += 1
-            centroid[0] += v[0]
-            centroid[1] += v[1]
-            centroid[2] += v[2]
-    if (total != 0):
-        centroid[0] /= total
-        centroid[1] /= total
-        centroid[2] /= total
-        if "transform" in cm:
-            centroid[0] = (centroid[0] * cm["transform"]["scale"][0]) + cm["transform"]["translate"][0]
-            centroid[1] = (centroid[1] * cm["transform"]["scale"][1]) + cm["transform"]["translate"][1]
-            centroid[2] = (centroid[2] * cm["transform"]["scale"][2]) + cm["transform"]["translate"][2]
-        return centroid
-    else:
+    vertex_count = 0
+    for geometry in cm["CityObjects"][coid]["geometry"]:
+        vertex_indices: List[int] = []
+        collect_vertex_indices(geometry["boundaries"], vertex_indices)
+        for vertex_index in vertex_indices:
+            vertex = cm["vertices"][vertex_index]
+            vertex_count += 1
+            centroid[0] += vertex[0]
+            centroid[1] += vertex[1]
+            centroid[2] += vertex[2]
+
+    if vertex_count == 0:
         return None
 
-def get_subset_cotype(cm, cotype, invert=False):
-    # print ('get_subset_cotype')
+    # Calculate average coordinates
+    centroid = [coord / vertex_count for coord in centroid]
+
+    # Apply transformation if present
+    if "transform" in cm:
+        transform = cm["transform"]
+        for i in range(COORDINATE_DIMENSIONS):
+            centroid[i] = (centroid[i] * transform["scale"][i]) + transform[
+                "translate"
+            ][i]
+
+    return centroid
+
+
+def get_subset_cotype(
+    cm: Dict[str, Any], cotype: Union[str, List[str]], invert: bool = False
+) -> Dict[str, Any]:
     if isinstance(cotype, list):
-        lsCOtypes = cotype
+        cityobject_types = cotype
     else:
-        lsCOtypes = [cotype]
+        cityobject_types = [cotype]
 
-    for t in lsCOtypes:
-        if t == 'Building':
-            lsCOtypes.append('BuildingInstallation')
-            lsCOtypes.append('BuildingPart')
-        if t == 'Bridge':
-            lsCOtypes.append('BridgePart')
-            lsCOtypes.append('BridgeInstallation')
-            lsCOtypes.append('BridgeConstructionElement')
-        if t == 'Tunnel':
-            lsCOtypes.append('TunnelInstallation')
-            lsCOtypes.append('TunnelPart')
-    #-- new sliced CityJSON object
-    cm2 = createCityJSON()
-    cm2["version"] = cm["version"]
+    # Expand types for related subtypes
+    for cityobject_type in list(cityobject_types):
+        if cityobject_type == "Building":
+            cityobject_types.extend(["BuildingInstallation", "BuildingPart"])
+        if cityobject_type == "Bridge":
+            cityobject_types.extend(
+                ["BridgePart", "BridgeInstallation", "BridgeConstructionElement"]
+            )
+        if cityobject_type == "Tunnel":
+            cityobject_types.extend(["TunnelInstallation", "TunnelPart"])
+
+    # -- new sliced CityJSON object
+    subset_cm = createCityJSON()
+    subset_cm["version"] = cm["version"]
     if "transform" in cm:
-        cm2["transform"] = cm["transform"]
-    #-- copy selected CO to the j2
-    for theid in cm["CityObjects"]:
-        if invert is False:
-            if cm["CityObjects"][theid]["type"] in lsCOtypes:
-                cm2["CityObjects"][theid] = cm["CityObjects"][theid]
+        subset_cm["transform"] = cm["transform"]
+    # -- copy selected CityObjects
+    for cityobject_id in cm["CityObjects"]:
+        if not invert:
+            if cm["CityObjects"][cityobject_id]["type"] in cityobject_types:
+                subset_cm["CityObjects"][cityobject_id] = cm["CityObjects"][
+                    cityobject_id
+                ]
         else:
-            if cm["CityObjects"][theid]["type"] not in lsCOtypes:
-                cm2["CityObjects"][theid] = cm["CityObjects"][theid]
-    #-- geometry
-    process_geometry(cm, cm2)
-    #-- templates
-    process_templates(cm, cm2)
-    #-- appearance
-    if ("appearance" in cm):
-        cm2["appearance"] = {}
-        process_appearance(cm, cm2)
-    #-- metadata
-    if ("metadata" in cm):
-        cm2["metadata"] = cm["metadata"]
+            if cm["CityObjects"][cityobject_id]["type"] not in cityobject_types:
+                subset_cm["CityObjects"][cityobject_id] = cm["CityObjects"][
+                    cityobject_id
+                ]
+    # -- geometry
+    subset.process_geometry(cm, subset_cm)
+    # -- templates
+    subset.process_templates(cm, subset_cm)
+    # -- appearance
+    if "appearance" in cm:
+        subset_cm["appearance"] = {}
+        subset.process_appearance(cm, subset_cm)
+    # -- metadata
+    if "metadata" in cm:
+        subset_cm["metadata"] = cm["metadata"]
 
-    return cm2
+    return subset_cm
 
-def get_subset_bbox(cm, bbox, invert=False):
-    # print ('get_subset_bbox')
-    #-- new sliced CityJSON object
-    cm2 = createCityJSON()
-    cm2["version"] = cm["version"]
+
+def get_subset_bbox(
+    cm: Dict[str, Any], bbox: List[float], invert: bool = False
+) -> Dict[str, Any]:
+    """Returns a subset of the CityJSON file within the given bbox."""
+    # -- new sliced CityJSON object
+    subset_cm = createCityJSON()
+    subset_cm["version"] = cm["version"]
     if "transform" in cm:
-        cm2["transform"] = cm["transform"]
-    re = set()            
-    for coid in cm["CityObjects"]:
-        centroid = get_centroid(cm, coid)
-        if ((centroid is not None) and
-            (centroid[0] >= bbox[0]) and
-            (centroid[1] >= bbox[1]) and
-            (centroid[0] <  bbox[2]) and
-            (centroid[1] <  bbox[3]) ):
-            re.add(coid)
-    re2 = copy.deepcopy(re)
-    if invert == True:
-        allkeys = set(cm["CityObjects"].keys())
-        re = allkeys ^ re
-    #-- also add the parent-children
-    for theid in re2:
-        if "children" in cm['CityObjects'][theid]:
-            for child in cm['CityObjects'][theid]['children']:
-                re.add(child)
-        if "parent" in cm['CityObjects'][theid]:
-            re.add(cm['CityObjects'][theid]['parent'])
+        subset_cm["transform"] = cm["transform"]
+    selected_ids = set()
+    for cityobject_id in cm["CityObjects"]:
+        centroid = get_centroid(cm, cityobject_id)
+        if (
+            (centroid is not None)
+            and (centroid[0] >= bbox[0])
+            and (centroid[1] >= bbox[1])
+            and (centroid[0] < bbox[2])
+            and (centroid[1] < bbox[3])
+        ):
+            selected_ids.add(cityobject_id)
+    selected_ids_copy = copy.deepcopy(selected_ids)
+    if invert:
+        all_ids = set(cm["CityObjects"].keys())
+        selected_ids = all_ids ^ selected_ids
+    # -- also add the parent-children
+    for cityobject_id in selected_ids_copy:
+        if "children" in cm["CityObjects"][cityobject_id]:
+            for child_id in cm["CityObjects"][cityobject_id]["children"]:
+                selected_ids.add(child_id)
+        if "parent" in cm["CityObjects"][cityobject_id]:
+            selected_ids.add(cm["CityObjects"][cityobject_id]["parent"])
 
-    for each in re:
-        cm2["CityObjects"][each] = cm["CityObjects"][each]
-    #-- geometry
-    process_geometry(cm, cm2)
-    #-- templates
-    process_templates(cm, cm2)
-    #-- appearance
-    if ("appearance" in cm):
-        cm2["appearance"] = {}
-        process_appearance(cm, cm2)
-    #-- metadata
-    if ("metadata" in cm):
-        cm2["metadata"] = cm["metadata"]
+    for cityobject_id in selected_ids:
+        subset_cm["CityObjects"][cityobject_id] = cm["CityObjects"][cityobject_id]
+    # -- geometry
+    subset.process_geometry(cm, subset_cm)
+    # -- templates
+    subset.process_templates(cm, subset_cm)
+    # -- appearance
+    if "appearance" in cm:
+        subset_cm["appearance"] = {}
+        subset.process_appearance(cm, subset_cm)
+    # -- metadata
+    if "metadata" in cm:
+        subset_cm["metadata"] = cm["metadata"]
 
-    return cm2
+    return subset_cm

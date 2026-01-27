@@ -1,0 +1,5 @@
+pytest-cov
+pytest
+ruff
+pre-commit
+qgis-plugin-ci

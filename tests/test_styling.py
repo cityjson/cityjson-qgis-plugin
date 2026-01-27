@@ -1,17 +1,29 @@
+# Copyright © 2018–2026 3D geoinformation group, TU Delft, S. Vitalis and G. Stavropoulou.
+# Licensed under the Apache License, Version 2.0. See LICENSE file for details.
+
 """A list of tests to check the styling classes functionality"""
 
 import pytest
-
 from core.styling import SemanticSurfacesStyling
 from core.settings import semantic_colors
 from qgis.core import QgsVectorLayer
 
+
+@pytest.fixture()
+def vectorlayer() -> QgsVectorLayer:
+    return QgsVectorLayer(
+        "Polygon?crs=EPSG:4326&field=semantic_surface:string", "test_layer", "memory"
+    )
+
+
 class TestSemanticSurfacesStyling:
     """Tests the functionality of the SemanticSurfacesStyling class"""
 
-    def test_creates_correct_number_of_rules(self):
+    def test_creates_correct_number_of_rules(self, vectorlayer: QgsVectorLayer):
         """Tests if the class creates the correct number of rules"""
-        vectorlayer = QgsVectorLayer()
+
+        # Ensure the layer is valid
+        assert vectorlayer.isValid(), "Vector layer should be valid"
 
         styling = SemanticSurfacesStyling(semantic_colors)
         styling.apply(vectorlayer)
