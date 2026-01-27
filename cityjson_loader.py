@@ -27,9 +27,21 @@
 import os.path
 import json
 
-from PyQt5.QtCore import QCoreApplication, QSettings, QTranslator, Qt, qVersion, QTimer
-from PyQt5.QtGui import QIcon, QKeySequence
-from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox, QShortcut
+from qgis.PyQt.QtCore import (
+    QCoreApplication,
+    QSettings,
+    QTranslator,
+    Qt,
+    qVersion,
+    QTimer,
+)
+from qgis.PyQt.QtGui import QIcon, QKeySequence
+from qgis.PyQt.QtWidgets import (
+    QAction,
+    QFileDialog,
+    QMessageBox,
+    QShortcut,
+)
 from qgis.core import QgsApplication, QgsCoordinateReferenceSystem
 from qgis.gui import QgsProjectionSelectionDialog
 
@@ -85,7 +97,7 @@ class CityJsonLoader:
         self.current_file_index = 0
         self.process_timer = None
 
-        self.delete_shortcut = QShortcut(QKeySequence(Qt.Key_Delete), self.dlg)
+        self.delete_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Delete), self.dlg)
         self.delete_shortcut.activated.connect(self.remove_cityjson_files)
 
         self.dlg.listWidget.itemSelectionChanged.connect(self.update_file_list)
