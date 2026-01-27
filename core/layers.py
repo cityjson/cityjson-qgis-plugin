@@ -28,7 +28,7 @@
 import abc
 
 from qgis.PyQt.QtCore import (
-    QVariant,
+    QMetaType,
 )
 from qgis.core import QgsFeature, QgsField, QgsFields, QgsVectorLayer
 
@@ -211,10 +211,14 @@ class BaseFieldsBuilder:
     def get_fields(self):
         """Creates and returns fields"""
         fields = QgsFields()
-        fields.append(QgsField("uid", QVariant.String))
-        fields.append(QgsField("type", QVariant.String))
-        fields.append(QgsField("parents", QVariant.String, len=1000))
-        fields.append(QgsField("children", QVariant.String, len=1000))
+        fields.append(QgsField("uid", QMetaType.Type.QString))
+        fields.append(QgsField("type", QMetaType.Type.QString))
+        field_parents = QgsField("parents", QMetaType.Type.QString)
+        field_parents.setLength(1000)
+        fields.append(field_parents)
+        field_children = QgsField("children", QMetaType.Type.QString)
+        field_children.setLength(1000)
+        fields.append(field_children)
 
         return fields
 
@@ -237,13 +241,13 @@ class AttributeFieldsDecorator:
 
     def _get_qgis_type(self, value):
         if isinstance(value, bool):
-            return QVariant.Bool
+            return QMetaType.Type.Bool
         elif isinstance(value, int):
-            return QVariant.Int
+            return QMetaType.Type.Int
         elif isinstance(value, float):
-            return QVariant.Double
+            return QMetaType.Type.Double
         else:
-            return QVariant.String
+            return QMetaType.Type.QString
 
     def _get_attribute_types(self):
         attribute_types = {}
@@ -254,18 +258,18 @@ class AttributeFieldsDecorator:
                     if (
                         att_key not in attribute_types
                         or (
-                            qtype == QVariant.Double
-                            and attribute_types[att_key] != QVariant.Double
+                            qtype == QMetaType.Type.Double
+                            and attribute_types[att_key] != QMetaType.Type.Double
                         )
                         or (
-                            qtype == QVariant.String
-                            and attribute_types[att_key] != QVariant.String
+                            qtype == QMetaType.Type.QString
+                            and attribute_types[att_key] != QMetaType.Type.QString
                         )
                     ):
                         attribute_types[att_key] = qtype
                     elif (
-                        qtype == QVariant.Int
-                        and attribute_types[att_key] == QVariant.Bool
+                        qtype == QMetaType.Type.Int
+                        and attribute_types[att_key] == QMetaType.Type.Bool
                     ):
                         attribute_types[att_key] = qtype
 
@@ -302,7 +306,7 @@ class LodFieldsDecorator:
     def get_fields(self):
         """Create and returns fields"""
         fields = self._decorated.get_fields()
-        fields.append(QgsField("lod", QVariant.String))
+        fields.append(QgsField("lod", QMetaType.Type.QString))
 
         return fields
 
@@ -316,13 +320,13 @@ class SemanticSurfaceFieldsDecorator:
 
     def _get_qgis_type(self, value):
         if isinstance(value, bool):
-            return QVariant.Bool
+            return QMetaType.Type.Bool
         elif isinstance(value, int):
-            return QVariant.Int
+            return QMetaType.Type.Int
         elif isinstance(value, float):
-            return QVariant.Double
+            return QMetaType.Type.Double
         else:
-            return QVariant.String
+            return QMetaType.Type.QString
 
     def get_semantic_attributes(self, objs):
         """Returns the list of (unique) attributes found in all city objects."""
