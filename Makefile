@@ -2,11 +2,6 @@
 # Edit the following to match your sources lists
 #################################################
 
-
-
-
-
-# translation
 SOURCES = \
 	__init__.py \
 	cityjson_loader.py gui/cityjson_loader_dialog.py \
@@ -69,7 +64,7 @@ endif
 # Normally you would not need to edit below here
 #################################################
 
-PLUGIN_UPLOAD = $(c)/plugin_upload.py
+PLUGIN_UPLOAD = plugin_upload.py
 
 RESOURCE_SRC=$(shell grep '^ *<file' resources.qrc | sed 's@</file>@@g;s/.*>//g' | tr '\n' ' ')
 
@@ -79,9 +74,6 @@ compile: $(COMPILED_RESOURCE_FILES)
 
 %.py : %.qrc $(RESOURCES_SRC)
 	pyrcc5 -o $*.py  $<
-
-
-
 
 
 deploy: compile
@@ -116,7 +108,6 @@ dclean:
 	@find "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)" -iname "*.pyc" -delete
 	@find "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)" -iname ".git" -prune -exec rm -Rf {} \;
 
-
 derase:
 	@echo
 	@echo "-------------------------"
@@ -136,11 +127,11 @@ zip: deploy dclean
 	@cd "$(HOME)/$(QGISDIR)/python/plugins"; zip -9r $(CURDIR)/$(PLUGINNAME).zip $(PLUGINNAME) -x ".*" "__pycache__/*" "**/__pycache__/*"
 
 package: compile
-# Create a zip package of the plugin named $(PLUGINNAME).zip.
+# Creates a zip package of the plugin named $(PLUGINNAME).zip.
 # This requires use of git (your plugin development directory must be a
 # git repository).
 # To use, pass a valid commit or tag as follows:
-#   make package VERSION=Version_0.3.2
+#   make package VERSION=v1.0.0
 	@echo
 	@echo "------------------------------------"
 	@echo "Exporting plugin to zip package.	"
@@ -154,16 +145,7 @@ upload: zip
 	@echo "-------------------------------------"
 	@echo "Uploading plugin to QGIS Plugin repo."
 	@echo "-------------------------------------"
-	@$(PLUGIN_UPLOAD) $(PLUGINNAME).zip
-
-
-
-clean:
-	@echo
-	@echo "------------------------------------"
-	@echo "Removing uic and rcc generated files"
-	@echo "------------------------------------"
-	@rm $(COMPILED_UI_FILES) $(COMPILED_RESOURCE_FILES)
+	@python3 ./$(PLUGIN_UPLOAD) $(PLUGINNAME).zip
 
 
 docker-build-340:
