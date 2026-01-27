@@ -1,23 +1,3 @@
-#/***************************************************************************
-# CityJsonLoader
-#
-# This plugin allows for CityJSON files to be loaded in QGIS
-#							 -------------------
-#		begin				: 2018-06-08
-#		git sha				: $Format:%H$
-#		copyright			: (C) 2018 by 3D Geoinformation
-#		email				: s.vitalis@tudelft.nl
-# ***************************************************************************/
-#
-#/***************************************************************************
-# *																		 *
-# *   This program is free software; you can redistribute it and/or modify  *
-# *   it under the terms of the GNU General Public License as published by  *
-# *   the Free Software Foundation; either version 2 of the License, or	 *
-# *   (at your option) any later version.								   *
-# *																		 *
-# ***************************************************************************/
-
 #################################################
 # Edit the following to match your sources lists
 #################################################
@@ -112,17 +92,6 @@ compile: $(COMPILED_RESOURCE_FILES)
 %.qm : %.ts
 	$(LRELEASE) $<
 
-test: compile transcompile
-
-	@echo "------------------------------------------"
-	@echo " Running tests"
-	@echo "------------------------------------------"
-	export QGIS_DEBUG=0; \
-	export QGIS_LOG_FILE=/dev/null; \
-	$(QGIS_PYTHON) -m pytest tests  -v -s --cov=core/ --cov=gui
-	@echo "------------------------------------------"
-	@echo "Test suite completed"
-	@echo "------------------------------------------"
 
 deploy: compile doc transcompile
 # The deploy  target only works on unix like operating system where
@@ -226,3 +195,36 @@ clean:
 	@echo "Removing uic and rcc generated files"
 	@echo "------------------------------------"
 	@rm $(COMPILED_UI_FILES) $(COMPILED_RESOURCE_FILES)
+
+
+docker-build-340:
+	docker build  -f Dockerfile.qgis-3.40 -t cityjson-qgis-plugin-test-340 .
+
+test-340:
+	@if [ -z "$$(docker images -q cityjson-qgis-plugin-test-340)" ]; then \
+		echo "Docker image not found. Building..."; \
+		$(MAKE) docker-build-340; \
+	fi
+	docker run --rm cityjson-qgis-plugin-test-340
+
+docker-build-344:
+	docker build  -f Dockerfile.qgis-3.44 -t cityjson-qgis-plugin-test-344 .
+
+test-344:
+	@if [ -z "$$(docker images -q cityjson-qgis-plugin-test-344)" ]; then \
+		echo "Docker image not found. Building..."; \
+		$(MAKE) docker-build-344; \
+	fi
+	docker run --rm cityjson-qgis-plugin-test-344
+
+test: compile transcompile
+
+	@echo "------------------------------------------"
+	@echo " Running tests"
+	@echo "------------------------------------------"
+	export QGIS_DEBUG=0; \
+	export QGIS_LOG_FILE=/dev/null; \
+	$(QGIS_PYTHON) -m pytest tests  -v -s --cov=core/ --cov=gui
+	@echo "------------------------------------------"
+	@echo "Test suite completed"
+	@echo "------------------------------------------"

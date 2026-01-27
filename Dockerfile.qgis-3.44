@@ -1,0 +1,21 @@
+FROM qgis/qgis:3.44
+
+# Set up environment variables if needed
+ENV QT_QPA_PLATFORM=offscreen
+ENV DISPLAY=:99
+
+# Install any extra dependencies you need
+RUN apt-get update && apt-get install -y python3-pip xvfb git
+
+# Copy your code into the container
+WORKDIR /app
+COPY . /app
+
+# Install Python dependencies
+RUN pip3 install -r requirements.txt --break-system-packages
+
+# Install pre-commit (optional)
+RUN pip3 install pre-commit --break-system-packages
+
+# Default command: run tests with coverage
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x24 & python3 -m pytest tests/ -v -s --cov=core/ --cov=gui --color=yes"]
