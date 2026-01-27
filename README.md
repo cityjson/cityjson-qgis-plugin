@@ -29,6 +29,10 @@ This can be done as follows:
 
 ## Development
 
+** For more detailed guidelines on contributing, please see the [CONTRIBUTING.md](CONTRIBUTING.md) file.** 
+
+
+
 The user interfaces for the loader were developed with QT Designer.
 
 After setupUI you can access any designer object by doing
