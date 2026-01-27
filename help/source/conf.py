@@ -40,7 +40,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "CityJsonLoader"
-copyright = "2013, 3D Geoinformation"
+copyright = "# Copyright © 2018–2026 3D geoinformation group, TU Delft, S. Vitalis and G. Stavropoulou. All rights reserved."
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
