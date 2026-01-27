@@ -25,8 +25,9 @@
 # ******************************************************************************
 """This module contains functions that originate from cjio"""
 
-import copy
 
+import copy
+from typing import Any, Dict, List, Optional, Set, Union
 from . import subset
 
 CITYJSON_VERSION = "1.0"
@@ -34,7 +35,7 @@ CITYJSON_TYPE = "CityJSON"
 COORDINATE_DIMENSIONS = 3
 
 
-def createCityJSON():
+def createCityJSON() -> Dict[str, Any]:
     """Returns an empty CityJSON file"""
     return {
         "type": CITYJSON_TYPE,
@@ -44,10 +45,10 @@ def createCityJSON():
     }
 
 
-def get_centroid(cm, coid):
+def get_centroid(cm: Dict[str, Any], coid: str) -> Optional[List[float]]:
     """Calculate the 3D centroid of a city object"""
 
-    def collect_vertices(boundaries, vertex_list):
+    def collect_vertices(boundaries: Any, vertex_list: List[int]) -> None:
         for item in boundaries:
             if isinstance(item, list):
                 collect_vertices(item, vertex_list)
@@ -84,7 +85,11 @@ def get_centroid(cm, coid):
     return centroid
 
 
-def get_subset_cotype(cm, cotype, invert=False):
+def get_subset_cotype(
+    cm: Dict[str, Any],
+    cotype: Union[str, List[str]],
+    invert: bool = False
+) -> Dict[str, Any]:
     if isinstance(cotype, list):
         lsCOtypes = cotype
     else:
@@ -129,21 +134,22 @@ def get_subset_cotype(cm, cotype, invert=False):
     return cm2
 
 
-def get_subset_bbox(cm, bbox, invert=False):
+def get_subset_bbox(
+    cm: Dict[str, Any],
+    bbox: List[float],
+    invert: bool = False
+) -> Dict[str, Any]:
     # print ('get_subset_bbox')
     # -- new sliced CityJSON object
     cm2 = createCityJSON()
-    cm2["version"] = cm["version"]
+    cm2["version"] = cm['version']
     if "transform" in cm:
         cm2["transform"] = cm["transform"]
     re = set()
     for coid in cm["CityObjects"]:
         centroid = get_centroid(cm, coid)
         if (
-            (centroid is not None)
-            and (centroid[0] >= bbox[0])
-            and (centroid[1] >= bbox[1])
-            and (centroid[0] < bbox[2])
+            (centroid is not None) and (centroid[0] >= bbox[0]) and (centroid[1] >= bbox[1]) and (centroid[0] < bbox[2])
             and (centroid[1] < bbox[3])
         ):
             re.add(coid)
