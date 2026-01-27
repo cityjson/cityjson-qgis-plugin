@@ -98,8 +98,6 @@ endif
 # Normally you would not need to edit below here
 #################################################
 
-HELP = help/build/html
-
 PLUGIN_UPLOAD = $(c)/plugin_upload.py
 
 RESOURCE_SRC=$(shell grep '^ *<file' resources.qrc | sed 's@</file>@@g;s/.*>//g' | tr '\n' ' ')
@@ -141,7 +139,7 @@ deploy: compile doc transcompile
 	@cp -f $(COMPILED_RESOURCE_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
 	@cp -f $(EXTRAS) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
 	@cp -fr i18n "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
-	@cp -fr $(HELP) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/help"
+
 # Copy extra directories if any
 	$(foreach EXTRA_DIR,$(EXTRA_DIRS), cp -R $(EXTRA_DIR) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"/;)
 	@echo "------------------------------------------"
@@ -228,10 +226,3 @@ clean:
 	@echo "Removing uic and rcc generated files"
 	@echo "------------------------------------"
 	@rm $(COMPILED_UI_FILES) $(COMPILED_RESOURCE_FILES)
-
-doc:
-	@echo
-	@echo "------------------------------------"
-	@echo "Building documentation using sphinx."
-	@echo "------------------------------------"
-	@cd help; make html
