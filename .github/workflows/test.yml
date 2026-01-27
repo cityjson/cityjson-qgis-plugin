@@ -1,4 +1,4 @@
-name: CityJSON QGIS Plugin Test Suite
+name: CityJSON QGIS Plugin Test with QGIS 3.40
 
 on:
   push:
@@ -7,30 +7,14 @@ on:
     branches: [ develop ]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  test-340:
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up QGIS environment 
-        run: |
-          sudo apt update
-          sudo apt install -y qgis python3-qgis python3-pyqt5 python3-pytest
-      
-      - name: Set Environment Variables
-        run: |
-          echo "QGIS_HOME=/usr" >> $GITHUB_ENV
-          echo "QT_QPA_PLATFORM=offscreen" >> $GITHUB_ENV
-          echo "DISPLAY=:99" >> $GITHUB_ENV
+      - name: Build Docker image for QGIS 3.40
+        run: docker build -f Dockerfile.qgis-3.40 -t cityjson-qgis-plugin-test-340 .
 
-      - name: Start Virtual Display
-        run: Xvfb :99 -screen 0 1024x768x24 &
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-
-      - name: Run tests with coverage
-        run: |
-          python -m pytest tests/ -v -s --cov=core/ --cov=gui
+      - name: Run tests in Docker (QGIS 3.40)
+        run: docker run --rm cityjson-qgis-plugin-test-340
