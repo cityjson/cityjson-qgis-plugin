@@ -14,7 +14,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Build Docker image for QGIS 3.40
-        run: docker build -f Dockerfile.qgis-3.40 -t cityjson-qgis-plugin-test-340 .
+        run: docker build -f docker/Dockerfile.qgis-3.40 -t cityjson-qgis-plugin-test-340 .
 
       - name: Run tests in Docker (QGIS 3.40)
         run: docker run --rm cityjson-qgis-plugin-test-340
@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Build Docker image for QGIS 3.44
-        run: docker build -f Dockerfile.qgis-3.44 -t cityjson-qgis-plugin-test-344 .
+        run: docker build -f docker/Dockerfile.qgis-3.44 -t cityjson-qgis-plugin-test-344 .
 
       - name: Run tests in Docker (QGIS 3.44)
         run: docker run --rm cityjson-qgis-plugin-test-344

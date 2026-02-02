@@ -35,6 +35,14 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
+# Detect platform for Docker (set DOCKER_DEFAULT_PLATFORM on Mac)
+ifeq ($(detected_OS),Darwin)
+    DOCKER_PLATFORM_PREFIX = DOCKER_DEFAULT_PLATFORM=linux/amd64
+else
+    DOCKER_PLATFORM_PREFIX =
+endif
+
+
 # If QGISDIR is not set from .env, detect from system
 ifndef QGISDIR
 ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
@@ -143,21 +151,21 @@ upload: zip
 
 
 docker-build-340:
-	docker build  -f Dockerfile.qgis-3.40 -t cityjson-qgis-plugin-test-340 .
+	$(DOCKER_PLATFORM_PREFIX) docker build  -f docker/Dockerfile.qgis-3.40 -t cityjson-qgis-plugin-test-340 .
 
 test-340:
 	@if [ -z "$$(docker images -q cityjson-qgis-plugin-test-340)" ]; then \
 		echo "Docker image not found. Building..."; \
 		$(MAKE) docker-build-340; \
 	fi
-	docker run --rm cityjson-qgis-plugin-test-340
+	$(DOCKER_PLATFORM_PREFIX) docker run --rm cityjson-qgis-plugin-test-340
 
 docker-build-344:
-	docker build  -f Dockerfile.qgis-3.44 -t cityjson-qgis-plugin-test-344 .
+	$(DOCKER_PLATFORM_PREFIX) docker build  -f docker/Dockerfile.qgis-3.44 -t cityjson-qgis-plugin-test-344 .
 
 test-344:
 	@if [ -z "$$(docker images -q cityjson-qgis-plugin-test-344)" ]; then \
 		echo "Docker image not found. Building..."; \
 		$(MAKE) docker-build-344; \
 	fi
-	docker run --rm cityjson-qgis-plugin-test-344
+	$(DOCKER_PLATFORM_PREFIX) docker run --rm cityjson-qgis-plugin-test-344
