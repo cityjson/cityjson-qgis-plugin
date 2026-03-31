@@ -60,19 +60,29 @@ def select_co_ids(j, IDs):
     return re
 
 
-def process_geometry(j, j2):
-    # -- update vertex indices
-    oldnewids = {}
-    newvertices = []
-    for each in j2["CityObjects"]:
-        for geom in j2["CityObjects"][each]["geometry"]:
+def process_geometry(j: dict, j2: dict) -> None:
+    """Reindex vertex references in j2 to point into a compacted vertex list.
+
+    Iterates over all geometries in j2, collects only the vertices that are
+    actually referenced, and writes the compacted list back to j2["vertices"].
+    Vertex indices inside each geometry's boundaries are updated in-place to
+    reflect their new positions in the compacted list.
+
+    Args:
+        j (dict): The source CityJSON model containing the full vertex list.
+        j2 (dict): The target CityJSON subset whose boundaries will be updated.
+    """
+    vertex_map = {}
+    new_vertices = []
+    for co in j2["CityObjects"].values():
+        for geom in co.get("geometry", []):
             update_array_indices(
-                geom["boundaries"], oldnewids, j["vertices"], newvertices, -1
+                geom["boundaries"], vertex_map, j["vertices"], new_vertices, -1
             )
-    j2["vertices"] = newvertices
+    j2["vertices"] = new_vertices
 
 
-def process_templates(j, j2):
+def process_templates(j: dict, j2: dict) -> None:
     dOldNewIDs = {}
     newones = []
     for each in j2["CityObjects"]:
@@ -93,7 +103,7 @@ def process_templates(j, j2):
         j2["geometry-templates"]["templates"] = newones
 
 
-def process_appearance(j, j2):
+def process_appearance(j: dict, j2: dict) -> None:
     # -- materials
     dOldNewIDs = {}
     newmats = []
@@ -118,7 +128,7 @@ def process_appearance(j, j2):
                             -1,
                         )
     if len(newmats) > 0:
-        j2["appearance"]["materials"] = newmats
+        j2.setdefault("appearance", {})["materials"] = newmats
 
     # -- textures references (first int in the arrays)
     dOldNewIDs = {}
@@ -136,7 +146,7 @@ def process_appearance(j, j2):
                             0,
                         )
     if len(newtextures) > 0:
-        j2["appearance"]["textures"] = newtextures
+        j2.setdefault("appearance", {})["textures"] = newtextures
     # -- textures vertices references (1+ int in the arrays)
     dOldNewIDs = {}
     newtextures = []
@@ -153,7 +163,7 @@ def process_appearance(j, j2):
                             1,
                         )
     if len(newtextures) > 0:
-        j2["appearance"]["vertices-texture"] = newtextures
+        j2.setdefault("appearance", {})["vertices-texture"] = newtextures
 
 
 def update_array_indices(a, dOldNewIDs, oldarray, newarray, slicearray):
