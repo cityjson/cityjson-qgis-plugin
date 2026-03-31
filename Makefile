@@ -35,6 +35,13 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
+# Detect OS for Docker and QGISDIR logic
+ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
+	detected_OS := Windows
+else
+	detected_OS := $(shell sh -c 'uname 2>/dev/null || echo Unknown')
+endif
+
 # Detect platform for Docker (set DOCKER_DEFAULT_PLATFORM on Mac)
 ifeq ($(detected_OS),Darwin)
     DOCKER_PLATFORM_PREFIX = DOCKER_DEFAULT_PLATFORM=linux/amd64
@@ -45,12 +52,6 @@ endif
 
 # If QGISDIR is not set from .env, detect from system
 ifndef QGISDIR
-ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
-	detected_OS := Windows
-else
-	detected_OS := $(shell sh -c 'uname 2>/dev/null || echo Unknown')
-endif
-
 ifeq ($(detected_OS),Windows)
 	QGISDIR := AppData\Roaming\QGIS\QGIS3\profiles\default
 endif
@@ -169,3 +170,25 @@ test-344:
 		$(MAKE) docker-build-344; \
 	fi
 	$(DOCKER_PLATFORM_PREFIX) docker run --rm cityjson-qgis-plugin-test-344
+
+docker-build-40:
+	$(DOCKER_PLATFORM_PREFIX) docker build  -f docker/Dockerfile.qgis-4.0 -t cityjson-qgis-plugin-test-40 .
+
+test-40:
+	@if [ -z "$$(docker images -q cityjson-qgis-plugin-test-40)" ]; then \
+		echo "Docker image not found. Building..."; \
+		$(MAKE) docker-build-40; \
+	fi
+	$(DOCKER_PLATFORM_PREFIX) docker run --rm cityjson-qgis-plugin-test-40
+
+test: compile 
+
+	@echo "------------------------------------------"
+	@echo " Running tests"
+	@echo "------------------------------------------"
+	export QGIS_DEBUG=0; \
+	export QGIS_LOG_FILE=/dev/null; \
+	$(QGIS_PYTHON) -m pytest tests  -v -s --cov=core/ --cov=gui
+	@echo "------------------------------------------"
+	@echo "Test suite completed"
+	@echo "------------------------------------------"
