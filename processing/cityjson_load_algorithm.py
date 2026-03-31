@@ -35,8 +35,8 @@ from qgis.core import (
     QgsProcessingParameterExtent,
 )
 
-from ..core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
-from ..core.utils import get_subset_bbox, get_subset_cotype
+from core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
+from core.utils import get_subset_bbox, get_subset_cotype
 
 
 class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
@@ -305,14 +305,20 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
 
         if not extent.isNull():
             feedback.setProgressText("Filtering objects by extent...")
-            cm = self.subset_bbox(cm, extent)
+            bbox = [
+                extent.xMinimum(),
+                extent.yMinimum(),
+                extent.xMaximum(),
+                extent.yMaximum(),
+            ]
+            cm = get_subset_bbox(cm, bbox)
             feedback.pushInfo("Found {} objects.".format(len(cm["CityObjects"])))
 
         object_types = self.parameterAsEnums(parameters, self.OBJECT_TYPE, context)
 
         if len(object_types) > 0:
             feedback.setProgressText("Filtering objects by type...")
-            cm = self.subset_cotype(cm, [self.OBJECTTYPES[t] for t in object_types])
+            cm = get_subset_cotype(cm, [self.OBJECTTYPES[t] for t in object_types])
             feedback.pushInfo("Found {} objects.".format(len(cm["CityObjects"])))
 
         if len(cm["CityObjects"]) == 0:
@@ -334,25 +340,3 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
         loader.load(feedback=feedback)
 
         return {"STATUS": "SUCCESS"}
-
-    def subset_bbox(self, cm, rectangle):
-        """
-        Returns a subset of the original city model based on the defined
-        extent.
-        """
-
-        bbox = [
-            rectangle.xMinimum(),
-            rectangle.yMinimum(),
-            rectangle.xMaximum(),
-            rectangle.yMaximum(),
-        ]
-
-        sub_cm = get_subset_bbox(cm, bbox)
-
-        return sub_cm
-
-    def subset_cotype(self, cm, cotype):
-        sub_cm = get_subset_cotype(cm, cotype)
-
-        return sub_cm
