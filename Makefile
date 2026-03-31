@@ -14,7 +14,7 @@ PY_FILES = \
 
 UI_FILES = gui/cityjson_loader_dialog_base.ui
 
-EXTRAS = metadata.txt icon.png cityjson_logo_big.png cityjson_logo.svg Changelog.md
+EXTRAS = metadata.txt cityjson_logo.svg Changelog.md
 
 EXTRA_DIRS = 
 
@@ -188,7 +188,11 @@ test: compile
 	@echo "------------------------------------------"
 	export QGIS_DEBUG=0; \
 	export QGIS_LOG_FILE=/dev/null; \
-	$(QGIS_PYTHON) -m pytest tests  -v -s --cov=core/ --cov=gui
+	$(QGIS_PYTHON) -m pytest tests  -v -s --cov=core/ --cov=processing/ --cov=gui
 	@echo "------------------------------------------"
 	@echo "Test suite completed"
 	@echo "------------------------------------------"
+
+format: compile
+	uv tool run ruff format .
+	uv tool run ruff check .
