@@ -28,7 +28,7 @@ def test_select_co_ids_empty_input():
     assert len(result) == 0
 
 
-def test_select_co_ids_nonexistent_ids(capsys):
+def test_select_co_ids_nonexistent_ids(caplog):
     cm = {
         "CityObjects": {
             "id1": {"type": "Building"},
@@ -36,12 +36,12 @@ def test_select_co_ids_nonexistent_ids(capsys):
         }
     }
     result = subset.select_co_ids(cm, ["id1", "nonexistent", "id2"])
-    captured = capsys.readouterr()
 
     assert "id1" in result
     assert "id2" in result
     assert "nonexistent" not in result
-    assert "WARNING: ID nonexistent not found" in captured.out
+    assert "ID nonexistent not found in input file; ignored." in caplog.text
+    assert caplog.records[0].levelname == "WARNING"
 
 
 def test_select_co_ids_with_city_object_group():

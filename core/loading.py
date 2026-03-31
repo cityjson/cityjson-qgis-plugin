@@ -54,6 +54,9 @@ from .styling import (
     is_3d_styling_available,
     is_rule_based_3d_styling_available,
 )
+from . import get_logger
+
+logger = get_logger("loading")
 
 
 class CityJSONLoader:
@@ -241,11 +244,10 @@ def get_model_epsg(citymodel) -> Optional[str]:
             p = re.compile(r"^https://www\.opengis\.net/def/crs/.*/([0-9]+)$")
             m = p.match(ref_string)
 
-            print("Regex match result: ")
-            print(ref_string)
+            logger.debug(f"Regex match result: {ref_string}")
 
             if m is not None:
-                print("Matching CRS:", m)
+                logger.debug(f"Matching CRS: {m}")
                 return m.group(1)
         except (KeyError, TypeError):
             return None

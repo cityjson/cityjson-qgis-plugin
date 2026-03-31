@@ -25,6 +25,10 @@
 # ******************************************************************************
 """A module that provides functions to create subsets of CityJSON files"""
 
+from . import get_logger
+
+logger = get_logger("subset")
+
 
 def select_co_ids(j, IDs):
     IDs = list(IDs)
@@ -35,7 +39,7 @@ def select_co_ids(j, IDs):
     not_found = [theid for theid in IDs if theid not in j["CityObjects"]]
     for theid in not_found:
         IDs.remove(theid)
-        print("WARNING: ID", theid, "not found in input file; ignored.")
+        logger.warning(f"ID {theid} not found in input file; ignored.")
     # -- also add the children (covers CityObjectGroup which uses "children" per spec 2.0)
     for id in j["CityObjects"]:
         if id in IDs:

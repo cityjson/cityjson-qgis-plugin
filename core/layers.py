@@ -29,6 +29,9 @@ import abc
 
 
 from qgis.core import Qgis, QgsFeature, QgsField, QgsFields, QgsVectorLayer
+from . import get_logger
+
+logger = get_logger("layers")
 
 # Define type aliases for field types based on QGIS version
 if Qgis.QGIS_VERSION_INT >= 33800:
@@ -294,7 +297,7 @@ class AttributeFieldsDecorator:
             for att, qtype in attributes:
                 fields.append(QgsField("attribute.{}".format(att), qtype))
         except Exception as e:
-            print("Error while creating attribute fields: {}".format(e))
+            logger.error(f"Error while creating attribute fields: {e}")
 
         return fields
 
@@ -376,9 +379,7 @@ class SemanticSurfaceFieldsDecorator:
                 qtype = self._get_qgis_type(sample_value)
                 fields.append(QgsField(f"surface.{att}", qtype))
         except Exception as e:
-            print(
-                "Error while creating semantic surface attribute fields: {}".format(e)
-            )
+            logger.error(f"Error while creating semantic surface attribute fields: {e}")
 
         return fields
 
