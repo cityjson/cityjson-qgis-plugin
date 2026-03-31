@@ -136,7 +136,9 @@ class CityJsonLoader:
         """Add CityJSON files to the file list"""
         self.reset_progress_format_on_ui_change()
         for filename in filepaths:
-            existing_items = self.dlg.listWidget.findItems(filename, Qt.MatchFlag.MatchExactly)
+            existing_items = self.dlg.listWidget.findItems(
+                filename, Qt.MatchFlag.MatchExactly
+            )
             if not existing_items:
                 self.dlg.listWidget.addItem(filename)
                 epsg = self.load_file_crs(filename)
