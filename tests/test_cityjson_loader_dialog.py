@@ -24,7 +24,7 @@ class TestCityJsonLoaderDialog:
         assert button.isEnabled()
         button.click()
         result = self.dialog.result()
-        assert result == QDialog.Rejected
+        assert result == 0  # QDialog.Rejected
 
     def test_load_button(self, qgis_app):
         """Test the load button functionality."""
@@ -40,7 +40,7 @@ class TestCityJsonLoaderDialog:
         button.click()
         assert not button.isEnabled()
         result = self.dialog.result()
-        assert result == QDialog.Rejected
+        assert result == 0  # QDialog.Rejected
 
     def test_browse_files_button(self, qgis_app):
         """Test the browse files button functionality."""
