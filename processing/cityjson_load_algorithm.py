@@ -35,8 +35,14 @@ from qgis.core import (
     QgsProcessingParameterExtent,
 )
 
-from ..core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
-from ..core.utils import get_subset_bbox, get_subset_cotype
+try:
+    # When running as QGIS plugin
+    from ..core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
+    from ..core.utils import get_subset_bbox, get_subset_cotype
+except ImportError:
+    # When running tests or standalone
+    from core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
+    from core.utils import get_subset_bbox, get_subset_cotype
 
 
 class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
