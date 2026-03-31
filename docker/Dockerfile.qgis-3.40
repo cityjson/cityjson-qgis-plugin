@@ -1,8 +1,15 @@
 FROM qgis/qgis:3.40-jammy
 
-# Set up environment variables if needed
+# Set up environment variables for headless Qt/QGIS testing
 ENV QT_QPA_PLATFORM=offscreen
 ENV DISPLAY=:99
+ENV XDG_RUNTIME_DIR=/tmp/runtime-root
+ENV QT_LOGGING_RULES="*.debug=false;qt.qpa.*=false"
+ENV QGIS_DISABLE_MESSAGE_HOOKS=1
+ENV QGIS_NO_OVERRIDE_IMPORT=1
+
+# Create runtime directory with proper permissions
+RUN mkdir -p /tmp/runtime-root && chmod 0700 /tmp/runtime-root
 
 # Install any extra dependencies you need
 RUN apt-get update && apt-get install -y python3-pip xvfb git
