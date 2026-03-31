@@ -188,7 +188,7 @@ test: compile
 	@echo "------------------------------------------"
 	export QGIS_DEBUG=0; \
 	export QGIS_LOG_FILE=/dev/null; \
-	$(QGIS_PYTHON) -m pytest tests  -v -s --cov=core/ --cov=processing/ --cov=gui
+	$(QGIS_PYTHON) -m pytest tests  -v -s --cov=core/ --cov=processing/ --cov=gui/
 	@echo "------------------------------------------"
 	@echo "Test suite completed"
 	@echo "------------------------------------------"
