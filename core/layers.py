@@ -301,9 +301,11 @@ class AttributeFieldsDecorator:
         """Create and returns fields"""
         fields = self._decorated.get_fields()
         attributes = self._attribute_types.items()
-
-        for att, qtype in attributes:
-            fields.append(QgsField("attribute.{}".format(att), qtype))
+        try:
+            for att, qtype in attributes:
+                fields.append(QgsField("attribute.{}".format(att), qtype))
+        except Exception as e:
+            print("Error while creating attribute fields: {}".format(e))
 
         return fields
 
@@ -379,10 +381,15 @@ class SemanticSurfaceFieldsDecorator:
         fields = self._decorated.get_fields()
         attributes = self.get_semantic_attributes(self._citymodel["CityObjects"])
 
-        for att in attributes:
-            sample_value = self._find_sample_value(att)
-            qtype = self._get_qgis_type(sample_value)
-            fields.append(QgsField(f"surface.{att}", qtype))
+        try:
+            for att in attributes:
+                sample_value = self._find_sample_value(att)
+                qtype = self._get_qgis_type(sample_value)
+                fields.append(QgsField(f"surface.{att}", qtype))
+        except Exception as e:
+            print(
+                "Error while creating semantic surface attribute fields: {}".format(e)
+            )
 
         return fields
 
