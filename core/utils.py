@@ -54,10 +54,24 @@ def get_centroid(cm: Dict[str, Any], coid: str) -> Optional[List[float]]:
             else:
                 vertex_indices.append(boundary)
 
+    # Check if city object exists
+    if coid not in cm["CityObjects"]:
+        return None
+
+    city_object = cm["CityObjects"][coid]
+
+    # Check if city object has geometry
+    if "geometry" not in city_object:
+        return None
+
+    # Check if geometry is empty
+    if not city_object["geometry"]:
+        return None
+
     # Calculate centroid
     centroid = [0, 0, 0]
     vertex_count = 0
-    for geometry in cm["CityObjects"][coid]["geometry"]:
+    for geometry in city_object["geometry"]:
         vertex_indices: List[int] = []
         collect_vertex_indices(geometry["boundaries"], vertex_indices)
         for vertex_index in vertex_indices:
