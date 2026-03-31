@@ -3,7 +3,7 @@
 
 from unittest.mock import MagicMock
 
-from qgis.core import QgsFields
+from qgis.core import QgsFields, QgsField
 
 from core.layers import (
     TypeNamingIterator,
@@ -18,6 +18,7 @@ from core.layers import (
     LodFeatureDecorator,
     ParentFeatureDecorator,
     DynamicLayerManager,
+    FIELD_STRING,
 )
 
 
@@ -745,3 +746,93 @@ class TestDecoratorChaining:
 
         # Total: 4 base + 1 attribute + 1 lod + 2 semantic = 8
         assert len(fields) == 8
+
+
+class TestErrorHandlingAndEdgeCases:
+    """Tests for error handling and edge cases in layers module"""
+
+    def test_dynamic_layer_manager_empty_citymodel(self):
+        """Tests DynamicLayerManager with empty CityModel creates no objects but still works"""
+        empty_model = {"CityObjects": {}, "vertices": []}
+
+        # Create required components
+        fields_builder = BaseFieldsBuilder()
+        feature_builder = SimpleFeatureBuilder(MagicMock())
+        layer_iterator = BaseNamingIterator("empty")
+
+        manager = DynamicLayerManager(
+            empty_model, feature_builder, layer_iterator, fields_builder
+        )
+
+        # Should create one empty layer based on the filename
+        layers = list(manager.get_all_layers())
+        # Empty layers are filtered out by get_all_layers(), so expect 0
+        assert len(layers) == 0
+
+    def test_base_naming_iterator_with_empty_filename(self):
+        """Tests BaseNamingIterator with filename parameter"""
+        iterator = BaseNamingIterator("test_file")
+        layers = list(iterator.all_layers())
+        assert len(layers) == 1
+        assert layers[0] == "test_file"
+
+    def test_type_naming_iterator_single_object_type(self):
+        """Tests TypeNamingIterator when all objects are same type"""
+        same_type_model = {
+            "CityObjects": {
+                "b1": {"type": "Building"},
+                "b2": {"type": "Building"},
+                "b3": {"type": "Building"},
+            }
+        }
+        iterator = TypeNamingIterator("test_file", same_type_model)
+        names = list(iterator.all_layers())
+        # Should only create one name for Buildings
+        assert len(names) == 1
+        assert names[0] == "test_file - Building"
+
+    def test_simple_feature_builder_with_empty_parents_list(self):
+        """Tests SimpleFeatureBuilder with empty parents list"""
+        reader = MagicMock()
+        builder = SimpleFeatureBuilder(reader)
+
+        # Create fields with parents field
+        fields = self._make_basic_fields_with_parents()
+
+        # Test with empty parents list
+        co = {"type": "Building", "parents": []}
+        features = builder.create_features(fields, "b1", co, read_geometry=False)
+        feature = list(features.keys())[0]
+        # Empty parents list should set parents field to '[]'
+        assert feature["parents"] == "[]"
+
+    def _make_basic_fields_with_parents(self):
+        """Helper to create basic fields including parents field"""
+        fields = QgsFields()
+        fields.append(QgsField("uid", FIELD_STRING))
+        fields.append(QgsField("type", FIELD_STRING))
+        fields.append(QgsField("parents", FIELD_STRING))
+        fields.append(QgsField("children", FIELD_STRING))
+        return fields
+
+    def test_parent_feature_decorator_no_parents(self):
+        """Tests ParentFeatureDecorator with object that has no parents"""
+        reader = MagicMock()
+        base_builder = SimpleFeatureBuilder(reader)
+        decorator = ParentFeatureDecorator(base_builder, reader, PARENT_CHILD_CITYMODEL)
+        fields = self._make_parent_fields()
+
+        co = {"type": "Building"}  # No parents property
+        features = decorator.create_features(
+            fields, "root-building", co, read_geometry=False
+        )
+        feature = list(features.keys())[0]
+
+        # Should handle objects without parents gracefully
+        assert feature["uid"] == "root-building"
+        assert feature["type"] == "Building"
+
+    def _make_parent_fields(self):
+        """Helper to create fields for parent decorator tests"""
+        base = BaseFieldsBuilder()
+        return base.get_fields()
