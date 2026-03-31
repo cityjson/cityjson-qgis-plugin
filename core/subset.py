@@ -26,12 +26,6 @@
 """A module that provides functions to create subsets of CityJSON files"""
 
 
-def select_co_bbox(j, bbox):
-    """Select city objects whose geometry intersects with the bounding box"""
-    # TODO: Implement bounding box selection
-    pass
-
-
 def select_co_ids(j, IDs):
     IDs = list(IDs)
     re = set()

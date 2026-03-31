@@ -62,14 +62,6 @@ def get_color_int(color):
     return None if color is None else color.getRgb()
 
 
-def get_color_from_tuple(data):
-    """Returns a color created from a tuple"""
-    if data is None:
-        return None
-    r, g, b, a = data
-    return QColor(r, g, b, a)
-
-
 def save_defaults():
     """Saves the default values"""
     settings = QSettings()

@@ -286,17 +286,6 @@ class AttributeFieldsDecorator:
 
         return attribute_types
 
-    def get_attribute_keys(self, objs):
-        """Returns the list of (unique) attributes found in all city objects."""
-        atts = []
-        for obj in objs.values():
-            if "attributes" in obj:
-                for att_key in obj["attributes"]:
-                    if att_key not in atts:
-                        atts.append(att_key)
-
-        return atts
-
     def get_fields(self):
         """Create and returns fields"""
         fields = self._decorated.get_fields()
