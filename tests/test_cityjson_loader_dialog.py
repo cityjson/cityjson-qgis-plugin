@@ -1,7 +1,7 @@
 # Copyright © 2018–2026 3D geoinformation group, TU Delft, S. Vitalis and G. Stavropoulou.
 # Licensed under the Apache License, Version 2.0. See LICENSE file for details.
 
-from PyQt5.QtWidgets import QDialog
+from qgis.PyQt.QtWidgets import QDialog
 
 from gui.cityjson_loader_dialog import CityJsonLoaderDialog
 
