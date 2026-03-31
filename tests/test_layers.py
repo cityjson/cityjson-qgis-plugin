@@ -87,7 +87,7 @@ TWO_CUBES_CITYMODEL = {
                         [[3, 2, 6, 7]],
                         [[6, 5, 4, 7]],
                     ],
-                    "lod": 1,
+                    "lod": "1",
                     "type": "MultiSurface",
                 }
             ],
@@ -107,6 +107,7 @@ TWO_CUBES_CITYMODEL = {
         [0.0, -1.0, 0.0],
     ],
     "metadata": {"geographicalExtent": [-1.0, -1.0, 0.0, 1.0, 1.0, 1.0]},
+    "transform": {"scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0]},
 }
 CITYMODEL_WITH_ATTRIBUTES = {
     "type": "CityJSON",
@@ -115,6 +116,8 @@ CITYMODEL_WITH_ATTRIBUTES = {
         "id-1": {"type": "Building", "attributes": {"attribute1": 1, "attribute2": 2}},
         "id-2": {"type": "Building", "attributes": {"attribute1": 1, "attribute3": 2}},
     },
+    "vertices": [],
+    "transform": {"scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0]},
 }
 
 

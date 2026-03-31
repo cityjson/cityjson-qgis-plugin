@@ -100,7 +100,7 @@ class TestGeometryReader:
         geom = sample_geometries.example_geometry_instance[0]
         lod = geometry_reader.get_lod(geom)
 
-        assert lod == 2
+        assert lod == "2"
 
     def test_get_polygons_with_geometry_instance(self):
         """Tests if the geometry of a geometry instance is read properly"""

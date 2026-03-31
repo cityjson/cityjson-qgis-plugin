@@ -87,7 +87,9 @@ def test_get_subset_cotype(monkeypatch):
 
 def test_get_subset_bbox(monkeypatch):
     cm = {
-        "version": "1.0",
+        "type": "CityJSON",
+        "version": "2.0",
+        "transform": {"scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0]},
         "CityObjects": {
             "id1": {"geometry": [{"boundaries": [[0, 1, 2]], "type": "Solid"}]},
             "id2": {"geometry": [{"boundaries": [[3, 4, 5]], "type": "Solid"}]},

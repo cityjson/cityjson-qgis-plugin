@@ -49,10 +49,10 @@ def test_select_co_ids_with_city_object_group():
         "CityObjects": {
             "group1": {
                 "type": "CityObjectGroup",
-                "members": ["building1", "building2"],
+                "children": ["building1", "building2"],
             },
-            "building1": {"type": "Building"},
-            "building2": {"type": "Building"},
+            "building1": {"type": "Building", "parents": ["group1"]},
+            "building2": {"type": "Building", "parents": ["group1"]},
             "building3": {"type": "Building"},
         }
     }
@@ -81,8 +81,8 @@ def test_select_co_ids_with_children():
     cm = {
         "CityObjects": {
             "parent1": {"type": "Building", "children": ["part1", "part2"]},
-            "part1": {"type": "BuildingPart"},
-            "part2": {"type": "BuildingPart"},
+            "part1": {"type": "BuildingPart", "parents": ["parent1"]},
+            "part2": {"type": "BuildingPart", "parents": ["parent1"]},
             "unrelated": {"type": "Building"},
         }
     }
@@ -98,8 +98,8 @@ def test_select_co_ids_with_parent():
     cm = {
         "CityObjects": {
             "parent1": {"type": "Building", "children": ["part1", "part2"]},
-            "part1": {"type": "BuildingPart", "parent": "parent1"},
-            "part2": {"type": "BuildingPart", "parent": "parent1"},
+            "part1": {"type": "BuildingPart", "parents": ["parent1"]},
+            "part2": {"type": "BuildingPart", "parents": ["parent1"]},
         }
     }
     result = subset.select_co_ids(cm, ["part1"])

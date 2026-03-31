@@ -32,31 +32,24 @@ def select_co_ids(j, IDs):
     for theid in j["CityObjects"]:
         if theid in IDs:
             re.add(theid)
-    for theid in IDs:
-        if theid not in j["CityObjects"]:
-            IDs.remove(theid)
-            print("WARNING: ID", theid, "not found in input file; ignored.")
-    # -- deal with CityObjectGroup
-    for each in j["CityObjects"]:
-        if each in IDs:
-            if (
-                j["CityObjects"][each]["type"] == "CityObjectGroup"
-                and "members" in j["CityObjects"][each]
-            ):
-                for member in j["CityObjects"][each]["members"]:
-                    re.add(member)
-    # -- also add the children
+    not_found = [theid for theid in IDs if theid not in j["CityObjects"]]
+    for theid in not_found:
+        IDs.remove(theid)
+        print("WARNING: ID", theid, "not found in input file; ignored.")
+    # -- also add the children (covers CityObjectGroup which uses "children" per spec 2.0)
     for id in j["CityObjects"]:
         if id in IDs:
             if "children" in j["CityObjects"][id]:
                 for child in j["CityObjects"][id]["children"]:
                     re.add(child)
-            if "parent" in j["CityObjects"][id]:
-                re.add(j["CityObjects"][id]["parent"])
-                # -- add siblings
-                if "children" in j["CityObjects"][id]["parent"]:
-                    for child in j["CityObjects"][id]["parent"]:
-                        re.add(child)
+            if "parents" in j["CityObjects"][id]:
+                for parent_id in j["CityObjects"][id]["parents"]:
+                    re.add(parent_id)
+                    # -- add siblings
+                    parent_obj = j["CityObjects"].get(parent_id, {})
+                    if "children" in parent_obj:
+                        for child in parent_obj["children"]:
+                            re.add(child)
     return re
 
 

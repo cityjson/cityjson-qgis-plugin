@@ -22,9 +22,10 @@ class TestLoadCityJsonModel:
         # Valid CityJSON content
         self.valid_cityjson = {
             "type": "CityJSON",
-            "version": "1.0",
+            "version": "2.0",
             "CityObjects": {"building1": {"type": "Building", "geometry": []}},
             "vertices": [[0, 0, 0], [1, 1, 1]],
+            "transform": {"scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0]},
         }
 
         # Create valid test file
@@ -48,7 +49,7 @@ class TestLoadCityJsonModel:
 
         assert isinstance(result, dict)
         assert result["type"] == "CityJSON"
-        assert result["version"] == "1.0"
+        assert result["version"] == "2.0"
         assert "CityObjects" in result
         assert "vertices" in result
 

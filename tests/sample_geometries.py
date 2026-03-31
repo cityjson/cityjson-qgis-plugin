@@ -6,7 +6,7 @@
 example_multisurface_with_semantics = [
     {
         "type": "MultiSurface",
-        "lod": 2,
+        "lod": "2",
         "boundaries": [
             [[0, 3, 2, 1]],
             [[4, 5, 6, 7]],
@@ -28,7 +28,7 @@ example_multisurface_with_semantics = [
 example_solid_with_semantics = [
     {
         "type": "CompositeSolid",
-        "lod": 2,
+        "lod": "2",
         "boundaries": [
             [[[[0, 3, 2, 1, 22]], [[4, 5, 6, 7]], [[0, 1, 5, 4]], [[1, 2, 6, 5]]]],
             [[[[666, 667, 668]], [[74, 75, 76]], [[880, 881, 885]], [[111, 122, 226]]]],
@@ -50,7 +50,7 @@ example_solid_with_semantics = [
 example_composite_solid = [
     {
         "type": "CompositeSolid",
-        "lod": 3,
+        "lod": "3",
         "boundaries": [
             [
                 [[[0, 3, 2, 1, 22]], [[4, 5, 6, 7]], [[0, 1, 5, 4]], [[1, 2, 6, 5]]],
@@ -96,12 +96,12 @@ example_geometry_template = {
     "templates": [
         {
             "type": "MultiSurface",
-            "lod": 2,
+            "lod": "2",
             "boundaries": [[[0, 3, 2, 1]], [[4, 5, 6, 7]], [[0, 1, 5, 4]]],
         },
         {
             "type": "MultiSurface",
-            "lod": 1,
+            "lod": "1",
             "boundaries": [[[1, 2, 6, 5]], [[2, 3, 7, 6]], [[3, 0, 4, 7]]],
         },
     ],

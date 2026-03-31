@@ -29,7 +29,7 @@ import copy
 from typing import Any, Dict, List, Optional, Union
 from . import subset
 
-CITYJSON_VERSION = "1.0"
+CITYJSON_VERSION = "2.0"
 CITYJSON_TYPE = "CityJSON"
 COORDINATE_DIMENSIONS = 3
 
@@ -164,8 +164,9 @@ def get_subset_bbox(
         if "children" in cm["CityObjects"][cityobject_id]:
             for child_id in cm["CityObjects"][cityobject_id]["children"]:
                 selected_ids.add(child_id)
-        if "parent" in cm["CityObjects"][cityobject_id]:
-            selected_ids.add(cm["CityObjects"][cityobject_id]["parent"])
+        if "parents" in cm["CityObjects"][cityobject_id]:
+            for parent_id in cm["CityObjects"][cityobject_id]["parents"]:
+                selected_ids.add(parent_id)
 
     for cityobject_id in selected_ids:
         subset_cm["CityObjects"][cityobject_id] = cm["CityObjects"][cityobject_id]
