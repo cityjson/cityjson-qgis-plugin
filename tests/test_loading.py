@@ -1,14 +1,15 @@
 # Copyright © 2018–2026 3D geoinformation group, TU Delft, S. Vitalis and G. Stavropoulou.
 # Licensed under the Apache License, Version 2.0. See LICENSE file for details.
 
-import pytest
-import tempfile
 import json
 import os
 import shutil
+import tempfile
 
-from core.loading import load_cityjson_model, get_model_epsg, CityJSONLoader
-from qgis.core import QgsVectorLayer, QgsFeedback
+import pytest
+from qgis.core import QgsFeedback, QgsVectorLayer
+
+from core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
 
 
 class TestLoadCityJsonModel:

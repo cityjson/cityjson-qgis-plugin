@@ -1,4 +1,4 @@
-from qgis.PyQt.QtCore import QAbstractItemModel, QModelIndex, Qt, QSize, QRect, QPoint
+from qgis.PyQt.QtCore import QAbstractItemModel, QModelIndex, QPoint, QRect, QSize, Qt
 from qgis.PyQt.QtGui import QFontMetrics
 
 METADATA_REALNAMES = {
@@ -69,7 +69,7 @@ METADATA_REALNAMES = {
 }
 
 
-class TreeNode(object):
+class TreeNode:
     def __init__(self, parent, row):
         self.parent = parent
         self.row = row
@@ -113,7 +113,7 @@ class TreeModel(QAbstractItemModel):
         return len(node.subnodes)
 
 
-class MetadataElement(object):  # your internal structure
+class MetadataElement:  # your internal structure
     def __init__(self, value_pair):
         self.key = value_pair[0]
         if isinstance(value_pair[1], dict):
@@ -133,9 +133,7 @@ class MetadataElement(object):  # your internal structure
                 self.subelements = {v: "" for v in value_pair[1]}
             elif value_pair[0] in METADATA_REALNAMES:
                 self.subelements = {
-                    "{metadata_name} ({index})".format(
-                        metadata_name=METADATA_REALNAMES[value_pair[0]], index=i
-                    ): v
+                    f"{METADATA_REALNAMES[value_pair[0]]} ({i})": v
                     for i, v in enumerate(value_pair[1], start=1)
                 }
             else:
@@ -167,11 +165,10 @@ class MetadataModel(TreeModel):
     def getKeyColumnWidth(self):
         width = 100
         padding = 30
-        for key, _ in self.rootElements.items():
+        for key in self.rootElements:
             metrics = QFontMetrics(self.treeview.font())
             outRect = metrics.boundingRect(get_real_key(key))
-            if width < outRect.width() + padding:
-                width = outRect.width() + padding
+            width = max(width, outRect.width() + padding)
 
         return width
 

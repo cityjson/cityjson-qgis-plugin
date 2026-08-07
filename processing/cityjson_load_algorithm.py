@@ -24,16 +24,16 @@
 #
 # ******************************************************************************
 
-from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (
     QgsProcessingAlgorithm,
     QgsProcessingException,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterCrs,
     QgsProcessingParameterEnum,
-    QgsProcessingParameterFile,
     QgsProcessingParameterExtent,
+    QgsProcessingParameterFile,
 )
+from qgis.PyQt.QtCore import QCoreApplication
 
 try:
     # When running as QGIS plugin
@@ -272,7 +272,7 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
             feedback.pushInfo("Loading all LoDs")
         elif len(lod_selection) == 1:
             lod = self.LODSELECTIONTYPES[lod_selection[0]]
-            feedback.pushInfo("Loading LoD: {}".format(lod))
+            feedback.pushInfo(f"Loading LoD: {lod}")
         else:
             lod = [self.LODSELECTIONTYPES[idx] for idx in lod_selection]
             feedback.pushInfo("Loading multiple LoDs: {}".format(", ".join(lod)))
@@ -300,7 +300,7 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
             )
             epsg = get_model_epsg(cm)
             if epsg:
-                feedback.pushInfo("CRS found: {}.".format(epsg))
+                feedback.pushInfo(f"CRS found: {epsg}.")
             else:
                 feedback.pushInfo("No CRS found.")
 

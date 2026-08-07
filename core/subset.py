@@ -171,15 +171,14 @@ def update_array_indices(a, dOldNewIDs, oldarray, newarray, slicearray):
     for i, each in enumerate(a):
         if isinstance(each, list):
             update_array_indices(each, dOldNewIDs, oldarray, newarray, slicearray)
-        elif each is not None:
-            if (
-                (slicearray == -1)
-                or (slicearray == 0 and i == 0)
-                or (slicearray == 1 and i > 0)
-            ):
-                if each in dOldNewIDs:
-                    a[i] = dOldNewIDs[each]
-                else:
-                    a[i] = len(newarray)
-                    dOldNewIDs[each] = len(newarray)
-                    newarray.append(oldarray[each])
+        elif each is not None and (
+            (slicearray == -1)
+            or (slicearray == 0 and i == 0)
+            or (slicearray == 1 and i > 0)
+        ):
+            if each in dOldNewIDs:
+                a[i] = dOldNewIDs[each]
+            else:
+                a[i] = len(newarray)
+                dOldNewIDs[each] = len(newarray)
+                newarray.append(oldarray[each])

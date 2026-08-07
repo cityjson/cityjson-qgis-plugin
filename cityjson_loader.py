@@ -24,16 +24,18 @@
 #
 # ******************************************************************************
 
-import os.path
 import json
+import os.path
 
+from qgis.core import QgsApplication, QgsCoordinateReferenceSystem
+from qgis.gui import QgsProjectionSelectionDialog
 from qgis.PyQt.QtCore import (
     QCoreApplication,
     QSettings,
-    QTranslator,
     Qt,
-    qVersion,
     QTimer,
+    QTranslator,
+    qVersion,
 )
 from qgis.PyQt.QtGui import QIcon, QKeySequence
 from qgis.PyQt.QtWidgets import (
@@ -42,13 +44,10 @@ from qgis.PyQt.QtWidgets import (
     QMessageBox,
     QShortcut,
 )
-from qgis.core import QgsApplication, QgsCoordinateReferenceSystem
-from qgis.gui import QgsProjectionSelectionDialog
 
 from .core.helpers.treemodel import MetadataModel
-from .core.loading import CityJSONLoader, load_cityjson_model, get_model_epsg
+from .core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
 from .core.styling import is_rule_based_3d_styling_available
-
 from .gui.cityjson_loader_dialog import CityJsonLoaderDialog
 from .processing.provider import Provider
 
@@ -65,7 +64,7 @@ class CityJsonLoader:
         # initialize locale
         locale = QSettings().value("locale/userLocale")[0:2]
         locale_path = os.path.join(
-            self.plugin_dir, "i18n", "CityJsonLoader_{}.qm".format(locale)
+            self.plugin_dir, "i18n", f"CityJsonLoader_{locale}.qm"
         )
 
         if os.path.exists(locale_path):
@@ -170,7 +169,7 @@ class CityJsonLoader:
             filenames = [
                 os.path.join(directory, f)
                 for f in os.listdir(directory)
-                if f.endswith(".city.json") or f.endswith(".json")
+                if f.endswith((".city.json", ".json"))
             ]
             if filenames:
                 self.add_cityjson_files(filenames)
@@ -246,7 +245,7 @@ class CityJsonLoader:
 
             epsg = get_model_epsg(model)
             return epsg
-        except (IOError, OSError, json.JSONDecodeError, KeyError):
+        except (OSError, json.JSONDecodeError, KeyError):
             return "None"
 
     def update_file_list(self):
@@ -286,7 +285,7 @@ class CityJsonLoader:
             current_crs = self.file_epsg_map.get(current_file, None)
             if current_crs:
                 old_crs = QgsCoordinateReferenceSystem(
-                    "EPSG:{}".format(self.dlg.crsLineEdit.text())
+                    f"EPSG:{self.dlg.crsLineEdit.text()}"
                 )
                 crs_dialog.setCrs(old_crs)
 
@@ -505,7 +504,7 @@ class CityJsonLoader:
         except Exception as e:
             # Handle any errors gracefully
             QMessageBox.critical(
-                self.dlg, "Error", f"Error processing file {filepath}: {str(e)}"
+                self.dlg, "Error", f"Error processing file {filepath}: {e!s}"
             )
 
         # Move to next file

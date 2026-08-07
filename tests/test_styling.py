@@ -3,19 +3,21 @@
 
 """A list of tests to check the styling classes functionality"""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from qgis.core import QgsVectorLayer
 from qgis.PyQt.QtGui import QColor
+
+from core.settings import semantic_colors
 from core.styling import (
-    SemanticSurfacesStyling,
-    NullStyling,
     Copy2dStyling,
+    NullStyling,
+    SemanticSurfacesStyling,
     create_material,
     is_3d_styling_available,
     is_rule_based_3d_styling_available,
 )
-from core.settings import semantic_colors
 
 
 @pytest.fixture()

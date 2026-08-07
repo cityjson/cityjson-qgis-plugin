@@ -3,24 +3,23 @@
 
 from unittest.mock import MagicMock
 
-from qgis.core import QgsFields, QgsField
+from qgis.core import QgsField, QgsFields
 
 from core.layers import (
-    TypeNamingIterator,
-    BaseNamingIterator,
-    LodNamingDecorator,
-    BaseFieldsBuilder,
-    NullFieldsBuilder,
+    FIELD_STRING,
     AttributeFieldsDecorator,
+    BaseFieldsBuilder,
+    BaseNamingIterator,
+    DynamicLayerManager,
+    LodFeatureDecorator,
     LodFieldsDecorator,
+    LodNamingDecorator,
+    NullFieldsBuilder,
+    ParentFeatureDecorator,
     SemanticSurfaceFieldsDecorator,
     SimpleFeatureBuilder,
-    LodFeatureDecorator,
-    ParentFeatureDecorator,
-    DynamicLayerManager,
-    FIELD_STRING,
+    TypeNamingIterator,
 )
-
 
 SINGLE_CUBE_CITYMODEL = {
     "CityObjects": {
@@ -491,7 +490,7 @@ class TestSimpleFeatureBuilder:
 
         co = {"type": "Building", "geometry": []}
         features = builder.create_features(fields, "b1", co, read_geometry=False)
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
 
         assert feature["uid"] == "b1"
         assert feature["type"] == "Building"
@@ -504,7 +503,7 @@ class TestSimpleFeatureBuilder:
 
         co = {"type": "BuildingPart", "parents": ["building-1"], "geometry": []}
         features = builder.create_features(fields, "p1", co, read_geometry=False)
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
 
         assert feature["parents"] == "building-1"
 
@@ -516,7 +515,7 @@ class TestSimpleFeatureBuilder:
 
         co = {"type": "BuildingPart", "parents": ["p1", "p2"], "geometry": []}
         features = builder.create_features(fields, "x", co, read_geometry=False)
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
 
         assert feature["parents"] == "['p1', 'p2']"
 
@@ -528,7 +527,7 @@ class TestSimpleFeatureBuilder:
 
         co = {"type": "Building", "children": ["part-1"], "geometry": []}
         features = builder.create_features(fields, "b1", co, read_geometry=False)
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
 
         assert feature["children"] == "['part-1']"
 
@@ -544,7 +543,7 @@ class TestSimpleFeatureBuilder:
             "geometry": [],
         }
         features = builder.create_features(fields, "b1", co, read_geometry=False)
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
 
         assert feature["attribute.roofType"] == "gable"
         assert feature["attribute.height"] == 22.3
@@ -557,7 +556,7 @@ class TestSimpleFeatureBuilder:
 
         co = {"type": "Building"}
         features = builder.create_features(fields, "b1", co)
-        geom_list = list(features.values())[0]
+        geom_list = next(iter(features.values()))
 
         assert geom_list == []
 
@@ -570,7 +569,7 @@ class TestSimpleFeatureBuilder:
         geom = [{"type": "MultiSurface", "lod": "1", "boundaries": [[[0, 1, 2]]]}]
         co = {"type": "Building", "geometry": geom}
         features = builder.create_features(fields, "b1", co, read_geometry=False)
-        returned_geom = list(features.values())[0]
+        returned_geom = next(iter(features.values()))
 
         assert returned_geom == geom
 
@@ -601,7 +600,7 @@ class TestLodFeatureDecorator:
 
         features = decorator.create_features(fields, "id-1", co, read_geometry=False)
 
-        lods_found = {f["lod"] for f in features.keys()}
+        lods_found = {f["lod"] for f in features}
         assert "1" in lods_found
         assert "2" in lods_found
         assert len(features) == 2
@@ -641,7 +640,7 @@ class TestParentFeatureDecorator:
         fields = self._make_fields()
         co = PARENT_CHILD_CITYMODEL["CityObjects"]["part-1"]
         features = decorator.create_features(fields, "part-1", co, read_geometry=False)
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
 
         assert feature["attribute.roofType"] == "gable"
         assert feature["attribute.height"] == 22.3
@@ -657,7 +656,7 @@ class TestParentFeatureDecorator:
         features = decorator.create_features(
             fields, "building-1", co, read_geometry=False
         )
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
 
         assert feature["attribute.roofType"] == "gable"
 
@@ -802,7 +801,7 @@ class TestErrorHandlingAndEdgeCases:
         # Test with empty parents list
         co = {"type": "Building", "parents": []}
         features = builder.create_features(fields, "b1", co, read_geometry=False)
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
         # Empty parents list should set parents field to '[]'
         assert feature["parents"] == "[]"
 
@@ -826,7 +825,7 @@ class TestErrorHandlingAndEdgeCases:
         features = decorator.create_features(
             fields, "root-building", co, read_geometry=False
         )
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
 
         # Should handle objects without parents gracefully
         assert feature["uid"] == "root-building"

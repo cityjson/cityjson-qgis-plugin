@@ -2,7 +2,8 @@
 # Licensed under the Apache License, Version 2.0. See LICENSE file for details.
 
 from unittest.mock import Mock, patch
-from qgis.PyQt.QtCore import Qt, QModelIndex, QSize
+
+from qgis.PyQt.QtCore import QModelIndex, QSize, Qt
 
 from core.helpers import treemodel
 

@@ -25,7 +25,7 @@
 # ******************************************************************************
 """A module to provide classes for reading geometries of CityJSON"""
 
-from qgis.core import QgsPoint, QgsGeometry, QgsLineString, QgsPolygon, QgsMultiPolygon
+from qgis.core import QgsGeometry, QgsLineString, QgsMultiPolygon, QgsPoint, QgsPolygon
 
 DEFAULT_SCALE = (1, 1, 1)
 DEFAULT_TRANSLATE = (0, 0, 0)
@@ -155,8 +155,10 @@ class GeometryReader:
 
         return QgsGeometry(geoms)
 
-    def get_polygons(self, geometry, attributes={}):
+    def get_polygons(self, geometry, attributes=None):
         """Returns a dictionary where keys are polygons and values are the semantic surfaces"""
+        if attributes is None:
+            attributes = {}
         if geometry is None:
             return [], []
 
@@ -212,7 +214,7 @@ class GeometryReader:
                                 **semantic,
                                 **{
                                     key: str(additional_semantics[key][i])
-                                    for key in additional_semantics.keys()
+                                    for key in additional_semantics
                                 },
                             }
                         )

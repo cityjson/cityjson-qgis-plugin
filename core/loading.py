@@ -25,27 +25,27 @@
 # ******************************************************************************
 """A module that provides the logic for loading CityJSON in QGIS"""
 
+import json
 import os
 import re
-import json
 
 from qgis.core import QgsProject
-from typing import Optional
 
+from . import get_logger
 from .geometry import GeometryReader, VerticesCache
 from .layers import (
-    DynamicLayerManager,
-    BaseFieldsBuilder,
-    TypeNamingIterator,
-    BaseNamingIterator,
     AttributeFieldsDecorator,
-    SimpleFeatureBuilder,
-    ParentFeatureDecorator,
-    LodNamingDecorator,
-    LodFieldsDecorator,
+    BaseFieldsBuilder,
+    BaseNamingIterator,
+    DynamicLayerManager,
     LodFeatureDecorator,
-    SemanticSurfaceFieldsDecorator,
+    LodFieldsDecorator,
+    LodNamingDecorator,
+    ParentFeatureDecorator,
     SemanticSurfaceFeatureDecorator,
+    SemanticSurfaceFieldsDecorator,
+    SimpleFeatureBuilder,
+    TypeNamingIterator,
 )
 from .styling import (
     Copy2dStyling,
@@ -54,7 +54,6 @@ from .styling import (
     is_3d_styling_available,
     is_rule_based_3d_styling_available,
 )
-from . import get_logger
 
 logger = get_logger("loading")
 
@@ -212,7 +211,7 @@ def load_cityjson_model(filepath):
     return citymodel
 
 
-def get_model_epsg(citymodel) -> Optional[str]:
+def get_model_epsg(citymodel) -> str | None:
     """Returns the EPSG of the city model as a string, or None if not found"""
 
     if "metadata" not in citymodel:

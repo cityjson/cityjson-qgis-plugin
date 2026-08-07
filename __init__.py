@@ -33,7 +33,6 @@ def classFactory(iface):
     :param iface: A QGIS interface instance.
     :type iface: QgsInterface
     """
-    #
     from .cityjson_loader import CityJsonLoader
 
     return CityJsonLoader(iface)

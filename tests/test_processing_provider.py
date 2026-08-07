@@ -1,7 +1,7 @@
 # Copyright © 2018–2026 3D geoinformation group, TU Delft, S. Vitalis and G. Stavropoulou.
 # Licensed under the Apache License, Version 2.0. See LICENSE file for details.
-from processing.provider import Provider
 from processing.cityjson_load_algorithm import CityJsonLoadAlgorithm
+from processing.provider import Provider
 
 
 def test_provider_metadata():

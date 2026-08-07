@@ -26,6 +26,7 @@
 """A module related to apply styling in QGIS layers"""
 
 from qgis.core import Qgis
+
 from .settings import load_settings
 
 try:
@@ -117,7 +118,7 @@ class SemanticSurfacesStyling:
             symbol.setEdgesEnabled(True)
 
             new_rule = QgsRuleBased3DRenderer.Rule(
-                symbol, "\"surface.type\" = '{surface}'".format(surface=surface_type)
+                symbol, f"\"surface.type\" = '{surface_type}'"
             )
             root_rule.appendChild(new_rule)
 

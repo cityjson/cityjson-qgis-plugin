@@ -27,8 +27,8 @@
 
 import abc
 
-
 from qgis.core import Qgis, QgsFeature, QgsField, QgsFields, QgsVectorLayer
+
 from . import get_logger
 
 logger = get_logger("layers")
@@ -71,7 +71,7 @@ class BaseLayerManager:
             srid = self._citymodel["metadata"]["crs"]["epsg"]
 
         if srid:
-            self._geom_type = "{}?crs=EPSG:{}".format(self._geom_type, srid)
+            self._geom_type = f"{self._geom_type}?crs=EPSG:{srid}"
 
     def prepare_attributes(self):
         """Prepares the attributes of the vector layer."""
@@ -113,11 +113,11 @@ class DynamicLayerManager(BaseLayerManager):
     def __init__(
         self, citymodel, feature_builder, layer_iterator, fields_builder, srid=None
     ):
-        super(DynamicLayerManager, self).__init__(citymodel, fields_builder, srid)
+        super().__init__(citymodel, fields_builder, srid)
 
         self._feature_builder = feature_builder
         self._layer_iterator = layer_iterator
-        self._vectorlayers = dict()
+        self._vectorlayers = {}
 
         for name in self._layer_iterator.all_layers():
             vl = QgsVectorLayer(self._geom_type, name, "memory")
@@ -139,7 +139,7 @@ class DynamicLayerManager(BaseLayerManager):
     def get_all_layers(self):
         """Returns all the vector layers from this manager"""
         valid_layers = []
-        for layer_name, layer in self._vectorlayers.items():
+        for layer in self._vectorlayers.values():
             provider = layer.dataProvider()
             provider.addAttributes(self._fields)
             layer.updateFields()
@@ -174,9 +174,9 @@ class TypeNamingIterator:
 
     def all_layers(self):
         """Returns the all layer names"""
-        types = set([obj["type"] for obj in self._citymodel["CityObjects"].values()])
+        types = {obj["type"] for obj in self._citymodel["CityObjects"].values()}
         for t in types:
-            yield "{} - {}".format(self._filename, t)
+            yield f"{self._filename} - {t}"
 
     def get_feature_layer(self, feature):
         """Returns the layer name for the given city object"""
@@ -210,7 +210,7 @@ class LodNamingDecorator:
         layer_names = []
         for lod in sorted_lods:
             for layer in self._decorated.all_layers():
-                layer_names.append("{} [LoD{}]".format(layer, str(lod)))
+                layer_names.append(f"{layer} [LoD{lod!s}]")
 
         return layer_names
 
@@ -273,18 +273,20 @@ class AttributeFieldsDecorator:
                 for att_key, att_value in obj["attributes"].items():
                     qtype = self._get_qgis_type(att_value)
                     if (
-                        att_key not in attribute_types
-                        or (
-                            qtype == FIELD_DOUBLE
-                            and attribute_types[att_key] != FIELD_DOUBLE
+                        (
+                            att_key not in attribute_types
+                            or (
+                                qtype == FIELD_DOUBLE
+                                and attribute_types[att_key] != FIELD_DOUBLE
+                            )
+                            or (
+                                qtype == FIELD_STRING
+                                and attribute_types[att_key] != FIELD_STRING
+                            )
                         )
-                        or (
-                            qtype == FIELD_STRING
-                            and attribute_types[att_key] != FIELD_STRING
-                        )
+                        or qtype == FIELD_INT
+                        and attribute_types[att_key] == FIELD_BOOL
                     ):
-                        attribute_types[att_key] = qtype
-                    elif qtype == FIELD_INT and attribute_types[att_key] == FIELD_BOOL:
                         attribute_types[att_key] = qtype
 
         return attribute_types
@@ -295,7 +297,7 @@ class AttributeFieldsDecorator:
         attributes = self._attribute_types.items()
         try:
             for att, qtype in attributes:
-                fields.append(QgsField("attribute.{}".format(att), qtype))
+                fields.append(QgsField(f"attribute.{att}", qtype))
         except Exception as e:
             logger.error(f"Error while creating attribute fields: {e}")
 
@@ -345,7 +347,7 @@ class SemanticSurfaceFieldsDecorator:
                                 if att_key not in atts:
                                     atts.append(att_key)
 
-                        for key, _ in geom["semantics"].items():
+                        for key in geom["semantics"]:
                             key = key.lstrip("+")
                             if key not in ["surfaces", "values"] and key not in atts:
                                 atts.append(key)
@@ -411,7 +413,7 @@ class SimpleFeatureBuilder:
 
         if "attributes" in cityobject:
             for att_key, att_value in cityobject["attributes"].items():
-                new_feature["attribute.{}".format(att_key)] = att_value
+                new_feature[f"attribute.{att_key}"] = att_value
 
         if "geometry" in cityobject:
             return_geom = cityobject["geometry"]
@@ -538,7 +540,7 @@ class ParentFeatureDecorator:
         )
 
         return_features = {}
-        for feature, feature_geom in features.items():
+        for feature in features:
             new_feature = QgsFeature(feature)
             city_attributes = cityobject.get("attributes", {})
 
