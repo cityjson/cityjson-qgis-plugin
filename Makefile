@@ -1,23 +1,3 @@
-#/***************************************************************************
-# CityJsonLoader
-#
-# This plugin allows for CityJSON files to be loaded in QGIS
-#							 -------------------
-#		begin				: 2018-06-08
-#		git sha				: $Format:%H$
-#		copyright			: (C) 2018 by 3D Geoinformation
-#		email				: s.vitalis@tudelft.nl
-# ***************************************************************************/
-#
-#/***************************************************************************
-# *																		 *
-# *   This program is free software; you can redistribute it and/or modify  *
-# *   it under the terms of the GNU General Public License as published by  *
-# *   the Free Software Foundation; either version 2 of the License, or	 *
-# *   (at your option) any later version.								   *
-# *																		 *
-# ***************************************************************************/
-
 #################################################
 # Edit the following to match your sources lists
 #################################################
@@ -61,8 +41,6 @@ EXTRA_DIRS =
 
 COMPILED_RESOURCE_FILES = resources.py
 
-PEP8EXCLUDE=pydev,resources.py,conf.py,third_party,ui
-
 # QGISDIR points to the location where your plugin should be installed.
 # This varies by platform, relative to your HOME directory:
 #	* Linux:
@@ -72,29 +50,45 @@ PEP8EXCLUDE=pydev,resources.py,conf.py,third_party,ui
 #	* Windows:
 #	  AppData\Roaming\QGIS\QGIS3\profiles\default\python\plugins'
 
-ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
-    detected_OS := Windows
-else
-    detected_OS := $(shell sh -c 'uname 2>/dev/null || echo Unknown')
+# Load variables from .env if it exists
+ifneq (,$(wildcard .env))
+	include .env
+	export
 endif
 
+# Detect OS for Docker and QGISDIR logic
+ifeq ($(OS),Windows_NT)     # is Windows_NT on XP, 2000, 7, Vista, 10...
+	detected_OS := Windows
+else
+	detected_OS := $(shell sh -c 'uname 2>/dev/null || echo Unknown')
+endif
+
+# Detect platform for Docker (set DOCKER_DEFAULT_PLATFORM on Mac)
+ifeq ($(detected_OS),Darwin)
+    DOCKER_PLATFORM_PREFIX = DOCKER_DEFAULT_PLATFORM=linux/amd64
+else
+    DOCKER_PLATFORM_PREFIX =
+endif
+
+
+# If QGISDIR is not set from .env, detect from system
+ifndef QGISDIR
 ifeq ($(detected_OS),Windows)
-    QGISDIR := AppData\Roaming\QGIS\QGIS3\profiles\default
+	QGISDIR := AppData\Roaming\QGIS\QGIS3\profiles\default
 endif
 ifeq ($(detected_OS),Darwin)
-    QGISDIR := Library/Application Support/QGIS/QGIS3/profiles/default
+	QGISDIR := Library/Application Support/QGIS/QGIS3/profiles/default
 endif
 ifeq ($(detected_OS),Linux)
-    QGISDIR := .local/share/QGIS/QGIS3/profiles/default
+	QGISDIR := .local/share/QGIS/QGIS3/profiles/default
+endif
 endif
 
 #################################################
 # Normally you would not need to edit below here
 #################################################
 
-HELP = help/build/html
-
-PLUGIN_UPLOAD = $(c)/plugin_upload.py
+PLUGIN_UPLOAD = scripts/plugin_upload.py
 
 RESOURCE_SRC=$(shell grep '^ *<file' resources.qrc | sed 's@</file>@@g;s/.*>//g' | tr '\n' ' ')
 
@@ -105,44 +99,27 @@ compile: $(COMPILED_RESOURCE_FILES)
 %.py : %.qrc $(RESOURCES_SRC)
 	pyrcc5 -o $*.py  $<
 
-%.qm : %.ts
-	$(LRELEASE) $<
 
-test: compile transcompile
-	@echo
-	@echo "----------------------"
-	@echo "Regression Test Suite"
-	@echo "----------------------"
-
-	@# Preceding dash means that make will continue in case of errors
-	@-export PYTHONPATH=`pwd`:$(PYTHONPATH); \
-		export QGIS_DEBUG=0; \
-		export QGIS_LOG_FILE=/dev/null; \
-		nosetests -v --with-id --with-coverage --cover-package=. \
-		3>&1 1>&2 2>&3 3>&- || true
-	@echo "----------------------"
-	@echo "If you get a 'no module named qgis.core error, try sourcing"
-	@echo "the helper script we have provided first then run make test."
-	@echo "e.g. source run-env-linux.sh <path to qgis install>; make test"
-	@echo "----------------------"
-
-deploy: compile doc transcompile
+deploy: compile
+# The deploy  target only works on unix like operating system where
+# the Python plugin directory is located at:
+# $(HOME)/$(QGISDIR)/python/plugins
 	@echo
 	@echo "------------------------------------------"
-	@echo "Deploying plugin to your QGIS3 directory."
+	@echo "Deploying plugin to your QGIS3 directory:"
+	@echo " $(HOME)/$(QGISDIR)/python/plugins/"
 	@echo "------------------------------------------"
-	# The deploy  target only works on unix like operating system where
-	# the Python plugin directory is located at:
-	# $HOME/$(QGISDIR)/python/plugins
-	mkdir -p "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
-	rsync -R $(PY_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
-	rsync -R $(UI_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
-	cp -vf $(COMPILED_RESOURCE_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
-	cp -vf $(EXTRAS) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
-	# cp -vfr i18n "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
-	# cp -vfr $(HELP) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/help"
-	# Copy extra directories if any
+	@mkdir -p "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
+	@rsync -R $(PY_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
+	@rsync -R $(UI_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
+	@cp -f $(COMPILED_RESOURCE_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
+	@cp -f $(EXTRAS) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
+
+# Copy extra directories if any
 	$(foreach EXTRA_DIR,$(EXTRA_DIRS), cp -R $(EXTRA_DIR) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"/;)
+	@echo "------------------------------------------"
+	@echo " Deployment Successful!"
+	@echo "------------------------------------------"
 
 
 # The dclean target removes compiled python files from plugin directory
@@ -152,18 +129,19 @@ dclean:
 	@echo "-----------------------------------"
 	@echo "Removing any compiled python files."
 	@echo "-----------------------------------"
-	find "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)" -iname "*.pyc" -delete
-	find "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)" -iname ".git" -prune -exec rm -Rf {} \;
-
+	@find "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)" -iname "*.pyc" -delete
+	@find "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)" -iname ".git" -prune -exec rm -Rf {} \;
 
 derase:
 	@echo
 	@echo "-------------------------"
 	@echo "Removing deployed plugin."
 	@echo "-------------------------"
-	rm -Rf $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)
+	@rm -Rf $(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)
 
 zip: deploy dclean
+# The zip target deploys the plugin and creates a zip file with the deployed
+# content. You can then upload the zip file on http://plugins.qgis.org
 	@echo
 	@echo "---------------------------"
 	@echo "Creating plugin zip bundle."
@@ -172,87 +150,74 @@ zip: deploy dclean
 	# content. You can then upload the zip file on http://plugins.qgis.org
 	rm -f $(PLUGINNAME).zip
 	cd "$(HOME)/$(QGISDIR)/python/plugins"; zip -9r $(CURDIR)/$(PLUGINNAME).zip $(PLUGINNAME) -x ".*" "__pycache__/*" "**/__pycache__/*"
+	@rm -f $(PLUGINNAME).zip
+	@cp  LICENSE "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/LICENSE"
+	@cd "$(HOME)/$(QGISDIR)/python/plugins"; zip -9r $(CURDIR)/$(PLUGINNAME).zip $(PLUGINNAME) -x ".*" "__pycache__/*" "**/__pycache__/*"
 
 package: compile
-	# Create a zip package of the plugin named $(PLUGINNAME).zip.
-	# This requires use of git (your plugin development directory must be a
-	# git repository).
-	# To use, pass a valid commit or tag as follows:
-	#   make package VERSION=Version_0.3.2
+# Creates a zip package of the plugin named $(PLUGINNAME).zip.
+# This requires use of git (your plugin development directory must be a
+# git repository).
+# To use, pass a valid commit or tag as follows:
+#   make package VERSION=v1
 	@echo
 	@echo "------------------------------------"
 	@echo "Exporting plugin to zip package.	"
 	@echo "------------------------------------"
-	rm -f $(PLUGINNAME).zip
-	git archive --prefix=$(PLUGINNAME)/ -o $(PLUGINNAME).zip $(VERSION)
-	echo "Created package: $(PLUGINNAME).zip"
+	@rm -f $(PLUGINNAME).zip
+	@git archive --prefix=$(PLUGINNAME)/ -o $(PLUGINNAME).zip $(VERSION)
+	@echo "Created package: $(PLUGINNAME).zip"
 
 upload: zip
 	@echo
 	@echo "-------------------------------------"
 	@echo "Uploading plugin to QGIS Plugin repo."
 	@echo "-------------------------------------"
-	$(PLUGIN_UPLOAD) $(PLUGINNAME).zip
-
-transup:
-	@echo
-	@echo "------------------------------------------------"
-	@echo "Updating translation files with any new strings."
-	@echo "------------------------------------------------"
-	@chmod +x scripts/update-strings.sh
-	@scripts/update-strings.sh $(LOCALES)
-
-transcompile:
-	@echo
-	@echo "----------------------------------------"
-	@echo "Compiled translation files to .qm files."
-	@echo "----------------------------------------"
-	@chmod +x scripts/compile-strings.sh
-	@scripts/compile-strings.sh $(LRELEASE) $(LOCALES)
-
-transclean:
-	@echo
-	@echo "------------------------------------"
-	@echo "Removing compiled translation files."
-	@echo "------------------------------------"
-	rm -f i18n/*.qm
-
-clean:
-	@echo
-	@echo "------------------------------------"
-	@echo "Removing uic and rcc generated files"
-	@echo "------------------------------------"
-	rm $(COMPILED_UI_FILES) $(COMPILED_RESOURCE_FILES)
-
-doc:
-	@echo
-	@echo "------------------------------------"
-	@echo "Building documentation using sphinx."
-	@echo "------------------------------------"
-	cd help; make html
-
-pylint:
-	@echo
-	@echo "-----------------"
-	@echo "Pylint violations"
-	@echo "-----------------"
-	@pylint --reports=n --rcfile=pylintrc . || true
-	@echo
-	@echo "----------------------"
-	@echo "If you get a 'no module named qgis.core' error, try sourcing"
-	@echo "the helper script we have provided first then run make pylint."
-	@echo "e.g. source run-env-linux.sh <path to qgis install>; make pylint"
-	@echo "----------------------"
+	@python3 ./$(PLUGIN_UPLOAD) $(PLUGINNAME).zip
 
 
-# Run pep8 style checking
-#http://pypi.python.org/pypi/pep8
-pep8:
-	@echo
-	@echo "-----------"
-	@echo "PEP8 issues"
-	@echo "-----------"
-	@pep8 --repeat --ignore=E203,E121,E122,E123,E124,E125,E126,E127,E128 --exclude $(PEP8EXCLUDE) . || true
-	@echo "-----------"
-	@echo "Ignored in PEP8 check:"
-	@echo $(PEP8EXCLUDE)
+docker-build-340:
+	$(DOCKER_PLATFORM_PREFIX) docker build  -f docker/Dockerfile.qgis-3.40 -t cityjson-qgis-plugin-test-340 .
+
+test-340:
+	@if [ -z "$$(docker images -q cityjson-qgis-plugin-test-340)" ]; then \
+		echo "Docker image not found. Building..."; \
+		$(MAKE) docker-build-340; \
+	fi
+	$(DOCKER_PLATFORM_PREFIX) docker run --rm cityjson-qgis-plugin-test-340
+
+docker-build-344:
+	$(DOCKER_PLATFORM_PREFIX) docker build  -f docker/Dockerfile.qgis-3.44 -t cityjson-qgis-plugin-test-344 .
+
+test-344:
+	@if [ -z "$$(docker images -q cityjson-qgis-plugin-test-344)" ]; then \
+		echo "Docker image not found. Building..."; \
+		$(MAKE) docker-build-344; \
+	fi
+	$(DOCKER_PLATFORM_PREFIX) docker run --rm cityjson-qgis-plugin-test-344
+
+docker-build-40:
+	$(DOCKER_PLATFORM_PREFIX) docker build  -f docker/Dockerfile.qgis-4.0 -t cityjson-qgis-plugin-test-40 .
+
+test-40:
+	@if [ -z "$$(docker images -q cityjson-qgis-plugin-test-40)" ]; then \
+		echo "Docker image not found. Building..."; \
+		$(MAKE) docker-build-40; \
+	fi
+	$(DOCKER_PLATFORM_PREFIX) docker run --rm cityjson-qgis-plugin-test-40
+
+test: compile 
+
+	@echo "------------------------------------------"
+	@echo " Running tests"
+	@echo "------------------------------------------"
+	export QGIS_DEBUG=0; \
+	export QGIS_LOG_FILE=/dev/null; \
+	$(QGIS_PYTHON) -m pytest tests  -v -s --cov=core/ --cov=processing/ --cov=gui/
+	@echo "------------------------------------------"
+	@echo "Test suite completed"
+	@echo "------------------------------------------"
+
+format: compile
+	uv tool run ruff format .
+	uv tool run ruff check .

@@ -1,13 +1,39 @@
+# ******************************************************************************
+# Project: CityJsonLoader - A QGIS Plugin.
+#
+# Purpose: This plugin allows for CityJSON files to be loaded in QGIS.
+#
+# GitHub page: https://github.com/cityjson/cityjson-qgis-plugin
+#
+# Contact: G.Stavropoulou@tudelft.nl
+# ******************************************************************************
+#
+# Copyright © 2018–2026 3D geoinformation group, TU Delft, S. Vitalis and G. Stavropoulou. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# ******************************************************************************
+
 """This is a module that contains the provider for
 QGIS processing algorithms"""
 
 from qgis.core import QgsProcessingProvider
-from PyQt5.QtGui import QIcon
+from qgis.PyQt.QtGui import QIcon
 
 from .cityjson_load_algorithm import CityJsonLoadAlgorithm
 
-class Provider(QgsProcessingProvider):
 
+class Provider(QgsProcessingProvider):
     def loadAlgorithms(self, *args, **kwargs):
         self.addAlgorithm(CityJsonLoadAlgorithm())
 
@@ -17,7 +43,7 @@ class Provider(QgsProcessingProvider):
         This string should be a unique, short, character only string,
         eg "qgis" or "gdal". This string should not be localised.
         """
-        return 'cityjsonloader'
+        return "cityjsonloader"
 
     def name(self, *args, **kwargs):
         """The human friendly name of your plugin in Processing.
@@ -25,11 +51,11 @@ class Provider(QgsProcessingProvider):
         This string should be as short as possible (e.g. "Lastools", not
         "Lastools version 1.0.1 64-bit") and localised.
         """
-        return self.tr('CityJSON Loader')
+        return self.tr("CityJSON Loader")
 
     def icon(self):
         """Should return a QIcon which is used for your provider inside
         the Processing toolbox.
         """
-        icon_path = ':/plugins/cityjson_loader/cityjson_logo.svg'
+        icon_path = ":/plugins/cityjson_loader/cityjson_logo.svg"
         return QIcon(icon_path)
