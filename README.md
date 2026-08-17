@@ -70,9 +70,12 @@ Configuration lives in `pyproject.toml` (`[tool.mypy]`), scoped to `cityjson_loa
 
 #### Running tests locally
 
-With QGIS installed and `QGIS_PYTHON` set in `.env` (see the `Makefile`):
+With QGIS installed, create a local `.env` from the example and set
+`QGIS_PYTHON` to your QGIS Python interpreter:
 
 ```sh
+cp example.env .env
+# then edit .env if your QGIS path differs
 make test
 ```
 
