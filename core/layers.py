@@ -55,6 +55,38 @@ SURFACE_PREFIX = "surface."
 DEFAULT_GEOM_TYPE = "MultiPolygonZ"
 
 
+def _qgis_type(value: Any) -> Any:
+    """Return the QGIS field type that best matches a Python value."""
+    if isinstance(value, bool):
+        return FIELD_BOOL
+    if isinstance(value, int):
+        return FIELD_INT
+    if isinstance(value, float):
+        return FIELD_DOUBLE
+    return FIELD_STRING
+
+
+def _register_field_type(attribute_types: dict[str, Any], key: str, value: Any) -> None:
+    """Register the type of ``value`` for ``key``, promoting when necessary.
+
+    Promotion rules:
+    - a float upgrades the field to Double;
+    - a string upgrades the field to String;
+    - an int upgrades a Bool field to Int.
+    """
+    qtype = _qgis_type(value)
+    if (
+        (
+            key not in attribute_types
+            or (qtype == FIELD_DOUBLE and attribute_types[key] != FIELD_DOUBLE)
+            or (qtype == FIELD_STRING and attribute_types[key] != FIELD_STRING)
+        )
+        or qtype == FIELD_INT
+        and attribute_types[key] == FIELD_BOOL
+    ):
+        attribute_types[key] = qtype
+
+
 class BaseLayerManager:
     """A base layer manager for the common functionality between current ones"""
 
@@ -270,38 +302,12 @@ class AttributeFieldsDecorator:
         self._citymodel = citymodel
         self._attribute_types = self._get_attribute_types()
 
-    def _get_qgis_type(self, value: Any) -> Any:
-        if isinstance(value, bool):
-            return FIELD_BOOL
-        elif isinstance(value, int):
-            return FIELD_INT
-        elif isinstance(value, float):
-            return FIELD_DOUBLE
-        else:
-            return FIELD_STRING
-
     def _get_attribute_types(self) -> dict[str, Any]:
         attribute_types: dict[str, Any] = {}
         for obj in self._citymodel["CityObjects"].values():
             if "attributes" in obj:
                 for att_key, att_value in obj["attributes"].items():
-                    qtype = self._get_qgis_type(att_value)
-                    if (
-                        (
-                            att_key not in attribute_types
-                            or (
-                                qtype == FIELD_DOUBLE
-                                and attribute_types[att_key] != FIELD_DOUBLE
-                            )
-                            or (
-                                qtype == FIELD_STRING
-                                and attribute_types[att_key] != FIELD_STRING
-                            )
-                        )
-                        or qtype == FIELD_INT
-                        and attribute_types[att_key] == FIELD_BOOL
-                    ):
-                        attribute_types[att_key] = qtype
+                    _register_field_type(attribute_types, att_key, att_value)
 
         return attribute_types
 
@@ -338,16 +344,28 @@ class SemanticSurfaceFieldsDecorator:
     def __init__(self, decorated: Any, citymodel: dict[str, Any]) -> None:
         self._decorated = decorated
         self._citymodel = citymodel
+        self._attribute_types = self._get_attribute_types()
 
-    def _get_qgis_type(self, value: Any) -> Any:
-        if isinstance(value, bool):
-            return FIELD_BOOL
-        elif isinstance(value, int):
-            return FIELD_INT
-        elif isinstance(value, float):
-            return FIELD_DOUBLE
-        else:
-            return FIELD_STRING
+    def _get_attribute_types(self) -> dict[str, Any]:
+        attribute_types: dict[str, Any] = {}
+        for obj in self._citymodel["CityObjects"].values():
+            for geom in obj.get("geometry", []):
+                semantics = geom.get("semantics")
+                if not semantics:
+                    continue
+                for surface in semantics.get("surfaces", []):
+                    for att_key, att_value in surface.items():
+                        _register_field_type(attribute_types, att_key, att_value)
+                for key, value in semantics.items():
+                    if key in ["surfaces", "values"]:
+                        continue
+                    att_key = key.lstrip("+")
+                    if isinstance(value, list):
+                        for item in value:
+                            _register_field_type(attribute_types, att_key, item)
+                    else:
+                        _register_field_type(attribute_types, att_key, value)
+        return attribute_types
 
     def get_semantic_attributes(self, objs: dict[str, Any]) -> list[str]:
         """Returns the list of (unique) attributes found in all city objects."""
@@ -368,31 +386,12 @@ class SemanticSurfaceFieldsDecorator:
 
         return atts
 
-    def _find_sample_value(self, att_key: str) -> Any:
-        """Find a sample value for a given attribute key in citymodel"""
-        for obj in self._citymodel["CityObjects"].values():
-            if "geometry" in obj:
-                for geom in obj["geometry"]:
-                    if "semantics" in geom:
-                        for surface in geom["semantics"]["surfaces"]:
-                            if att_key in surface:
-                                return surface[att_key]
-                        # Also check other keys besides "surfaces"
-                        for key, value in geom["semantics"].items():
-                            key_clean = key.lstrip("+")
-                            if key_clean == att_key:
-                                return value
-        return None
-
     def get_fields(self) -> QgsFields:
         """Create and returns fields"""
         fields = self._decorated.get_fields()
-        attributes = self.get_semantic_attributes(self._citymodel["CityObjects"])
 
         try:
-            for att in attributes:
-                sample_value = self._find_sample_value(att)
-                qtype = self._get_qgis_type(sample_value)
+            for att, qtype in self._attribute_types.items():
                 fields.append(QgsField(f"surface.{att}", qtype))
         except Exception as e:
             logger.error(f"Error while creating semantic surface attribute fields: {e}")
@@ -400,8 +399,8 @@ class SemanticSurfaceFieldsDecorator:
         return fields
 
     def get_attributes(self) -> list[str]:
-        """Create and returns fields"""
-        return self.get_semantic_attributes(self._citymodel["CityObjects"])
+        """Returns the list of (unique) semantic surface attributes."""
+        return list(self._attribute_types.keys())
 
 
 class SimpleFeatureBuilder:
