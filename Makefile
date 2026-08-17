@@ -150,25 +150,41 @@ upload: zip
 docker-build-340:
 	$(DOCKER_PLATFORM_PREFIX) docker build  -f docker/Dockerfile.qgis-3.40 -t cityjson-qgis-plugin-test-340 .
 
-test-340: docker-build-340
+test-340:
+	@if [ -z "$$(docker images -q cityjson-qgis-plugin-test-340)" ]; then \
+		echo "Docker image not found. Building..."; \
+		$(MAKE) docker-build-340; \
+	fi
 	$(DOCKER_PLATFORM_PREFIX) docker run --rm cityjson-qgis-plugin-test-340
 
 docker-build-344:
 	$(DOCKER_PLATFORM_PREFIX) docker build  -f docker/Dockerfile.qgis-3.44 -t cityjson-qgis-plugin-test-344 .
 
-test-344: docker-build-344
+test-344:
+	@if [ -z "$$(docker images -q cityjson-qgis-plugin-test-344)" ]; then \
+		echo "Docker image not found. Building..."; \
+		$(MAKE) docker-build-344; \
+	fi
 	$(DOCKER_PLATFORM_PREFIX) docker run --rm cityjson-qgis-plugin-test-344
 
 docker-build-40:
 	$(DOCKER_PLATFORM_PREFIX) docker build  -f docker/Dockerfile.qgis-4.0 -t cityjson-qgis-plugin-test-40 .
 
-test-40: docker-build-40
+test-40:
+	@if [ -z "$$(docker images -q cityjson-qgis-plugin-test-40)" ]; then \
+		echo "Docker image not found. Building..."; \
+		$(MAKE) docker-build-40; \
+	fi
 	$(DOCKER_PLATFORM_PREFIX) docker run --rm cityjson-qgis-plugin-test-40
 
 docker-build-42:
 	$(DOCKER_PLATFORM_PREFIX) docker build  -f docker/Dockerfile.qgis-4.2 -t cityjson-qgis-plugin-test-42 .
 
-test-42: docker-build-42
+test-42:
+	@if [ -z "$$(docker images -q cityjson-qgis-plugin-test-42)" ]; then \
+		echo "Docker image not found. Building..."; \
+		$(MAKE) docker-build-42; \
+	fi
 	$(DOCKER_PLATFORM_PREFIX) docker run --rm cityjson-qgis-plugin-test-42
 
 test: compile 
@@ -186,3 +202,7 @@ test: compile
 format: compile
 	uv tool run --with ruff==0.8.4 ruff format .
 	uv tool run --with ruff==0.8.4 ruff check . --fix
+
+
+test_all: format test test-340 test-344 test-40 test-42 
+	source .venv/bin/activate  ; mypy
