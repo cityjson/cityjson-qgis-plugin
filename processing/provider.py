@@ -27,6 +27,7 @@
 """This is a module that contains the provider for
 QGIS processing algorithms"""
 
+import os
 from typing import Any
 
 from qgis.core import QgsProcessingProvider
@@ -59,5 +60,5 @@ class Provider(QgsProcessingProvider):
         """Should return a QIcon which is used for your provider inside
         the Processing toolbox.
         """
-        icon_path = ":/plugins/cityjson_loader/cityjson_logo.svg"
-        return QIcon(icon_path)
+        plugin_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        return QIcon(os.path.join(plugin_dir, "cityjson_logo.svg"))
