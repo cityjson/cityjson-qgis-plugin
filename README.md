@@ -39,9 +39,9 @@ This project uses [ruff](https://docs.astral.sh/ruff/) for linting/formatting an
 
 To set up code style checks and pre-commit hooks after cloning the repository:
 
-1. Install ruff and pre-commit (ideally in a virtual environment):
+1. Install the development tools (ruff, pre-commit and mypy) — ideally in a virtual environment:
    ```sh
-   pip install ruff pre-commit
+   pip install -r requirements-dev.txt
    ```
 2. Install the pre-commit hooks:
    ```sh
@@ -53,6 +53,18 @@ To set up code style checks and pre-commit hooks after cloning the repository:
    ```
 
 Now, every time you commit, pre-commit will automatically run ruff and other checks to help keep the codebase clean and consistent.
+
+
+### Type checking
+
+The codebase is annotated with type hints and checked with [mypy](https://mypy.readthedocs.io/). To run it locally:
+
+1. Run the type checker on the plugin source:
+   ```sh
+   mypy
+   ```
+
+Configuration lives in `pyproject.toml` (`[tool.mypy]`), scoped to `cityjson_loader.py`, `core/`, `gui/` and `processing/`. QGIS has no type stubs, so missing imports are ignored; the goal is to catch internal type errors, not to fully type the QGIS API.
 
 
 ### Testing with Docker
