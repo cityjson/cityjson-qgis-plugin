@@ -1,3 +1,27 @@
+## 1.0.0 - 17/08/2026
+
+### Changed
+- Upgraded to Qt6, supporting QGIS 3.40/3.44 (LTR) and 4.x (Python 3.10+).
+
+### Added
+- Support for CityJSONFeature and CityJSONSeq (`.city.jsonl`).
+- Non-modal dialog with asynchronous, cancellable processing and a progress bar.
+- Multi-file loading: add files/directories, remove and clear all, file count.
+- LoD loading as attributes or separate layers, with LoD selection.
+- Correct data types for attributes and semantic surfaces (Boolean/Integer/Double/String).
+- Smart field ordering (core, surface, then attributes) and LoD layer sorting.
+- Processing toolbox filters by bounding box and object type.
+- Expanded test suite with coverage reporting, type hints and mypy checks.
+
+### Fixed
+- Buildings floating above the terrain in 3D view (absolute altitude clamping).
+- `referenceSystem` URLs starting with `http://` were not parsed.
+- Nested attributes (e.g. address) were stored as raw Python structures.
+- Input files with different CRS used the CRS of the first file.
+- "Style by semantic surfaces" checkbox always read as checked.
+- Crash when opening multiple instances of the plugin.
+- Qt6 enum compatibility and the Processing Toolbox.
+
 ## 0.8.2 - 17/03/2025
 
 ### Fixed

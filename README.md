@@ -1,6 +1,6 @@
 # CityJSON Loader for QGIS
 
-This is a Python plugin for QGIS which adds support for loading [CityJSON](http://www.cityjson.org) datasets in QGIS.
+This is a Python plugin for QGIS which adds support for loading [CityJSON](http://www.cityjson.org) datasets in QGIS. It supports standard CityJSON and CityJSONSeq files.
 
 **Tested and supported on QGIS 3.40 (LTR), 3.44 (LTR) and QGIS 4.x (Qt6). Compatibility with earlier versions is not guaranteed.**
 
