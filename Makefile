@@ -194,5 +194,5 @@ test: compile
 	@echo "------------------------------------------"
 
 format: compile
-	uv tool run ruff format .
-	uv tool run ruff check .
+	uv tool run --with ruff==0.8.4 ruff format .
+	uv tool run --with ruff==0.8.4 ruff check . --fix
