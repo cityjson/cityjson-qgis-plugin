@@ -27,8 +27,6 @@
 """This is a module that contains the provider for
 QGIS processing algorithms"""
 
-from __future__ import annotations
-
 from typing import Any
 
 from qgis.core import QgsProcessingProvider

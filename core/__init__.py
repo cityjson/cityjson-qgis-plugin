@@ -2,8 +2,6 @@
 to QGIS layers and features
 """
 
-from __future__ import annotations
-
 import logging
 
 

@@ -24,8 +24,6 @@
 #
 # ******************************************************************************
 
-from __future__ import annotations
-
 from typing import Any
 
 from qgis.core import (
@@ -113,7 +111,7 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
         """
         return QCoreApplication.translate("Processing", string)
 
-    def createInstance(self) -> CityJsonLoadAlgorithm:
+    def createInstance(self) -> "CityJsonLoadAlgorithm":
         """
         Returns an instance of the algorithm.
         """

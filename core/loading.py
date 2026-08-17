@@ -25,8 +25,6 @@
 # ******************************************************************************
 """A module that provides the logic for loading CityJSON in QGIS"""
 
-from __future__ import annotations
-
 import json
 import os
 import re

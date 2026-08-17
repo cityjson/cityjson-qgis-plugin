@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any
 
 from qgis.PyQt.QtCore import QAbstractItemModel, QModelIndex, QPoint, QRect, QSize, Qt

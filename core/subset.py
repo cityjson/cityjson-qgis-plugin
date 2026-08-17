@@ -25,8 +25,6 @@
 # ******************************************************************************
 """A module that provides functions to create subsets of CityJSON files"""
 
-from __future__ import annotations
-
 from typing import Any
 
 from . import get_logger

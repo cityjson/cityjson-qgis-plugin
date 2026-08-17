@@ -26,8 +26,6 @@
 
 """The class that manages the CityJSON Loader dialog"""
 
-from __future__ import annotations
-
 import os
 
 from qgis.PyQt import QtWidgets, uic
