@@ -26,7 +26,7 @@
 """This module contains functions that originate from cjio"""
 
 import copy
-from typing import Any
+from typing import Any, Optional, Union
 
 from . import subset
 
@@ -45,7 +45,7 @@ def createCityJSON() -> dict[str, Any]:
     }
 
 
-def get_centroid(cm: dict[str, Any], coid: str) -> list[float] | None:
+def get_centroid(cm: dict[str, Any], coid: str) -> Optional[list[float]]:
     """Calculate the 3D centroid of a city object"""
 
     def collect_vertex_indices(boundaries: Any, vertex_indices: list[int]) -> None:
@@ -70,7 +70,7 @@ def get_centroid(cm: dict[str, Any], coid: str) -> list[float] | None:
         return None
 
     # Calculate centroid
-    centroid = [0, 0, 0]
+    centroid: list[float] = [0, 0, 0]
     vertex_count = 0
     for geometry in city_object["geometry"]:
         vertex_indices: list[int] = []
@@ -100,7 +100,7 @@ def get_centroid(cm: dict[str, Any], coid: str) -> list[float] | None:
 
 
 def get_subset_cotype(
-    cm: dict[str, Any], cotype: str | list[str], invert: bool = False
+    cm: dict[str, Any], cotype: Union[str, list[str]], invert: bool = False
 ) -> dict[str, Any]:
     if isinstance(cotype, list):
         cityobject_types = cotype

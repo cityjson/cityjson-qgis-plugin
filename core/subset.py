@@ -25,12 +25,14 @@
 # ******************************************************************************
 """A module that provides functions to create subsets of CityJSON files"""
 
+from typing import Any
+
 from . import get_logger
 
 logger = get_logger("subset")
 
 
-def select_co_ids(j, IDs):
+def select_co_ids(j: dict[str, Any], IDs: list[str]) -> set[str]:
     IDs = list(IDs)
     re = set()
     for theid in j["CityObjects"]:
@@ -57,7 +59,7 @@ def select_co_ids(j, IDs):
     return re
 
 
-def process_geometry(j: dict, j2: dict) -> None:
+def process_geometry(j: dict[str, Any], j2: dict[str, Any]) -> None:
     """Reindex vertex references in j2 to point into a compacted vertex list.
 
     Iterates over all geometries in j2, collects only the vertices that are
@@ -69,8 +71,8 @@ def process_geometry(j: dict, j2: dict) -> None:
         j (dict): The source CityJSON model containing the full vertex list.
         j2 (dict): The target CityJSON subset whose boundaries will be updated.
     """
-    vertex_map = {}
-    new_vertices = []
+    vertex_map: dict[int, int] = {}
+    new_vertices: list[Any] = []
     for co in j2["CityObjects"].values():
         for geom in co.get("geometry", []):
             update_array_indices(
@@ -79,9 +81,9 @@ def process_geometry(j: dict, j2: dict) -> None:
     j2["vertices"] = new_vertices
 
 
-def process_templates(j: dict, j2: dict) -> None:
-    dOldNewIDs = {}
-    newones = []
+def process_templates(j: dict[str, Any], j2: dict[str, Any]) -> None:
+    dOldNewIDs: dict[int, int] = {}
+    newones: list[Any] = []
     for each in j2["CityObjects"]:
         for geom in j2["CityObjects"][each]["geometry"]:
             if geom["type"] == "GeometryInstance":
@@ -100,10 +102,10 @@ def process_templates(j: dict, j2: dict) -> None:
         j2["geometry-templates"]["templates"] = newones
 
 
-def process_appearance(j: dict, j2: dict) -> None:
+def process_appearance(j: dict[str, Any], j2: dict[str, Any]) -> None:
     # -- materials
-    dOldNewIDs = {}
-    newmats = []
+    dOldNewIDs: dict[int, int] = {}
+    newmats: list[Any] = []
     for each in j2["CityObjects"]:
         for geom in j2["CityObjects"][each]["geometry"]:
             if "material" in geom:
@@ -129,7 +131,7 @@ def process_appearance(j: dict, j2: dict) -> None:
 
     # -- textures references (first int in the arrays)
     dOldNewIDs = {}
-    newtextures = []
+    newtextures: list[Any] = []
     for each in j2["CityObjects"]:
         for geom in j2["CityObjects"][each]["geometry"]:
             if "texture" in geom:
@@ -163,7 +165,13 @@ def process_appearance(j: dict, j2: dict) -> None:
         j2.setdefault("appearance", {})["vertices-texture"] = newtextures
 
 
-def update_array_indices(a, dOldNewIDs, oldarray, newarray, slicearray):
+def update_array_indices(
+    a: list[Any],
+    dOldNewIDs: dict[int, int],
+    oldarray: list[Any],
+    newarray: list[Any],
+    slicearray: int,
+) -> None:
     # -- slicearray: -1=none ; 0=use-only-first (for textures) ; 1=use-1+ (for textures)
     # -- a must be an array
     # -- issue with passing integer is that it's non-mutable, thus can't update

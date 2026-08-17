@@ -26,9 +26,10 @@
 
 import json
 import os.path
+from typing import Any, Callable
 
 from qgis.core import QgsApplication, QgsCoordinateReferenceSystem
-from qgis.gui import QgsProjectionSelectionDialog
+from qgis.gui import QgisInterface, QgsProjectionSelectionDialog
 from qgis.PyQt.QtCore import (
     QCoreApplication,
     QSettings,
@@ -55,7 +56,7 @@ from .processing.provider import Provider
 class CityJsonLoader:
     """QGIS Plugin Implementation"""
 
-    def __init__(self, iface):
+    def __init__(self, iface: QgisInterface) -> None:
         """Initialize the CityJSON Loader plugin"""
         # Save reference to the QGIS interface
         self.iface = iface
@@ -71,14 +72,15 @@ class CityJsonLoader:
             self.translator = QTranslator()
             self.translator.load(locale_path)
 
-            if qVersion() > "4.3.3":
+            qt_version = tuple(int(part) for part in qVersion().split("."))
+            if qt_version >= (4, 3, 3):
                 QCoreApplication.installTranslator(self.translator)
 
         # Create the dialog (after translation) and keep reference
         self.dlg = CityJsonLoaderDialog()
 
         # Declare instance attributes
-        self.actions = []
+        self.actions: list[QAction] = []
         self.menu = self.tr("&CityJSON Loader")
         # # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar("CityJsonLoader")
@@ -86,15 +88,15 @@ class CityJsonLoader:
 
         self._cancel_requested = False
 
-        self.file_epsg_map = {}
+        self.file_epsg_map: dict[str, str | None] = {}
 
-        self.citymodel_cache = {}
+        self.citymodel_cache: dict[str, dict[str, Any]] = {}
         self.max_cache_size = 10  # Limit cache to prevent memory issues
 
         # Variables for asynchronous file processing
-        self.file_queue = []
+        self.file_queue: list[str] = []
         self.current_file_index = 0
-        self.process_timer = None
+        self.process_timer: QTimer | None = None
 
         self.delete_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Delete), self.dlg)
         self.delete_shortcut.activated.connect(self.remove_cityjson_files)
@@ -119,19 +121,19 @@ class CityJsonLoader:
 
         self.provider = None
 
-    def initProcessing(self):
+    def initProcessing(self) -> None:
         """Initialises the processing provider."""
         self.provider = Provider()
         QgsApplication.processingRegistry().addProvider(self.provider)
 
-    def request_cancel(self):
+    def request_cancel(self) -> None:
         """Request cancellation of the current processing operation"""
         self._cancel_requested = True
         if self.process_timer is not None:
             # The timer will check _cancel_requested on next iteration
             pass
 
-    def add_cityjson_files(self, filepaths):
+    def add_cityjson_files(self, filepaths: list[str]) -> None:
         """Add CityJSON files to the file list"""
         self.reset_progress_format_on_ui_change()
         for filename in filepaths:
@@ -149,7 +151,7 @@ class CityJsonLoader:
 
         self.update_file_count_label()
 
-    def select_cityjson_files(self):
+    def select_cityjson_files(self) -> None:
         """Open file dialog to select CityJSON files"""
         file_filter = "CityJSON files (*.city.json *.json);;CityJSON files (*.city.json);;JSON files (*.json);;All files (*.*)"
         filenames, _ = QFileDialog.getOpenFileNames(
@@ -159,7 +161,7 @@ class CityJsonLoader:
         if filenames:
             self.add_cityjson_files(filenames)
 
-    def select_cityjson_files_directory(self):
+    def select_cityjson_files_directory(self) -> None:
         """Select CityJSON files from a directory"""
         directory = QFileDialog.getExistingDirectory(
             self.dlg, "Select Directory", "", QFileDialog.ShowDirsOnly
@@ -174,7 +176,7 @@ class CityJsonLoader:
             if filenames:
                 self.add_cityjson_files(filenames)
 
-    def remove_cityjson_files(self):
+    def remove_cityjson_files(self) -> None:
         """Removes CityJSON file(s) from the list"""
         selected_items = self.dlg.listWidget.selectedItems()
         if selected_items:
@@ -196,7 +198,7 @@ class CityJsonLoader:
 
         self.update_file_count_label()
 
-    def clear_all_files(self):
+    def clear_all_files(self) -> None:
         """Removes all CityJSON files from the list"""
         if self.dlg.listWidget.count() > 0:
             self.reset_progress_format_on_ui_change()
@@ -205,7 +207,7 @@ class CityJsonLoader:
         self.citymodel_cache.clear()
         self.update_file_count_label()
 
-    def update_file_count_label(self):
+    def update_file_count_label(self) -> None:
         """Updates the file count label to reflect the number of selected files"""
         count = self.dlg.listWidget.count()
         self.dlg.fileCountLabel.setText(f"{count} file(s) selected")
@@ -224,14 +226,14 @@ class CityJsonLoader:
             self.dlg.splitByTypeCheckBox.setChecked(False)
             self.dlg.semanticsLoadingCheckBox.setChecked(False)
 
-    def _manage_cache_size(self):
+    def _manage_cache_size(self) -> None:
         """Manage cache size to prevent memory issues"""
         if len(self.citymodel_cache) > self.max_cache_size:
             # Remove oldest entry (FIFO)
             oldest_key = next(iter(self.citymodel_cache))
             del self.citymodel_cache[oldest_key]
 
-    def load_file_crs(self, filename):
+    def load_file_crs(self, filename: str) -> str | None:
         """Load the CRS for the CityJSON file"""
         try:
             if filename in self.citymodel_cache:
@@ -248,7 +250,7 @@ class CityJsonLoader:
         except (OSError, json.JSONDecodeError, KeyError):
             return "None"
 
-    def update_file_list(self):
+    def update_file_list(self) -> None:
         """Update metadata fields according to the file selected"""
         self.dlg.listWidget.blockSignals(True)
         try:
@@ -274,7 +276,7 @@ class CityJsonLoader:
         finally:
             self.dlg.listWidget.blockSignals(False)
 
-    def select_crs(self):
+    def select_crs(self) -> None:
         """Shows a dialog to select a new CRS for the model"""
         crs_dialog = QgsProjectionSelectionDialog()
         crs_dialog.setShowNoProjection(True)
@@ -301,7 +303,7 @@ class CityJsonLoader:
             filename = current_item.text()
             self.file_epsg_map[filename] = str(new_crs_id)
 
-    def semantics_loading_changed(self):
+    def semantics_loading_changed(self) -> None:
         """Update the GUI according to the new state of semantic surfaces loading"""
         if is_rule_based_3d_styling_available():
             checked = self.dlg.semanticsLoadingCheckBox.isChecked()
@@ -310,14 +312,14 @@ class CityJsonLoader:
                 self.dlg.semanticSurfacesStylingCheckBox.setChecked(False)
                 self.dlg.semanticSurfacesStylingCheckBox.setEnabled(False)
 
-    def clear_file_information(self):
+    def clear_file_information(self) -> None:
         """Clear all file information fields"""
         self.dlg.cityjsonVersionLineEdit.clear()
         self.dlg.compressedLineEdit.clear()
         self.dlg.crsLineEdit.clear()
         self.dlg.metadataTreeView.setModel(None)
 
-    def update_file_information(self, filename):
+    def update_file_information(self, filename: str) -> None:
         """Update metadata fields according to the file provided"""
 
         if filename in self.citymodel_cache:
@@ -357,22 +359,22 @@ class CityJsonLoader:
         self.dlg.loDSelectionComboBox.addItems(sorted(lods) if lods else [])
         self.dlg.loDSelectionComboBox.setEnabled(len(lods) > 0)
 
-    def tr(self, message):
+    def tr(self, message: str) -> str:
         """Get translation for a string using Qt translation API"""
         return QCoreApplication.translate("CityJsonLoader", message)
 
     def add_action(
         self,
-        icon_path,
-        text,
-        callback,
-        enabled_flag=True,
-        add_to_menu=True,
-        add_to_toolbar=True,
-        status_tip=None,
-        whats_this=None,
-        parent=None,
-    ):
+        icon_path: str,
+        text: str,
+        callback: Callable[[], None],
+        enabled_flag: bool = True,
+        add_to_menu: bool = True,
+        add_to_toolbar: bool = True,
+        status_tip: str | None = None,
+        whats_this: str | None = None,
+        parent: Any = None,
+    ) -> QAction:
         """Add an action to the toolbar and/or menu"""
 
         icon = QIcon(icon_path)
@@ -396,7 +398,7 @@ class CityJsonLoader:
 
         return action
 
-    def initGui(self):
+    def initGui(self) -> None:
         """Create the menu entries and toolbar icons inside the QGIS GUI"""
 
         icon_path = ":/plugins/cityjson_loader/cityjson_logo.svg"
@@ -409,7 +411,7 @@ class CityJsonLoader:
 
         self.initProcessing()
 
-    def unload(self):
+    def unload(self) -> None:
         """Removes the plugin menu item and icon from QGIS GUI"""
         if self.process_timer is not None:
             self.process_timer.stop()
@@ -423,7 +425,7 @@ class CityJsonLoader:
 
         QgsApplication.processingRegistry().removeProvider(self.provider)
 
-    def run(self):
+    def run(self) -> None:
         """Run method that performs all the real work"""
         if self.dlg.isVisible():
             self.dlg.raise_()
@@ -437,7 +439,7 @@ class CityJsonLoader:
 
         self.dlg.show()
 
-    def process_files(self):
+    def process_files(self) -> None:
         """Process files in the list widget. Dialog always stays open after processing. Updates progress bar in percent"""
         filepaths = [
             self.dlg.listWidget.item(i).text()
@@ -467,7 +469,7 @@ class CityJsonLoader:
         self.process_timer.timeout.connect(self.process_next_file)
         self.process_timer.start(50)
 
-    def process_next_file(self):
+    def process_next_file(self) -> None:
         """Process the next file in the queue asynchronously"""
         # Check for cancellation
         if self._cancel_requested:
@@ -510,7 +512,7 @@ class CityJsonLoader:
         # Move to next file
         self.current_file_index += 1
 
-    def finish_processing(self, status_text):
+    def finish_processing(self, status_text: str) -> None:
         """Clean up and finish the asynchronous processing"""
         if self.process_timer is not None:
             self.process_timer.stop()
@@ -529,12 +531,12 @@ class CityJsonLoader:
         # Reset progress bar after a short delay
         QTimer.singleShot(2000, lambda: self.dlg.progressBar.setValue(0))
 
-    def reset_progress_format_on_ui_change(self):
+    def reset_progress_format_on_ui_change(self) -> None:
         """Reset progress bar format when UI elements change"""
         if self.dlg.progressBar.format() == "Complete":
             self.dlg.progressBar.setFormat("%p%")
 
-    def load_cityjson(self, filepath):
+    def load_cityjson(self, filepath: str) -> int:
         """Loads the given CityJSON"""
         if filepath in self.citymodel_cache:
             citymodel = self.citymodel_cache[filepath]

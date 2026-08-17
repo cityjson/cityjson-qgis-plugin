@@ -28,6 +28,7 @@
 import json
 import os
 import re
+from typing import Any
 
 from qgis.core import QgsProject
 
@@ -63,16 +64,16 @@ class CityJSONLoader:
 
     def __init__(
         self,
-        filepath,
-        citymodel,
-        epsg=None,
-        keep_parent_attributes=False,
-        divide_by_object=False,
-        lod_as="NONE",
-        lod="All",
-        load_semantic_surfaces=False,
-        style_semantic_surfaces=False,
-    ):
+        filepath: str,
+        citymodel: dict[str, Any],
+        epsg: str | None = None,
+        keep_parent_attributes: bool = False,
+        divide_by_object: bool = False,
+        lod_as: str = "NONE",
+        lod: str | list[str] = "All",
+        load_semantic_surfaces: bool = False,
+        style_semantic_surfaces: bool = False,
+    ) -> None:
         filename_with_ext = os.path.basename(filepath)
         filename, _ = os.path.splitext(filename_with_ext)
 
@@ -88,11 +89,13 @@ class CityJSONLoader:
         if "geometry-templates" in citymodel:
             geometry_templates = citymodel["geometry-templates"]
 
-        self.geometry_reader = GeometryReader(
+        self.geometry_reader: Any = GeometryReader(
             self.vertices_cache, geometry_templates, lod=self.lod
         )
-        self.fields_builder = AttributeFieldsDecorator(BaseFieldsBuilder(), citymodel)
-        self.feature_builder = SimpleFeatureBuilder(self.geometry_reader)
+        self.fields_builder: Any = AttributeFieldsDecorator(
+            BaseFieldsBuilder(), citymodel
+        )
+        self.feature_builder: Any = SimpleFeatureBuilder(self.geometry_reader)
 
         if keep_parent_attributes:
             self.feature_builder = ParentFeatureDecorator(
@@ -114,7 +117,7 @@ class CityJSONLoader:
             )
 
         if divide_by_object:
-            self.naming_iterator = TypeNamingIterator(filename, citymodel)
+            self.naming_iterator: Any = TypeNamingIterator(filename, citymodel)
         else:
             self.naming_iterator = BaseNamingIterator(filename)
 
@@ -137,7 +140,7 @@ class CityJSONLoader:
         self.layer_manager.prepare_attributes()
 
         if is_3d_styling_available():
-            self.styler = Copy2dStyling()
+            self.styler: Any = Copy2dStyling()
         else:
             self.styler = NullStyling()
 
@@ -148,7 +151,7 @@ class CityJSONLoader:
         ):
             self.styler = SemanticSurfacesStyling()
 
-    def init_vertices(self):
+    def init_vertices(self) -> None:
         """Initialises the vertices cache"""
         self.vertices_cache = VerticesCache()
 
@@ -169,7 +172,7 @@ class CityJSONLoader:
             for v in verts:
                 self.vertices_cache.add_vertex(v)
 
-    def load(self, feedback=None) -> int:
+    def load(self, feedback: Any | None = None) -> int:
         """Loads a specified CityJSON file and returns the number of skipped geometries"""
         city_objects = self.citymodel["CityObjects"]
 
@@ -204,14 +207,14 @@ class CityJSONLoader:
         return self.geometry_reader.skipped_geometries()
 
 
-def load_cityjson_model(filepath):
+def load_cityjson_model(filepath: str) -> dict[str, Any]:
     """Returns the citymodel for the given filepath"""
     with open(filepath, encoding="utf-8-sig", buffering=8192) as fstream:
         citymodel = json.load(fstream)
     return citymodel
 
 
-def get_model_epsg(citymodel) -> str | None:
+def get_model_epsg(citymodel: dict[str, Any]) -> str | None:
     """Returns the EPSG of the city model as a string, or None if not found"""
 
     if "metadata" not in citymodel:
@@ -250,3 +253,5 @@ def get_model_epsg(citymodel) -> str | None:
                 return m.group(1)
         except (KeyError, TypeError):
             return None
+
+    return None

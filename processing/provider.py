@@ -27,6 +27,8 @@
 """This is a module that contains the provider for
 QGIS processing algorithms"""
 
+from typing import Any
+
 from qgis.core import QgsProcessingProvider
 from qgis.PyQt.QtGui import QIcon
 
@@ -34,10 +36,10 @@ from .cityjson_load_algorithm import CityJsonLoadAlgorithm
 
 
 class Provider(QgsProcessingProvider):
-    def loadAlgorithms(self, *args, **kwargs):
+    def loadAlgorithms(self, *args: Any, **kwargs: Any) -> None:
         self.addAlgorithm(CityJsonLoadAlgorithm())
 
-    def id(self, *args, **kwargs):
+    def id(self, *args: Any, **kwargs: Any) -> str:
         """The ID of your plugin, used for identifying the provider.
 
         This string should be a unique, short, character only string,
@@ -45,7 +47,7 @@ class Provider(QgsProcessingProvider):
         """
         return "cityjsonloader"
 
-    def name(self, *args, **kwargs):
+    def name(self, *args: Any, **kwargs: Any) -> str:
         """The human friendly name of your plugin in Processing.
 
         This string should be as short as possible (e.g. "Lastools", not
@@ -53,7 +55,7 @@ class Provider(QgsProcessingProvider):
         """
         return self.tr("CityJSON Loader")
 
-    def icon(self):
+    def icon(self) -> QIcon:
         """Should return a QIcon which is used for your provider inside
         the Processing toolbox.
         """

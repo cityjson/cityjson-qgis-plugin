@@ -25,10 +25,12 @@
 # ******************************************************************************
 """A module to manage the settings of the plugin"""
 
+from typing import Any
+
 from qgis.PyQt.QtCore import QSettings
 from qgis.PyQt.QtGui import QColor
 
-semantic_colors = {
+semantic_colors: dict[str, dict[str, QColor | None]] = {
     "RoofSurface": {
         "diffuse": QColor(255, 0, 0),
         "ambient": QColor(255, 0, 0),
@@ -57,12 +59,12 @@ semantic_colors = {
 }
 
 
-def get_color_int(color):
+def get_color_int(color: QColor | None) -> tuple[int, int, int, int] | None:
     """Returns the int representation of a QColor"""
     return None if color is None else color.getRgb()
 
 
-def save_defaults():
+def save_defaults() -> None:
     """Saves the default values"""
     settings = QSettings()
     settings.beginGroup("CityJSON Loader")
@@ -79,7 +81,7 @@ def save_defaults():
     settings.endGroup()
 
 
-def load_settings():
+def load_settings() -> dict[str, Any]:
     """Loads the settings from the app's registry"""
 
     result = {"semantic_colors": semantic_colors}

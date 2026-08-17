@@ -1,3 +1,5 @@
+from typing import Any
+
 from qgis.PyQt.QtCore import QAbstractItemModel, QModelIndex, QPoint, QRect, QSize, Qt
 from qgis.PyQt.QtGui import QFontMetrics
 
@@ -70,30 +72,30 @@ METADATA_REALNAMES = {
 
 
 class TreeNode:
-    def __init__(self, parent, row):
+    def __init__(self, parent: "TreeNode | None", row: int) -> None:
         self.parent = parent
         self.row = row
         self.subnodes = self._getChildren()
 
-    def _getChildren(self):
+    def _getChildren(self) -> list[Any]:
         raise NotImplementedError()
 
 
 class TreeModel(QAbstractItemModel):
-    def __init__(self):
+    def __init__(self) -> None:
         QAbstractItemModel.__init__(self)
         self.rootNodes = self._getRootNodes()
 
-    def _getRootNodes(self):
+    def _getRootNodes(self) -> list[Any]:
         raise NotImplementedError()
 
-    def index(self, row, column, parent):
+    def index(self, row: int, column: int, parent: QModelIndex) -> QModelIndex:
         if not parent.isValid():
             return self.createIndex(row, column, self.rootNodes[row])
         parentNode = parent.internalPointer()
         return self.createIndex(row, column, parentNode.subnodes[row])
 
-    def parent(self, index):
+    def parent(self, index: QModelIndex) -> QModelIndex:
         if not index.isValid():
             return QModelIndex()
         node = index.internalPointer()
@@ -102,11 +104,11 @@ class TreeModel(QAbstractItemModel):
         else:
             return self.createIndex(node.parent.row, 0, node.parent)
 
-    def reset(self):
+    def reset(self) -> None:
         self.rootNodes = self._getRootNodes()
         QAbstractItemModel.reset(self)
 
-    def rowCount(self, parent):
+    def rowCount(self, parent: QModelIndex) -> int:
         if not parent.isValid():
             return len(self.rootNodes)
         node = parent.internalPointer()
@@ -114,8 +116,9 @@ class TreeModel(QAbstractItemModel):
 
 
 class MetadataElement:  # your internal structure
-    def __init__(self, value_pair):
+    def __init__(self, value_pair: tuple[str, Any]) -> None:
         self.key = value_pair[0]
+        self.value: Any
         if isinstance(value_pair[1], dict):
             self.subelements = value_pair[1]
             self.value = ""
@@ -145,11 +148,11 @@ class MetadataElement:  # your internal structure
 
 
 class MetadataNode(TreeNode):
-    def __init__(self, ref, parent, row):
+    def __init__(self, ref: MetadataElement, parent: TreeNode | None, row: int) -> None:
         self.ref = ref
         TreeNode.__init__(self, parent, row)
 
-    def _getChildren(self):
+    def _getChildren(self) -> list[Any]:
         return [
             MetadataNode(MetadataElement(elem), self, index)
             for index, elem in enumerate(self.ref.subelements.items())
@@ -157,12 +160,12 @@ class MetadataNode(TreeNode):
 
 
 class MetadataModel(TreeModel):
-    def __init__(self, rootElements, treeview):
+    def __init__(self, rootElements: dict[str, Any], treeview: Any) -> None:
         self.rootElements = rootElements
         self.treeview = treeview
         TreeModel.__init__(self)
 
-    def getKeyColumnWidth(self):
+    def getKeyColumnWidth(self) -> int:
         width = 100
         padding = 30
         for key in self.rootElements:
@@ -172,16 +175,16 @@ class MetadataModel(TreeModel):
 
         return width
 
-    def _getRootNodes(self):
+    def _getRootNodes(self) -> list[Any]:
         return [
             MetadataNode(MetadataElement(elem), None, index)
             for index, elem in enumerate(self.rootElements.items())
         ]
 
-    def columnCount(self, parent):
+    def columnCount(self, parent: QModelIndex) -> int:
         return 2
 
-    def data(self, index, role):
+    def data(self, index: QModelIndex, role: int) -> Any:
         if not index.isValid():
             return None
         node = index.internalPointer()
@@ -204,7 +207,7 @@ class MetadataModel(TreeModel):
 
         return None
 
-    def headerData(self, section, orientation, role):
+    def headerData(self, section: int, orientation: Any, role: int) -> Any:
         if (
             orientation == Qt.Orientation.Horizontal
             and role == Qt.ItemDataRole.DisplayRole
@@ -216,5 +219,5 @@ class MetadataModel(TreeModel):
         return None
 
 
-def get_real_key(key_name):
+def get_real_key(key_name: str) -> str:
     return METADATA_REALNAMES.get(key_name, key_name)
