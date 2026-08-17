@@ -85,6 +85,7 @@ deploy: compile
 	@echo "Deploying plugin to your QGIS3 directory:"
 	@echo " $(HOME)/$(QGISDIR)/python/plugins/"
 	@echo "------------------------------------------"
+	@rm -rf "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
 	@mkdir -p "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
 	@rsync -R $(PY_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
 	@rsync -R $(UI_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
