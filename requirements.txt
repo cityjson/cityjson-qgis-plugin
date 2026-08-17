@@ -1,3 +1,4 @@
 pytest-cov
 pytest
 qgis-plugin-ci==2.8.10
+defusedxml
