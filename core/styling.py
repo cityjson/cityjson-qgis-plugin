@@ -25,6 +25,8 @@
 # ******************************************************************************
 """A module related to apply styling in QGIS layers"""
 
+from __future__ import annotations
+
 from typing import Any
 
 from qgis.core import Qgis, QgsVectorLayer

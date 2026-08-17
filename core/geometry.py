@@ -25,6 +25,8 @@
 # ******************************************************************************
 """A module to provide classes for reading geometries of CityJSON"""
 
+from __future__ import annotations
+
 from typing import Any, Sequence
 
 from qgis.core import QgsGeometry, QgsLineString, QgsMultiPolygon, QgsPoint, QgsPolygon

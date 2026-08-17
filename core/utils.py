@@ -25,6 +25,8 @@
 # ******************************************************************************
 """This module contains functions that originate from cjio"""
 
+from __future__ import annotations
+
 import copy
 from typing import Any, Optional, Union
 

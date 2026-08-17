@@ -24,6 +24,8 @@
 #
 # ******************************************************************************
 
+from __future__ import annotations
+
 import json
 import os.path
 from typing import Any, Callable
@@ -63,7 +65,7 @@ class CityJsonLoader:
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
-        locale = QSettings().value("locale/userLocale")[0:2]
+        locale = str(QSettings().value("locale/userLocale") or "")[0:2]
         locale_path = os.path.join(
             self.plugin_dir, "i18n", f"CityJsonLoader_{locale}.qm"
         )
@@ -205,6 +207,7 @@ class CityJsonLoader:
         self.dlg.listWidget.clear()
         self.clear_file_information()
         self.citymodel_cache.clear()
+        self.file_epsg_map.clear()
         self.update_file_count_label()
 
     def update_file_count_label(self) -> None:
@@ -228,7 +231,7 @@ class CityJsonLoader:
 
     def _manage_cache_size(self) -> None:
         """Manage cache size to prevent memory issues"""
-        if len(self.citymodel_cache) > self.max_cache_size:
+        while len(self.citymodel_cache) > self.max_cache_size:
             # Remove oldest entry (FIFO)
             oldest_key = next(iter(self.citymodel_cache))
             del self.citymodel_cache[oldest_key]

@@ -25,6 +25,8 @@
 # ******************************************************************************
 """A module to manage the vector layers as they are going to be loaded in QGIS"""
 
+from __future__ import annotations
+
 import abc
 from typing import Any, Iterator
 

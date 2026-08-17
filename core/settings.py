@@ -25,6 +25,8 @@
 # ******************************************************************************
 """A module to manage the settings of the plugin"""
 
+from __future__ import annotations
+
 from typing import Any
 
 from qgis.PyQt.QtCore import QSettings
