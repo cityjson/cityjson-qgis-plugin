@@ -123,6 +123,7 @@ class SemanticSurfacesStyling:
                 symbol.setMaterialSettings(material)
 
             symbol.setEdgesEnabled(True)
+            symbol.setAltitudeClamping(Qgis.AltitudeClamping.Absolute)
 
             new_rule = QgsRuleBased3DRenderer.Rule(
                 symbol, f"\"surface.type\" = '{surface_type}'"
@@ -143,6 +144,7 @@ class SemanticSurfacesStyling:
             symbol.setMaterialSettings(material)
 
         symbol.setEdgesEnabled(True)
+        symbol.setAltitudeClamping(Qgis.AltitudeClamping.Absolute)
 
         new_rule = QgsRuleBased3DRenderer.Rule(symbol, "ELSE")
         root_rule.appendChild(new_rule)
