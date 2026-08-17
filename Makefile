@@ -18,8 +18,6 @@ EXTRAS = metadata.txt cityjson_logo.svg Changelog.md
 
 EXTRA_DIRS = 
 
-COMPILED_RESOURCE_FILES = resources.py
-
 # QGISDIR points to the location where your plugin should be installed.
 # This varies by platform, relative to your HOME directory:
 #	* Linux:
@@ -69,14 +67,13 @@ endif
 
 PLUGIN_UPLOAD = scripts/plugin_upload.py
 
-RESOURCE_SRC=$(shell grep '^ *<file' resources.qrc | sed 's@</file>@@g;s/.*>//g' | tr '\n' ' ')
-
 default: compile
 
-compile: $(COMPILED_RESOURCE_FILES)
-
-%.py : %.qrc $(RESOURCES_SRC)
-	pyrcc5 -o $*.py  $<
+# Resources (the plugin icon) are loaded directly from disk via
+# cityjson_logo.svg, so there is no Qt resource compilation step. `compile` is
+# kept as a no-op target so the other rules keep working.
+compile:
+	@true
 
 
 deploy: compile
@@ -91,7 +88,6 @@ deploy: compile
 	@mkdir -p "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
 	@rsync -R $(PY_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
 	@rsync -R $(UI_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
-	@cp -f $(COMPILED_RESOURCE_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
 	@cp -f $(EXTRAS) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
 
 # Copy extra directories if any
