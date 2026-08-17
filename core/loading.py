@@ -243,7 +243,7 @@ def get_model_epsg(citymodel: dict[str, Any]) -> str | None:
                 return ref_string.split("::")[1]
 
             # Match CRS URL starting with 'https://www.opengis.net/def/crs/' and extract the last number
-            p = re.compile(r"^https://www\.opengis\.net/def/crs/.*/([0-9]+)$")
+            p = re.compile(r"^https?://www\.opengis\.net/def/crs/.*/([0-9]+)$")
             m = p.match(ref_string)
 
             logger.debug(f"Regex match result: {ref_string}")

@@ -126,6 +126,16 @@ class TestGetModelEpsg:
         result = get_model_epsg(citymodel)
         assert result == "4326"
 
+    def test_reference_system_with_http_url_pattern(self):
+        """Test referenceSystem with http:// URL pattern"""
+        citymodel = {
+            "metadata": {
+                "referenceSystem": "http://www.opengis.net/def/crs/EPSG/0/4326"
+            }
+        }
+        result = get_model_epsg(citymodel)
+        assert result == "4326"
+
     def test_reference_system_with_complex_url(self):
         """Test referenceSystem with more complex URL"""
         citymodel = {
