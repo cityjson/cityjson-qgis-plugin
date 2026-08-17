@@ -207,11 +207,103 @@ class CityJSONLoader:
         return self.geometry_reader.skipped_geometries()
 
 
+def _is_cityjson_feature(obj: Any) -> bool:
+    """Return True if the object is a CityJSONFeature."""
+    return isinstance(obj, dict) and obj.get("type") == "CityJSONFeature"
+
+
+def _offset_boundaries(boundaries: Any, offset: int) -> Any:
+    """Recursively add ``offset`` to every vertex index in a boundaries array."""
+    if isinstance(boundaries, list):
+        return [_offset_boundaries(b, offset) for b in boundaries]
+    if boundaries is None:
+        return None
+    return boundaries + offset
+
+
+def _merge_cityjson_features(
+    features: list[dict[str, Any]], metadata: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Merge CityJSONFeature objects into a single CityJSON model.
+
+    Each feature has its own local vertex indices, so the vertices are
+    concatenated and the vertex indices inside each feature's boundaries are
+    shifted accordingly. Transform, CRS metadata and geometry-templates are
+    taken from the metadata object (or the first feature).
+    """
+    merged: dict[str, Any] = {
+        "type": "CityJSON",
+        "version": "1.1",
+        "CityObjects": {},
+        "vertices": [],
+    }
+
+    source = metadata if metadata is not None else (features[0] if features else None)
+    if source:
+        for key in ("version", "transform", "metadata", "geometry-templates"):
+            if key in source:
+                merged[key] = source[key]
+
+    vertex_offset = 0
+    for feature in features:
+        cityobjects = feature.get("CityObjects", {})
+        vertices = feature.get("vertices", [])
+
+        if vertex_offset:
+            for obj in cityobjects.values():
+                for geom in obj.get("geometry", []):
+                    if "boundaries" in geom:
+                        geom["boundaries"] = _offset_boundaries(
+                            geom["boundaries"], vertex_offset
+                        )
+
+        merged["vertices"].extend(vertices)
+        vertex_offset += len(vertices)
+        merged["CityObjects"].update(cityobjects)
+
+    return merged
+
+
+def _load_cityjson_seq(content: str) -> dict[str, Any]:
+    """Parse a CityJSONSeq stream (newline-delimited JSON) into a city model."""
+    metadata: dict[str, Any] | None = None
+    features: list[dict[str, Any]] = []
+    for line in content.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        obj = json.loads(line)
+        obj_type = obj.get("type")
+        if obj_type == "CityJSON":
+            metadata = obj
+        elif obj_type == "CityJSONFeature":
+            features.append(obj)
+    return _merge_cityjson_features(features, metadata=metadata)
+
+
 def load_cityjson_model(filepath: str) -> dict[str, Any]:
-    """Returns the citymodel for the given filepath"""
+    """Returns the city model for the given filepath.
+
+    Accepts standard CityJSON, a single CityJSONFeature, a JSON array of
+    CityJSONFeature objects, and CityJSONSeq (newline-delimited JSON).
+    CityJSONFeature objects are merged into a single CityJSON model.
+    """
     with open(filepath, encoding="utf-8-sig", buffering=8192) as fstream:
-        citymodel = json.load(fstream)
-    return citymodel
+        content = fstream.read()
+
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError:
+        return _load_cityjson_seq(content)
+
+    if isinstance(data, list):
+        features = [f for f in data if _is_cityjson_feature(f)]
+        return _merge_cityjson_features(features)
+
+    if _is_cityjson_feature(data):
+        return _merge_cityjson_features([data])
+
+    return data
 
 
 def get_model_epsg(citymodel: dict[str, Any]) -> str | None:

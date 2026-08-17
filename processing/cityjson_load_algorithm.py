@@ -170,7 +170,7 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterFile(
-                self.INPUT, self.tr("CityJSON file"), extension="json"
+                self.INPUT, self.tr("CityJSON file"), extension="json,jsonl"
             )
         )
 

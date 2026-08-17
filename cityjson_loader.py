@@ -153,7 +153,7 @@ class CityJsonLoader:
 
     def select_cityjson_files(self) -> None:
         """Open file dialog to select CityJSON files"""
-        file_filter = "CityJSON files (*.city.json *.json);;CityJSON files (*.city.json);;JSON files (*.json);;All files (*.*)"
+        file_filter = "CityJSON files (*.city.json *.json *.city.jsonl *.jsonl);;CityJSON files (*.city.json *.city.jsonl);;CityJSONSeq (*.jsonl);;JSON files (*.json);;All files (*.*)"
         filenames, _ = QFileDialog.getOpenFileNames(
             self.dlg, "Select CityJSON File(s)", "", file_filter
         )
@@ -171,7 +171,7 @@ class CityJsonLoader:
             filenames = [
                 os.path.join(directory, f)
                 for f in os.listdir(directory)
-                if f.endswith((".city.json", ".json"))
+                if f.endswith((".city.json", ".json", ".city.jsonl", ".jsonl"))
             ]
             if filenames:
                 self.add_cityjson_files(filenames)
@@ -240,11 +240,10 @@ class CityJsonLoader:
             if filename in self.citymodel_cache:
                 model = self.citymodel_cache[filename]
             else:
-                with open(filename, encoding="utf-8-sig") as fstream:
-                    model = json.load(fstream)
-                    # Cache the model for reuse
-                    self.citymodel_cache[filename] = model
-                    self._manage_cache_size()
+                model = load_cityjson_model(filename)
+                # Cache the model for reuse
+                self.citymodel_cache[filename] = model
+                self._manage_cache_size()
 
             epsg = get_model_epsg(model)
             return epsg
@@ -329,11 +328,10 @@ class CityJsonLoader:
         if filename in self.citymodel_cache:
             model = self.citymodel_cache[filename]
         else:
-            with open(filename, encoding="utf-8-sig") as fstream:
-                model = json.load(fstream)
-                # Cache the model for reuse
-                self.citymodel_cache[filename] = model
-                self._manage_cache_size()
+            model = load_cityjson_model(filename)
+            # Cache the model for reuse
+            self.citymodel_cache[filename] = model
+            self._manage_cache_size()
 
         lods = {
             geom["lod"]
