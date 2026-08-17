@@ -26,6 +26,7 @@
 """A module to manage the vector layers as they are going to be loaded in QGIS"""
 
 import abc
+import json
 from typing import Any, Iterator
 
 from qgis.core import Qgis, QgsFeature, QgsField, QgsFields, QgsVectorLayer
@@ -64,6 +65,13 @@ def _qgis_type(value: Any) -> Any:
     if isinstance(value, float):
         return FIELD_DOUBLE
     return FIELD_STRING
+
+
+def _stringify_attribute(value: Any) -> Any:
+    """Serialize nested structures to JSON so they can be stored in a field."""
+    if isinstance(value, (dict, list)):
+        return json.dumps(value)
+    return value
 
 
 def _register_field_type(attribute_types: dict[str, Any], key: str, value: Any) -> None:
@@ -432,7 +440,7 @@ class SimpleFeatureBuilder:
 
         if "attributes" in cityobject:
             for att_key, att_value in cityobject["attributes"].items():
-                new_feature[f"attribute.{att_key}"] = att_value
+                new_feature[f"attribute.{att_key}"] = _stringify_attribute(att_value)
 
         if "geometry" in cityobject:
             return_geom = cityobject["geometry"]
@@ -587,13 +595,17 @@ class ParentFeatureDecorator:
 
             if city_attributes:
                 for att_key, att_value in city_attributes.items():
-                    new_feature[f"attribute.{att_key}"] = att_value
+                    new_feature[f"attribute.{att_key}"] = _stringify_attribute(
+                        att_value
+                    )
             else:
                 parent_attributes = self.get_attributes().get(
                     new_feature["parents"], {}
                 )
                 for att_key, att_value in parent_attributes.items():
-                    new_feature[f"attribute.{att_key}"] = att_value
+                    new_feature[f"attribute.{att_key}"] = _stringify_attribute(
+                        att_value
+                    )
 
             if "geometry" in cityobject:
                 return_geom = cityobject["geometry"]

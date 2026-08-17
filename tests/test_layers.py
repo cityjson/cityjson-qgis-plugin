@@ -658,6 +658,35 @@ class TestSimpleFeatureBuilder:
         assert feature["attribute.roofType"] == "gable"
         assert feature["attribute.height"] == 22.3
 
+    def test_nested_attributes_are_serialized(self):
+        """Tests that nested attributes (e.g. address) are serialized to JSON."""
+        import json
+
+        address = [{"CountryName": "Germany", "LocalityName": "Schwaigen"}]
+        cm = {
+            "CityObjects": {
+                "b1": {
+                    "type": "Building",
+                    "attributes": {"address": address, "function": "residential"},
+                    "geometry": [],
+                }
+            },
+            "type": "CityJSON",
+            "version": "2.0",
+            "vertices": [],
+        }
+        fields = AttributeFieldsDecorator(BaseFieldsBuilder(), cm).get_fields()
+        reader = MagicMock()
+        builder = SimpleFeatureBuilder(reader)
+
+        features = builder.create_features(
+            fields, "b1", cm["CityObjects"]["b1"], read_geometry=False
+        )
+        feature = next(iter(features.keys()))
+
+        assert feature["attribute.address"] == json.dumps(address)
+        assert feature["attribute.function"] == "residential"
+
     def test_no_geometry_returns_empty_list(self):
         """Tests that a CityObject without geometry returns empty geom list"""
         reader = MagicMock()
