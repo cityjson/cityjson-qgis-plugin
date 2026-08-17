@@ -249,7 +249,7 @@ class CityJsonLoader:
             epsg = get_model_epsg(model)
             return epsg
         except (OSError, json.JSONDecodeError, KeyError):
-            return "None"
+            return None
 
     def update_file_list(self) -> None:
         """Update metadata fields according to the file selected"""
@@ -299,12 +299,13 @@ class CityJsonLoader:
 
         if new_crs_id == 0:
             self.dlg.crsLineEdit.setText("None")
+            new_epsg: str | None = None
         else:
             self.dlg.crsLineEdit.setText(str(new_crs_id))
+            new_epsg = str(new_crs_id)
 
         if current_item:
-            filename = current_item.text()
-            self.file_epsg_map[filename] = str(new_crs_id)
+            self.file_epsg_map[current_item.text()] = new_epsg
 
     def semantics_loading_changed(self) -> None:
         """Update the GUI according to the new state of semantic surfaces loading"""
@@ -344,7 +345,7 @@ class CityJsonLoader:
 
         self.dlg.cityjsonVersionLineEdit.setText(model["version"])
         self.dlg.compressedLineEdit.setText("Yes" if "transform" in model else "No")
-        self.dlg.crsLineEdit.setText(self.file_epsg_map[filename])
+        self.dlg.crsLineEdit.setText(self.file_epsg_map.get(filename) or "")
 
         metadata = model.get(
             "metadata", {"metadata missing": "There is no metadata in this file"}

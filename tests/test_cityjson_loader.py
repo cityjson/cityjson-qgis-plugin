@@ -147,7 +147,25 @@ class TestCityJsonLoader:
     def test_load_file_crs_missing_file(self, plugin_module, mock_iface, qgis_app):
         loader = plugin_module.CityJsonLoader(mock_iface)
 
-        assert loader.load_file_crs("/does/not/exist.json") == "None"
+        assert loader.load_file_crs("/does/not/exist.json") is None
+
+    def test_add_cityjson_file_without_crs(
+        self, plugin_module, mock_iface, qgis_app, tmp_path
+    ):
+        loader = plugin_module.CityJsonLoader(mock_iface)
+        model = {
+            "type": "CityJSON",
+            "version": "2.0",
+            "CityObjects": {"b1": {"type": "Building", "geometry": []}},
+            "vertices": [[0, 0, 0]],
+        }
+        path = tmp_path / "no_crs.json"
+        path.write_text(json.dumps(model), encoding="utf-8")
+
+        loader.add_cityjson_files([str(path)])
+
+        assert loader.file_epsg_map[str(path)] is None
+        assert loader.dlg.crsLineEdit.text() == ""
 
     def test_process_files_without_files(self, plugin_module, mock_iface, qgis_app):
         loader = plugin_module.CityJsonLoader(mock_iface)
@@ -359,6 +377,7 @@ class TestCityJsonLoader:
             loader.select_crs()
 
         assert loader.dlg.crsLineEdit.text() == "None"
+        assert loader.file_epsg_map[sample_cityjson_file] is None
 
     def test_load_cityjson_passes_options(
         self, plugin_module, mock_iface, sample_cityjson_file, qgis_app
