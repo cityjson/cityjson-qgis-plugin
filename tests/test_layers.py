@@ -6,6 +6,9 @@ from unittest.mock import MagicMock
 from qgis.core import QgsField, QgsFields
 
 from core.layers import (
+    FIELD_BOOL,
+    FIELD_DOUBLE,
+    FIELD_INT,
     FIELD_STRING,
     AttributeFieldsDecorator,
     BaseFieldsBuilder,
@@ -452,6 +455,113 @@ class TestSemanticSurfaceFieldsDecoratorExtended:
         assert "surface.type" in field_names
         assert "surface.material" in field_names
 
+    def test_surface_attributes_have_correct_types(self):
+        """Surface attributes are typed from their values (not all strings)."""
+        cm = {
+            "type": "CityJSON",
+            "version": "2.0",
+            "CityObjects": {
+                "b1": {
+                    "type": "Building",
+                    "geometry": [
+                        {
+                            "type": "Solid",
+                            "semantics": {
+                                "surfaces": [
+                                    {
+                                        "type": "RoofSurface",
+                                        "rf_azimuth": 244.79,
+                                        "rf_count": 3,
+                                        "flag": True,
+                                    }
+                                ],
+                                "values": [0],
+                            },
+                        }
+                    ],
+                }
+            },
+            "vertices": [[0, 0, 0]],
+        }
+        builder = SemanticSurfaceFieldsDecorator(NullFieldsBuilder(), cm)
+        field_map = {f.name(): f for f in builder.get_fields()}
+
+        assert field_map["surface.type"].type() == FIELD_STRING
+        assert field_map["surface.rf_azimuth"].type() == FIELD_DOUBLE
+        assert field_map["surface.rf_count"].type() == FIELD_INT
+        assert field_map["surface.flag"].type() == FIELD_BOOL
+
+    def test_surface_attribute_type_promotion(self):
+        """Surface attribute types are promoted across objects."""
+        cm = {
+            "type": "CityJSON",
+            "version": "2.0",
+            "CityObjects": {
+                "b1": {
+                    "type": "Building",
+                    "geometry": [
+                        {
+                            "type": "Solid",
+                            "semantics": {
+                                "surfaces": [
+                                    {"type": "RoofSurface", "flag": True, "ratio": 5}
+                                ]
+                            },
+                        }
+                    ],
+                },
+                "b2": {
+                    "type": "Building",
+                    "geometry": [
+                        {
+                            "type": "Solid",
+                            "semantics": {
+                                "surfaces": [
+                                    {"type": "RoofSurface", "flag": 3, "ratio": 0.5}
+                                ]
+                            },
+                        }
+                    ],
+                },
+            },
+            "vertices": [],
+        }
+        builder = SemanticSurfaceFieldsDecorator(NullFieldsBuilder(), cm)
+        field_map = {f.name(): f for f in builder.get_fields()}
+
+        assert field_map["surface.flag"].type() == FIELD_INT
+        assert field_map["surface.ratio"].type() == FIELD_DOUBLE
+
+    def test_surface_geom_level_attribute_types(self):
+        """Geom-level (``+key``) semantic attributes are typed from their values."""
+        cm = {
+            "type": "CityJSON",
+            "version": "2.0",
+            "CityObjects": {
+                "b1": {
+                    "type": "Building",
+                    "geometry": [
+                        {
+                            "type": "Solid",
+                            "semantics": {
+                                "surfaces": [
+                                    {"type": "RoofSurface"},
+                                    {"type": "WallSurface"},
+                                ],
+                                "values": [0, 1],
+                                "+rf_azimuth": [244.79, 180.0],
+                            },
+                        }
+                    ],
+                }
+            },
+            "vertices": [],
+        }
+        builder = SemanticSurfaceFieldsDecorator(NullFieldsBuilder(), cm)
+        field_map = {f.name(): f for f in builder.get_fields()}
+
+        assert field_map["surface.rf_azimuth"].type() == FIELD_DOUBLE
+
 
 # ============================================================================
 # NullFieldsBuilder test
@@ -547,6 +657,35 @@ class TestSimpleFeatureBuilder:
 
         assert feature["attribute.roofType"] == "gable"
         assert feature["attribute.height"] == 22.3
+
+    def test_nested_attributes_are_serialized(self):
+        """Tests that nested attributes (e.g. address) are serialized to JSON."""
+        import json
+
+        address = [{"CountryName": "Germany", "LocalityName": "Schwaigen"}]
+        cm = {
+            "CityObjects": {
+                "b1": {
+                    "type": "Building",
+                    "attributes": {"address": address, "function": "residential"},
+                    "geometry": [],
+                }
+            },
+            "type": "CityJSON",
+            "version": "2.0",
+            "vertices": [],
+        }
+        fields = AttributeFieldsDecorator(BaseFieldsBuilder(), cm).get_fields()
+        reader = MagicMock()
+        builder = SimpleFeatureBuilder(reader)
+
+        features = builder.create_features(
+            fields, "b1", cm["CityObjects"]["b1"], read_geometry=False
+        )
+        feature = next(iter(features.keys()))
+
+        assert feature["attribute.address"] == json.dumps(address)
+        assert feature["attribute.function"] == "residential"
 
     def test_no_geometry_returns_empty_list(self):
         """Tests that a CityObject without geometry returns empty geom list"""

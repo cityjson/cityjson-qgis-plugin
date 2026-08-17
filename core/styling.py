@@ -25,7 +25,10 @@
 # ******************************************************************************
 """A module related to apply styling in QGIS layers"""
 
-from qgis.core import Qgis
+from typing import Any
+
+from qgis.core import Qgis, QgsVectorLayer
+from qgis.PyQt.QtGui import QColor
 
 from .settings import load_settings
 
@@ -51,7 +54,7 @@ except ImportError:
 class NullStyling:
     """A class that applies no styling to the provided layer"""
 
-    def apply(self, vectorlayer):
+    def apply(self, vectorlayer: QgsVectorLayer) -> None:
         """Applies no style to the vector layer"""
         return
 
@@ -59,11 +62,11 @@ class NullStyling:
 class Copy2dStyling:
     """A class that applies to 3D the same color as in 2D"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         if not has_3d:
             raise Exception("3D styling is not available for this version of QGIS!")
 
-    def apply(self, vectorlayer):
+    def apply(self, vectorlayer: QgsVectorLayer) -> None:
         """Applies the style to the vector layer"""
         material = create_material(vectorlayer.renderer().symbol().color())
 
@@ -87,7 +90,11 @@ class Copy2dStyling:
 class SemanticSurfacesStyling:
     """A class that applies colors for semantic surfaces"""
 
-    def __init__(self, colors=None, else_color=None):
+    def __init__(
+        self,
+        colors: dict[str, dict[str, Any]] | None = None,
+        else_color: QColor | None = None,
+    ) -> None:
         if colors is None:
             settings = load_settings()
             self._colors = settings["semantic_colors"]
@@ -99,7 +106,7 @@ class SemanticSurfacesStyling:
                 "Rule-based 3D styling is not available for this version of QGIS!"
             )
 
-    def apply(self, vectorlayer):
+    def apply(self, vectorlayer: QgsVectorLayer) -> None:
         """Applies the style to the vector layer"""
         root_rule = QgsRuleBased3DRenderer.Rule(None)
         for surface_type, colors in self._colors.items():
@@ -116,6 +123,7 @@ class SemanticSurfacesStyling:
                 symbol.setMaterialSettings(material)
 
             symbol.setEdgesEnabled(True)
+            symbol.setAltitudeClamping(Qgis.AltitudeClamping.Absolute)
 
             new_rule = QgsRuleBased3DRenderer.Rule(
                 symbol, f"\"surface.type\" = '{surface_type}'"
@@ -136,6 +144,7 @@ class SemanticSurfacesStyling:
             symbol.setMaterialSettings(material)
 
         symbol.setEdgesEnabled(True)
+        symbol.setAltitudeClamping(Qgis.AltitudeClamping.Absolute)
 
         new_rule = QgsRuleBased3DRenderer.Rule(symbol, "ELSE")
         root_rule.appendChild(new_rule)
@@ -145,7 +154,11 @@ class SemanticSurfacesStyling:
         vectorlayer.setRenderer3D(renderer)
 
 
-def create_material(diffuse_color, ambient_color=None, specular_color=None):
+def create_material(
+    diffuse_color: QColor,
+    ambient_color: QColor | None = None,
+    specular_color: QColor | None = None,
+) -> Any:
     """Create a material with the provided colors"""
     material = QgsPhongMaterialSettings()
 
@@ -158,11 +171,11 @@ def create_material(diffuse_color, ambient_color=None, specular_color=None):
     return material
 
 
-def is_3d_styling_available():
+def is_3d_styling_available() -> bool:
     """Returns True if 3D styling through Python is possible"""
     return has_3d
 
 
-def is_rule_based_3d_styling_available():
+def is_rule_based_3d_styling_available() -> bool:
     """Returns true if rule-based 3D styling is possible"""
     return has_rules

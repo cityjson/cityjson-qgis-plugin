@@ -35,13 +35,13 @@ FORM_CLASS, _ = uic.loadUiType(
 )
 
 
-class CityJsonLoaderDialog(QtWidgets.QDialog, FORM_CLASS):
-    def __init__(self, parent=None):
+class CityJsonLoaderDialog(QtWidgets.QDialog, FORM_CLASS):  # type: ignore[valid-type, misc]
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         """Initialize the dialog"""
         super().__init__(parent)
         self.setupUi(self)
 
-    def reset_fields(self):
+    def reset_fields(self) -> None:
         """Reset the fields in the dialog."""
         self.listWidget.clear()
         self.cityjsonVersionLineEdit.clear()

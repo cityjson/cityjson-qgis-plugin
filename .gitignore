@@ -1,5 +1,11 @@
 __pycache__/
 .vscode/
 .pytest_cache/
-help/build/
 CityJSON-loader.zip
+.venv/
+.ruff_cache/
+.coverage
+.env
+htmlcov/
+uv.lock
+symbology-style.db

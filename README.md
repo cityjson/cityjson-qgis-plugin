@@ -1,15 +1,15 @@
 # CityJSON Loader for QGIS
 
-This is a Python plugin for QGIS 3 which adds support for loading [CityJSON](http://www.cityjson.org) datasets in QGIS.
+This is a Python plugin for QGIS which adds support for loading [CityJSON](http://www.cityjson.org) datasets in QGIS.
 
-**Tested and supported on QGIS 3.40.* (LTR) and QGIS 3.44.* (future LTR/stable). Compatibility with earlier versions is not guaranteed.**
+**Tested and supported on QGIS 3.40 (LTR), 3.44 (LTR) and QGIS 4.x (Qt6). Compatibility with earlier versions is not guaranteed.**
 
 
 ## Installation
 
 "Stable" releases are available through the official QGIS plugins repository.
 
-* In QGIS 3 select `Plugins`->`Manage and Install Plugins...`
+* In QGIS select `Plugins`->`Manage and Install Plugins...`
 * In the `All` panel select the `CityJSON Loader` plugin from the list.
 
 
@@ -21,12 +21,11 @@ After the installation, there must be a new submenu under the `Vector` menu. Sel
 You may enable the `Split layers according to object type` option in order to load different object types as different layers in QGIS.
 
 ### 3D view 
-CityJSON Loader automatically enables 3D renderer in QGIS versions 3.2 onwards.
-However, if you are using QGIS 3.0 you have to enable it manually.
-This can be done as follows:
+CityJSON Loader automatically enables the 3D renderer. To see the 3D geometry, select `View` -> `New 3D Map View` in the QGIS menu.
+
+If the 3D renderer is not enabled automatically:
 * Right-click on the layer and select `Properties...`
 * Select the `3D View` panel and check the `Enable 3D renderer` option.
-* In QGIS 3 menu select `View`->`New 3D Map View` in order to see the 3D geometry.
 
 
 ## Development
@@ -39,9 +38,9 @@ This project uses [ruff](https://docs.astral.sh/ruff/) for linting/formatting an
 
 To set up code style checks and pre-commit hooks after cloning the repository:
 
-1. Install ruff and pre-commit (ideally in a virtual environment):
+1. Install the development tools (ruff, pre-commit and mypy) — ideally in a virtual environment:
    ```sh
-   pip install ruff pre-commit
+   pip install -r requirements-dev.txt
    ```
 2. Install the pre-commit hooks:
    ```sh
@@ -55,51 +54,89 @@ To set up code style checks and pre-commit hooks after cloning the repository:
 Now, every time you commit, pre-commit will automatically run ruff and other checks to help keep the codebase clean and consistent.
 
 
-### Testing with Docker
+### Type checking
 
-To run the test suite in a reproducible environment, you can use Docker. This is especially useful for Mac M1/M2 (Apple Silicon) users, who should specify the amd64 platform for compatibility with QGIS dependencies.
+The codebase is annotated with type hints and checked with [mypy](https://mypy.readthedocs.io/). To run it locally:
 
-**Build the Docker image:**
-For most other systems:
+1. Run the type checker on the plugin source:
+   ```sh
+   mypy
+   ```
+
+Configuration lives in `pyproject.toml` (`[tool.mypy]`), scoped to `cityjson_loader.py`, `core/`, `gui/` and `processing/`. QGIS has no type stubs, so missing imports are ignored; the goal is to catch internal type errors, not to fully type the QGIS API.
+
+
+### Testing
+
+#### Running tests locally
+
+With QGIS installed, create a local `.env` from the example and set
+`QGIS_PYTHON` to your QGIS Python interpreter:
+
 ```sh
-make docker-build
+cp example.env .env
+# then edit .env if your QGIS path differs
+make test
 ```
 
-For Mac M1/M2 (Apple Silicon):
+#### Running tests against specific QGIS versions (Docker)
+
+The CI and the `Makefile` provide targets for each supported QGIS version
+(3.40, 3.44, 4.0, 4.2). Each target builds a Docker image and runs the test
+suite inside it:
+
 ```sh
-DOCKER_DEFAULT_PLATFORM=linux/amd64 make docker-build
+make test-340
+make test-344
+make test-40
+make test-42
 ```
 
-**Run the tests in the container:**
+On Mac M1/M2 (Apple Silicon), prefix with the amd64 platform:
+
 ```sh
-docker run --rm cityjson-qgis-plugin-test
+DOCKER_DEFAULT_PLATFORM=linux/amd64 make test-42
 ```
 
-Or, using the Makefile for convenience:
+#### Coverage
+
+Tests are run with coverage. A terminal report is printed, and an HTML report
+is written to `htmlcov/index.html`. Coverage is configured in
+`pyproject.toml` (`[tool.coverage.*]`).
+
+### Loading the plugin locally into QGIS
+
+To try the plugin in your local QGIS without installing from the plugin
+repository, deploy the source directly to your QGIS plugins folder:
+
 ```sh
-make test-docker
+make deploy
 ```
 
-For Mac M1/M2 (Apple Silicon):
-```sh
-DOCKER_DEFAULT_PLATFORM=linux/amd64 make test-docker
-```
+This copies the required files to
+`$(HOME)/$(QGISDIR)/python/plugins/CityJSON-loader/`. On macOS this works
+out-of-the-box; on Linux/Windows you may need to adjust the `QGISDIR` variable
+in the `Makefile` (or in `.env`) to point at your QGIS profile:
 
+- Linux: `~/.local/share/QGIS/QGIS3/profiles/default`
+- macOS: `~/Library/Application Support/QGIS/QGIS3/profiles/default`
+- Windows: `%APPDATA%\QGIS\QGIS3\profiles\default`
 
-This will build the image if needed and run the test suite inside the container, matching the CI environment.
+Then restart QGIS and enable the plugin under `Plugins` -> `Manage and Install
+Plugins...`.
 
 ### Deployment
+
 The user interfaces for the loader were developed with QT Designer.
 
-After setupUI you can access any designer object by doing
-        # self.<objectname>, and you can use autoconnect slots - see
-        # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
-        # #widgets-and-dialogs-with-auto-connect
+After `setupUi` you can access any designer object by doing
+`self.<objectname>`, and you can use autoconnect slots (see
+<https://doc.qt.io/qt-6/designer-using-a-ui-file.html>).
 
-You may use `make` to assist you while developing.
+The following `make` rules are useful:
 
-The following rules can be useful:
+- `make deploy`: copy the required files to your local QGIS plugins folder.
+- `make package VERSION=GIT_REF`: build a zip package from a branch, tag or
+  commit, to be installed manually or uploaded to the QGIS plugin repository.
 
-* `make deploy`: will automatically copy the required files to your QGIS plugins' folder. **BEWARE:** *it only works out-of-the-box for macOS. For other operating systems you might have to change the `QGISDIR` variable in `Makefile`.*
-
-* `make package VERSION=GIT_REF`: (where *GIT_REF* is a branch, tag or any other git ref) will make a zip package to be installed manually from QGIS or uploaded to the QGIS plugins' repository.
+For the full release process, see [RELEASING.md](RELEASING.md).

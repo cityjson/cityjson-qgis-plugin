@@ -1,5 +1,0 @@
-<RCC>
-    <qresource prefix="/plugins/cityjson_loader" >
-        <file>cityjson_logo.svg</file>
-    </qresource>
-</RCC>
