@@ -1,36 +1,79 @@
+# ******************************************************************************
+# Project: CityJsonLoader - A QGIS Plugin.
+#
+# Purpose: This plugin allows for CityJSON files to be loaded in QGIS.
+#
+# GitHub page: https://github.com/cityjson/cityjson-qgis-plugin
+#
+# Contact: G.Stavropoulou@tudelft.nl
+# ******************************************************************************
+#
+# Copyright © 2018–2026 3D geoinformation group, TU Delft, S. Vitalis and G. Stavropoulou. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# ******************************************************************************
 """A module that provides the logic for loading CityJSON in QGIS"""
 
 import json
 import os
 import re
+from typing import Any
 
-from PyQt5.QtWidgets import QMessageBox
 from qgis.core import QgsProject
 
+from . import get_logger
 from .geometry import GeometryReader, VerticesCache
-from .layers import (AttributeFieldsDecorator, BaseFieldsBuilder,
-                     BaseNamingIterator, DynamicLayerManager, ParentFeatureDecorator,
-                     LodFeatureDecorator, LodFieldsDecorator,
-                     LodNamingDecorator, SemanticSurfaceFeatureDecorator,
-                     SemanticSurfaceFieldsDecorator, SimpleFeatureBuilder,
-                     TypeNamingIterator)
-from .styling import (Copy2dStyling, NullStyling, SemanticSurfacesStyling,
-                      is_3d_styling_available,
-                      is_rule_based_3d_styling_available)
+from .layers import (
+    AttributeFieldsDecorator,
+    BaseFieldsBuilder,
+    BaseNamingIterator,
+    DynamicLayerManager,
+    LodFeatureDecorator,
+    LodFieldsDecorator,
+    LodNamingDecorator,
+    ParentFeatureDecorator,
+    SemanticSurfaceFeatureDecorator,
+    SemanticSurfaceFieldsDecorator,
+    SimpleFeatureBuilder,
+    TypeNamingIterator,
+)
+from .styling import (
+    Copy2dStyling,
+    NullStyling,
+    SemanticSurfacesStyling,
+    is_3d_styling_available,
+    is_rule_based_3d_styling_available,
+)
+
+logger = get_logger("loading")
 
 
 class CityJSONLoader:
     """Class that loads a CityJSON to a QGIS project"""
 
-    def __init__(self, filepath, citymodel,
-                 epsg="None",
-                 keep_parent_attributes=False,
-                 divide_by_object=False,
-                 lod_as='NONE',
-                 lod='All',
-                 load_semantic_surfaces=False,
-                 style_semantic_surfaces=False):
-
+    def __init__(
+        self,
+        filepath: str,
+        citymodel: dict[str, Any],
+        epsg: str | None = None,
+        keep_parent_attributes: bool = False,
+        divide_by_object: bool = False,
+        lod_as: str = "NONE",
+        lod: str | list[str] = "All",
+        load_semantic_surfaces: bool = False,
+        style_semantic_surfaces: bool = False,
+    ) -> None:
         filename_with_ext = os.path.basename(filepath)
         filename, _ = os.path.splitext(filename_with_ext)
 
@@ -46,74 +89,90 @@ class CityJSONLoader:
         if "geometry-templates" in citymodel:
             geometry_templates = citymodel["geometry-templates"]
 
-        self.geometry_reader = GeometryReader(self.vertices_cache,
-                                              geometry_templates,
-                                              lod=self.lod)
-        self.fields_builder = AttributeFieldsDecorator(BaseFieldsBuilder(),
-                                                       citymodel)
-        self.feature_builder = SimpleFeatureBuilder(self.geometry_reader)
+        self.geometry_reader: Any = GeometryReader(
+            self.vertices_cache, geometry_templates, lod=self.lod
+        )
+        self.fields_builder: Any = AttributeFieldsDecorator(
+            BaseFieldsBuilder(), citymodel
+        )
+        self.feature_builder: Any = SimpleFeatureBuilder(self.geometry_reader)
 
         if keep_parent_attributes:
-            self.feature_builder = ParentFeatureDecorator(self.feature_builder,
-                                                          self.geometry_reader,
-                                                          citymodel)
+            self.feature_builder = ParentFeatureDecorator(
+                self.feature_builder, self.geometry_reader, citymodel
+            )
 
-        if lod_as in ['ATTRIBUTES', 'LAYERS']:
+        if lod_as in ["ATTRIBUTES", "LAYERS"]:
             self.fields_builder = LodFieldsDecorator(self.fields_builder)
-            self.feature_builder = LodFeatureDecorator(self.feature_builder,
-                                                       self.geometry_reader)
+            self.feature_builder = LodFeatureDecorator(
+                self.feature_builder, self.geometry_reader
+            )
 
         if load_semantic_surfaces:
-            self.fields_builder = SemanticSurfaceFieldsDecorator(self.fields_builder,
-                                                                 citymodel)
-            self.feature_builder = SemanticSurfaceFeatureDecorator(self.feature_builder,
-                                                                   self.geometry_reader,
-                                                                   self.fields_builder)
+            self.fields_builder = SemanticSurfaceFieldsDecorator(
+                self.fields_builder, citymodel
+            )
+            self.feature_builder = SemanticSurfaceFeatureDecorator(
+                self.feature_builder, self.geometry_reader, self.fields_builder
+            )
 
         if divide_by_object:
-            self.naming_iterator = TypeNamingIterator(filename, citymodel)
+            self.naming_iterator: Any = TypeNamingIterator(filename, citymodel)
         else:
             self.naming_iterator = BaseNamingIterator(filename)
 
-        if lod_as == 'LAYERS':
-            self.naming_iterator = LodNamingDecorator(self.naming_iterator,
-                                                      filename,
-                                                      citymodel,
-                                                      self.geometry_reader)
+        if lod_as == "LAYERS":
+            self.naming_iterator = LodNamingDecorator(
+                self.naming_iterator, filename, citymodel, self.geometry_reader
+            )
 
-        if epsg != "None":
+        if epsg:
             self.srid = epsg
 
-        self.layer_manager = DynamicLayerManager(self.citymodel,
-                                                 self.feature_builder,
-                                                 self.naming_iterator,
-                                                 self.fields_builder,
-                                                 self.srid)
+        self.layer_manager = DynamicLayerManager(
+            self.citymodel,
+            self.feature_builder,
+            self.naming_iterator,
+            self.fields_builder,
+            self.srid,
+        )
 
         self.layer_manager.prepare_attributes()
 
         if is_3d_styling_available():
-            self.styler = Copy2dStyling()
+            self.styler: Any = Copy2dStyling()
         else:
             self.styler = NullStyling()
 
-        if (load_semantic_surfaces and is_rule_based_3d_styling_available() and style_semantic_surfaces):
+        if (
+            load_semantic_surfaces
+            and is_rule_based_3d_styling_available()
+            and style_semantic_surfaces
+        ):
             self.styler = SemanticSurfacesStyling()
 
-    def init_vertices(self):
+    def init_vertices(self) -> None:
         """Initialises the vertices cache"""
         self.vertices_cache = VerticesCache()
 
         if "transform" in self.citymodel:
             self.vertices_cache.set_scale(self.citymodel["transform"]["scale"])
-            self.vertices_cache.set_translation(self.citymodel["transform"]["translate"])
+            self.vertices_cache.set_translation(
+                self.citymodel["transform"]["translate"]
+            )
 
         verts = self.citymodel["vertices"]
 
-        for v in verts:
-            self.vertices_cache.add_vertex(v)
+        if len(verts) > 100:  # Only for larger datasets
+            scale = self.vertices_cache._scale
+            translate = self.vertices_cache._translate
+            self.vertices_cache = VerticesCache(scale, translate, verts)
+        else:
+            # For smaller datasets, use the original method
+            for v in verts:
+                self.vertices_cache.add_vertex(v)
 
-    def load(self, feedback=None):
+    def load(self, feedback: Any | None = None) -> int:
         """Loads a specified CityJSON file and returns the number of skipped geometries"""
         city_objects = self.citymodel["CityObjects"]
 
@@ -132,51 +191,159 @@ class CityJSONLoader:
         root = QgsProject.instance().layerTreeRoot()
 
         if len(self.layer_manager.get_all_layers()) > 1:
-            group = root.addGroup(self.filename)
+            group = root.insertGroup(0, self.filename)
 
             for vl in self.layer_manager.get_all_layers():
                 QgsProject.instance().addMapLayer(vl, False)
-                group.addLayer(vl)
+                group.insertLayer(0, vl)
                 self.styler.apply(vl)
 
         elif len(self.layer_manager.get_all_layers()) == 1:
             for vl in self.layer_manager.get_all_layers():
                 QgsProject.instance().addMapLayer(vl, False)
-                root.addLayer(vl)
+                root.insertLayer(0, vl)
                 self.styler.apply(vl)
 
         return self.geometry_reader.skipped_geometries()
 
-def load_cityjson_model(filepath):
-    """Returns the citymodel for the given filepath"""
-    file = open(filepath, encoding='utf-8-sig')
-    citymodel = json.load(file)
-    file.close()
 
-    return citymodel
+def _is_cityjson_feature(obj: Any) -> bool:
+    """Return True if the object is a CityJSONFeature."""
+    return isinstance(obj, dict) and obj.get("type") == "CityJSONFeature"
 
-def get_model_epsg(citymodel):
-    """Returns the EPSG of the city model, if exists it exists in the metadata"""
-    if "metadata" in citymodel:
-        metadata = citymodel["metadata"]
 
-        if "crs" in metadata:
-            return str(metadata["crs"]["epsg"])
+def _offset_boundaries(boundaries: Any, offset: int) -> Any:
+    """Recursively add ``offset`` to every vertex index in a boundaries array."""
+    if isinstance(boundaries, list):
+        return [_offset_boundaries(b, offset) for b in boundaries]
+    if boundaries is None:
+        return None
+    return boundaries + offset
 
-        if "referenceSystem" in metadata:
+
+def _merge_cityjson_features(
+    features: list[dict[str, Any]], metadata: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Merge CityJSONFeature objects into a single CityJSON model.
+
+    Each feature has its own local vertex indices, so the vertices are
+    concatenated and the vertex indices inside each feature's boundaries are
+    shifted accordingly. Transform, CRS metadata and geometry-templates are
+    taken from the metadata object (or the first feature).
+    """
+    merged: dict[str, Any] = {
+        "type": "CityJSON",
+        "version": "1.1",
+        "CityObjects": {},
+        "vertices": [],
+    }
+
+    source = metadata if metadata is not None else (features[0] if features else None)
+    if source:
+        for key in ("version", "transform", "metadata", "geometry-templates"):
+            if key in source:
+                merged[key] = source[key]
+
+    vertex_offset = 0
+    for feature in features:
+        cityobjects = feature.get("CityObjects", {})
+        vertices = feature.get("vertices", [])
+
+        if vertex_offset:
+            for obj in cityobjects.values():
+                for geom in obj.get("geometry", []):
+                    if "boundaries" in geom:
+                        geom["boundaries"] = _offset_boundaries(
+                            geom["boundaries"], vertex_offset
+                        )
+
+        merged["vertices"].extend(vertices)
+        vertex_offset += len(vertices)
+        merged["CityObjects"].update(cityobjects)
+
+    return merged
+
+
+def _load_cityjson_seq(content: str) -> dict[str, Any]:
+    """Parse a CityJSONSeq stream (newline-delimited JSON) into a city model."""
+    metadata: dict[str, Any] | None = None
+    features: list[dict[str, Any]] = []
+    for line in content.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        obj = json.loads(line)
+        obj_type = obj.get("type")
+        if obj_type == "CityJSON":
+            metadata = obj
+        elif obj_type == "CityJSONFeature":
+            features.append(obj)
+    return _merge_cityjson_features(features, metadata=metadata)
+
+
+def load_cityjson_model(filepath: str) -> dict[str, Any]:
+    """Returns the city model for the given filepath.
+
+    Accepts standard CityJSON, a single CityJSONFeature, a JSON array of
+    CityJSONFeature objects, and CityJSONSeq (newline-delimited JSON).
+    CityJSONFeature objects are merged into a single CityJSON model.
+    """
+    with open(filepath, encoding="utf-8-sig", buffering=8192) as fstream:
+        content = fstream.read()
+
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError:
+        return _load_cityjson_seq(content)
+
+    if isinstance(data, list):
+        features = [f for f in data if _is_cityjson_feature(f)]
+        return _merge_cityjson_features(features)
+
+    if _is_cityjson_feature(data):
+        return _merge_cityjson_features([data])
+
+    return data
+
+
+def get_model_epsg(citymodel: dict[str, Any]) -> str | None:
+    """Returns the EPSG of the city model as a string, or None if not found"""
+
+    if "metadata" not in citymodel:
+        return None
+
+    metadata = citymodel["metadata"]
+
+    if "referenceSystem" not in metadata and "crs" not in metadata:
+        return None
+
+    if "crs" in metadata:
+        try:
+            crs_string = str(metadata["crs"]["epsg"])
+            if crs_string is not None and crs_string != "None":
+                return crs_string
+            else:
+                pass
+        except (KeyError, TypeError):
+            pass
+
+    if "referenceSystem" in metadata:
+        try:
             ref_string = str(metadata["referenceSystem"])
 
-            if ref_string.__contains__("::"):
+            if "::" in ref_string:
                 return ref_string.split("::")[1]
 
-            p = re.compile(r"https:\/\/www.opengis.net\/def\/crs\/([A-Z]+)\/([0-9]+)\/([0-9]+)")
+            # Match CRS URL starting with 'https://www.opengis.net/def/crs/' and extract the last number
+            p = re.compile(r"^https?://www\.opengis\.net/def/crs/.*/([0-9]+)$")
             m = p.match(ref_string)
 
-            if m:
-                return m.group(3)
-            else:
-                return "None"
-        else:
-            return "None"
+            logger.debug(f"Regex match result: {ref_string}")
 
-    return "None"
+            if m is not None:
+                logger.debug(f"Matching CRS: {m}")
+                return m.group(1)
+        except (KeyError, TypeError):
+            return None
+
+    return None

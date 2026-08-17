@@ -1,0 +1,28 @@
+FROM qgis/qgis:4.0-trixie
+
+# Set up environment variables for headless Qt/QGIS testing
+ENV QT_QPA_PLATFORM=offscreen
+ENV DISPLAY=:99
+ENV XDG_RUNTIME_DIR=/tmp/runtime-root
+ENV QT_LOGGING_RULES="*.debug=false;qt.qpa.*=false"
+ENV QGIS_DISABLE_MESSAGE_HOOKS=1
+ENV QGIS_NO_OVERRIDE_IMPORT=1
+
+# Create runtime directory with proper permissions
+RUN mkdir -p /tmp/runtime-root && chmod 0700 /tmp/runtime-root
+
+# Install any extra dependencies you need
+RUN apt-get update && apt-get install -y python3-pip xvfb git
+
+# Copy your code into the container
+WORKDIR /app
+COPY . /app
+
+# Install Python dependencies
+RUN pip3 install -r requirements.txt --break-system-packages
+
+# Install pre-commit (optional)
+RUN pip3 install pre-commit --break-system-packages
+
+# Default command: run tests with coverage
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x24 & python3 -m pytest tests/ -v -s --cov=. --cov-report=term-missing --cov-report=html --color=yes"]

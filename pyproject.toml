@@ -1,0 +1,34 @@
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+explicit_package_bases = true
+mypy_path = "."
+files = [
+    "cityjson_loader.py",
+    "__init__.py",
+    "core/",
+    "gui/",
+    "processing/",
+]
+
+[tool.coverage.run]
+branch = true
+omit = [
+    "tests/*",
+    "scripts/*",
+    "*/__pycache__/*",
+    ".venv/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]

@@ -1,28 +1,27 @@
 # This file contains metadata for your plugin. Since 
 # version 2.0 of QGIS this is the proper way to supply 
 # information about a plugin. The old method of 
-# embedding metadata in __init__.py will 
+# embedding metadata in __init__.py
 # is no longer supported since version 2.0.
-
-# This file should be included when you package your plugin.# Mandatory items:
 
 [general]
 name=CityJSON Loader
-qgisMinimumVersion=3.0
-description=This plugin allows for CityJSON files to be loaded in QGIS
-version=0.8.2
-author=3D geoinformation group (TU Delft)
-email=s.vitalis@tudelft.nl
+qgisMinimumVersion=3.40
+qgisMaximumVersion=4.2
+description=Load and visualize CityJSON 3D city models in QGIS with semantic surfaces, LoD support, and attribute management
+version=1.0.0
+author=3D geoinformation group, TU Delft (S. Vitalis, G. Stavropoulou)
+email=G.Stavropoulou@tudelft.nl
+supportsQt6=True
 
-about=This plugin allows QGIS to load CityJSON datasets. Data are loaded in respective tables and all information are loaded.
+about=Load, visualize and analyze CityJSON 3D city models in QGIS. Features include: semantic surface styling, Level of Detail (LoD) management, attribute data integration, coordinate system handling, subset filtering by bbox/type, and processing toolbox integration. Fully compatible with CityJSON 2.0 specification. Supports multiple QGIS versions (3.40+ and 4.x) with Qt6 compatibility.
 
 tracker=https://github.com/cityjson/cityjson-qgis-plugin/issues
 repository=https://github.com/cityjson/cityjson-qgis-plugin
-# End of mandatory metadata
 
-# changelog=
+changelog=https://github.com/cityjson/cityjson-qgis-plugin/blob/develop/Changelog.md
 
-tags=python, cityjson, 3d
+tags=3d,cityjson,semantic,surfaces,lod,buildings,city,model,json,processing,vector,import
 
 homepage=https://github.com/cityjson/cityjson-qgis-plugin
 category=Vector

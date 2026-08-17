@@ -1,2 +1,1 @@
-"""A module that provide helper functions
-"""
+"""A module that provide helper functions"""

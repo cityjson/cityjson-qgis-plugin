@@ -1,6 +1,8 @@
-import pytest
+# Copyright © 2018–2026 3D geoinformation group, TU Delft, S. Vitalis and G. Stavropoulou.
+# Licensed under the Apache License, Version 2.0. See LICENSE file for details.
 
-from core.settings import save_defaults, load_settings
+from core.settings import load_settings, save_defaults
+
 
 class TestSettings:
     """A class to test handling of settings for the plugin"""
