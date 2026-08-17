@@ -1,4 +1,4 @@
-name: CityJSON QGIS Plugin Test (3.40, 3.44, 4.0)
+name: CityJSON QGIS Plugin Test (3.40, 3.44, 4.0, 4.2)
 
 on:
   push:
@@ -40,3 +40,14 @@ jobs:
 
       - name: Run tests in Docker (QGIS 4.0)
         run: docker run --rm cityjson-qgis-plugin-test-40
+  test-42:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Docker image for QGIS 4.2
+        run: docker build -f docker/Dockerfile.qgis-4.2 -t cityjson-qgis-plugin-test-42 .
+
+      - name: Run tests in Docker (QGIS 4.2)
+        run: docker run --rm cityjson-qgis-plugin-test-42

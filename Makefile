@@ -154,32 +154,26 @@ upload: zip
 docker-build-340:
 	$(DOCKER_PLATFORM_PREFIX) docker build  -f docker/Dockerfile.qgis-3.40 -t cityjson-qgis-plugin-test-340 .
 
-test-340:
-	@if [ -z "$$(docker images -q cityjson-qgis-plugin-test-340)" ]; then \
-		echo "Docker image not found. Building..."; \
-		$(MAKE) docker-build-340; \
-	fi
+test-340: docker-build-340
 	$(DOCKER_PLATFORM_PREFIX) docker run --rm cityjson-qgis-plugin-test-340
 
 docker-build-344:
 	$(DOCKER_PLATFORM_PREFIX) docker build  -f docker/Dockerfile.qgis-3.44 -t cityjson-qgis-plugin-test-344 .
 
-test-344:
-	@if [ -z "$$(docker images -q cityjson-qgis-plugin-test-344)" ]; then \
-		echo "Docker image not found. Building..."; \
-		$(MAKE) docker-build-344; \
-	fi
+test-344: docker-build-344
 	$(DOCKER_PLATFORM_PREFIX) docker run --rm cityjson-qgis-plugin-test-344
 
 docker-build-40:
 	$(DOCKER_PLATFORM_PREFIX) docker build  -f docker/Dockerfile.qgis-4.0 -t cityjson-qgis-plugin-test-40 .
 
-test-40:
-	@if [ -z "$$(docker images -q cityjson-qgis-plugin-test-40)" ]; then \
-		echo "Docker image not found. Building..."; \
-		$(MAKE) docker-build-40; \
-	fi
+test-40: docker-build-40
 	$(DOCKER_PLATFORM_PREFIX) docker run --rm cityjson-qgis-plugin-test-40
+
+docker-build-42:
+	$(DOCKER_PLATFORM_PREFIX) docker build  -f docker/Dockerfile.qgis-4.2 -t cityjson-qgis-plugin-test-42 .
+
+test-42: docker-build-42
+	$(DOCKER_PLATFORM_PREFIX) docker run --rm cityjson-qgis-plugin-test-42
 
 test: compile 
 

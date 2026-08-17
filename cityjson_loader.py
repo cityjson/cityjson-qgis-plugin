@@ -164,7 +164,7 @@ class CityJsonLoader:
     def select_cityjson_files_directory(self) -> None:
         """Select CityJSON files from a directory"""
         directory = QFileDialog.getExistingDirectory(
-            self.dlg, "Select Directory", "", QFileDialog.ShowDirsOnly
+            self.dlg, "Select Directory", "", QFileDialog.Option.ShowDirsOnly
         )
 
         if directory:
@@ -259,7 +259,9 @@ class CityJsonLoader:
             if selected_item:
                 filename = selected_item.text()
                 if not os.path.exists(filename):
-                    items = self.dlg.listWidget.findItems(filename, Qt.MatchExactly)
+                    items = self.dlg.listWidget.findItems(
+                        filename, Qt.MatchFlag.MatchExactly
+                    )
                     for item in items:
                         self.dlg.listWidget.takeItem(self.dlg.listWidget.row(item))
                     self.file_epsg_map.pop(filename, None)
@@ -495,7 +497,7 @@ class CityJsonLoader:
             if skipped_geometries > 0:
                 # Show warning message without blocking the UI
                 msg = QMessageBox(self.dlg)
-                msg.setIcon(QMessageBox.Warning)
+                msg.setIcon(QMessageBox.Icon.Warning)
                 msg.setText("CityJSON loaded with issues.")
                 msg.setInformativeText("Some geometries were skipped.")
                 msg.setDetailedText(
