@@ -8,3 +8,4 @@ CityJSON-loader.zip
 .env
 htmlcov/
 uv.lock
+symbology-style.db
