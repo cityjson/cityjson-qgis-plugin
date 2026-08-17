@@ -35,14 +35,14 @@ import defusedxml.xmlrpc
 defusedxml.xmlrpc.monkey_patch()
 
 # Configuration
-PROTOCOL = "http"
+PROTOCOL = "https"
 SERVER = "plugins.qgis.org"
-PORT = "80"
+PORT = "443"
 ENDPOINT = "/plugins/RPC2/"
 VERBOSE = False
 
 
-class BasicAuthTransport(xmlrpc.client.Transport):
+class BasicAuthTransport(xmlrpc.client.SafeTransport):
     """Transport that adds an HTTP Basic Authentication header.
 
     Credentials are sent via the ``Authorization`` header instead of being
@@ -57,7 +57,12 @@ class BasicAuthTransport(xmlrpc.client.Transport):
         self._authorization = f"Basic {token}"
 
     def send_headers(self, connection, headers):
-        headers["Authorization"] = self._authorization
+        # `headers` is a dict on older Python (<3.12) and a list of
+        # (key, value) tuples on Python 3.12+.
+        if isinstance(headers, dict):
+            headers["Authorization"] = self._authorization
+        else:
+            headers.append(("Authorization", self._authorization))
         super().send_headers(connection, headers)
 
 
