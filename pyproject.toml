@@ -21,7 +21,6 @@ omit = [
     "tests/*",
     "scripts/*",
     "*/__pycache__/*",
-    "resources.py",
     ".venv/*",
 ]
 
