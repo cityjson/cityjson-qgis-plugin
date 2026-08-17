@@ -1,5 +1,5 @@
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.9"
 ignore_missing_imports = true
 check_untyped_defs = true
 warn_redundant_casts = true
@@ -13,4 +13,23 @@ files = [
     "core/",
     "gui/",
     "processing/",
+]
+
+[tool.coverage.run]
+branch = true
+omit = [
+    "tests/*",
+    "scripts/*",
+    "*/__pycache__/*",
+    "resources.py",
+    ".venv/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
 ]
