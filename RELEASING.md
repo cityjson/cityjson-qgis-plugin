@@ -107,10 +107,15 @@ git push origin main --tags
 ### 5. Build the package
 
 ```sh
-make package VERSION=v<version>
+make zip
 ```
 
-This creates `CityJSON-loader.zip` from the tag using `git archive`.
+This creates `CityJSON-loader.zip` containing only the plugin files
+(`PY_FILES`, `UI_FILES`, `EXTRAS` and `LICENSE`).
+
+> `make package VERSION=v<version>` also exists but uses `git archive`, which
+> includes development files (tests, CI config, etc.). Prefer `make zip` for a
+> release.
 
 ### 6. Upload to the QGIS repository
 
