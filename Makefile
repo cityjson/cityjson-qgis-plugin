@@ -28,7 +28,7 @@ PY_FILES = \
 	__init__.py \
 	cityjson_loader.py gui/cityjson_loader_dialog.py gui/cityjson_writer_dialog.py \
 	core/__init__.py core/layers.py core/geometry.py core/styling.py \
-	core/settings.py core/helpers/treemodel.py core/loading.py \
+	core/settings.py core/helpers/__init__.py core/helpers/treemodel.py core/loading.py \
 	processing/__init__.py processing/cityjson_load_algorithm.py \
 	processing/provider.py core/subset.py core/utils.py
 
@@ -38,8 +38,6 @@ UI_FILES = gui/cityjson_loader_dialog_base.ui \
 EXTRAS = metadata.txt icon.png cityjson_logo_big.png cityjson_logo.svg Changelog.md LICENSE cityjson_logo_load.svg cityjson_logo_export.svg 
 
 EXTRA_DIRS = 
-
-COMPILED_RESOURCE_FILES = resources.py
 
 # QGISDIR points to the location where your plugin should be installed.
 # This varies by platform, relative to your HOME directory:
@@ -90,14 +88,13 @@ endif
 
 PLUGIN_UPLOAD = scripts/plugin_upload.py
 
-RESOURCE_SRC=$(shell grep '^ *<file' resources.qrc | sed 's@</file>@@g;s/.*>//g' | tr '\n' ' ')
-
 default: compile
 
-compile: $(COMPILED_RESOURCE_FILES)
-
-%.py : %.qrc $(RESOURCES_SRC)
-	pyrcc5 -o $*.py  $<
+# Resources (the plugin icon) are loaded directly from disk via
+# cityjson_logo.svg, so there is no Qt resource compilation step. `compile` is
+# kept as a no-op target so the other rules keep working.
+compile:
+	@true
 
 
 deploy: compile
@@ -109,10 +106,10 @@ deploy: compile
 	@echo "Deploying plugin to your QGIS3 directory:"
 	@echo " $(HOME)/$(QGISDIR)/python/plugins/"
 	@echo "------------------------------------------"
+	@rm -rf "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
 	@mkdir -p "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
 	@rsync -R $(PY_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
 	@rsync -R $(UI_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
-	@cp -f $(COMPILED_RESOURCE_FILES) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
 	@cp -f $(EXTRAS) "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)"
 
 # Copy extra directories if any
@@ -206,6 +203,16 @@ test-40:
 	fi
 	$(DOCKER_PLATFORM_PREFIX) docker run --rm cityjson-qgis-plugin-test-40
 
+docker-build-42:
+	$(DOCKER_PLATFORM_PREFIX) docker build  -f docker/Dockerfile.qgis-4.2 -t cityjson-qgis-plugin-test-42 .
+
+test-42:
+	@if [ -z "$$(docker images -q cityjson-qgis-plugin-test-42)" ]; then \
+		echo "Docker image not found. Building..."; \
+		$(MAKE) docker-build-42; \
+	fi
+	$(DOCKER_PLATFORM_PREFIX) docker run --rm cityjson-qgis-plugin-test-42
+
 test: compile 
 
 	@echo "------------------------------------------"
@@ -213,11 +220,15 @@ test: compile
 	@echo "------------------------------------------"
 	export QGIS_DEBUG=0; \
 	export QGIS_LOG_FILE=/dev/null; \
-	$(QGIS_PYTHON) -m pytest tests  -v -s --cov=core/ --cov=processing/ --cov=gui/
+	$(QGIS_PYTHON) -m pytest tests  -v -s --cov=. --cov-report=term-missing --cov-report=html
 	@echo "------------------------------------------"
 	@echo "Test suite completed"
 	@echo "------------------------------------------"
 
 format: compile
-	uv tool run ruff format .
-	uv tool run ruff check .
+	uv tool run --with ruff==0.8.4 ruff format .
+	uv tool run --with ruff==0.8.4 ruff check . --fix
+
+
+test_all: format test test-340 test-344 test-40 test-42 
+	source .venv/bin/activate  ; mypy

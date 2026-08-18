@@ -3,6 +3,7 @@ Pytest configuration and fixtures for QGIS plugin testing.
 """
 
 import os
+
 import pytest
 from qgis.core import QgsApplication
 

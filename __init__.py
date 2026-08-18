@@ -26,14 +26,20 @@
 
 """This script initializes the plugin, making it known to QGIS."""
 
+from typing import TYPE_CHECKING
 
-def classFactory(iface):
+from qgis.gui import QgisInterface
+
+if TYPE_CHECKING:
+    from .cityjson_loader import CityJsonLoader
+
+
+def classFactory(iface: QgisInterface) -> "CityJsonLoader":
     """Load CityJsonLoader class from file CityJsonLoader.
 
     :param iface: A QGIS interface instance.
     :type iface: QgsInterface
     """
-    #
     from .cityjson_loader import CityJsonLoader
 
     return CityJsonLoader(iface)

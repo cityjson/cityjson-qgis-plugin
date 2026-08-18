@@ -25,4 +25,4 @@ RUN pip3 install -r requirements.txt --break-system-packages
 RUN pip3 install pre-commit --break-system-packages
 
 # Default command: run tests with coverage
-CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x24 & python3 -m pytest tests/ -v -s --cov=core/ --cov=processing/ --cov=gui/ --color=yes"]
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x24 & python3 -m pytest tests/ -v -s --cov=. --cov-report=term-missing --cov-report=html --color=yes"]

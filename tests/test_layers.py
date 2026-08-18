@@ -3,24 +3,26 @@
 
 from unittest.mock import MagicMock
 
-from qgis.core import QgsFields, QgsField
+from qgis.core import QgsField, QgsFields
 
 from core.layers import (
-    TypeNamingIterator,
-    BaseNamingIterator,
-    LodNamingDecorator,
-    BaseFieldsBuilder,
-    NullFieldsBuilder,
+    FIELD_BOOL,
+    FIELD_DOUBLE,
+    FIELD_INT,
+    FIELD_STRING,
     AttributeFieldsDecorator,
+    BaseFieldsBuilder,
+    BaseNamingIterator,
+    DynamicLayerManager,
+    LodFeatureDecorator,
     LodFieldsDecorator,
+    LodNamingDecorator,
+    NullFieldsBuilder,
+    ParentFeatureDecorator,
     SemanticSurfaceFieldsDecorator,
     SimpleFeatureBuilder,
-    LodFeatureDecorator,
-    ParentFeatureDecorator,
-    DynamicLayerManager,
-    FIELD_STRING,
+    TypeNamingIterator,
 )
-
 
 SINGLE_CUBE_CITYMODEL = {
     "CityObjects": {
@@ -453,6 +455,113 @@ class TestSemanticSurfaceFieldsDecoratorExtended:
         assert "surface.type" in field_names
         assert "surface.material" in field_names
 
+    def test_surface_attributes_have_correct_types(self):
+        """Surface attributes are typed from their values (not all strings)."""
+        cm = {
+            "type": "CityJSON",
+            "version": "2.0",
+            "CityObjects": {
+                "b1": {
+                    "type": "Building",
+                    "geometry": [
+                        {
+                            "type": "Solid",
+                            "semantics": {
+                                "surfaces": [
+                                    {
+                                        "type": "RoofSurface",
+                                        "rf_azimuth": 244.79,
+                                        "rf_count": 3,
+                                        "flag": True,
+                                    }
+                                ],
+                                "values": [0],
+                            },
+                        }
+                    ],
+                }
+            },
+            "vertices": [[0, 0, 0]],
+        }
+        builder = SemanticSurfaceFieldsDecorator(NullFieldsBuilder(), cm)
+        field_map = {f.name(): f for f in builder.get_fields()}
+
+        assert field_map["surface.type"].type() == FIELD_STRING
+        assert field_map["surface.rf_azimuth"].type() == FIELD_DOUBLE
+        assert field_map["surface.rf_count"].type() == FIELD_INT
+        assert field_map["surface.flag"].type() == FIELD_BOOL
+
+    def test_surface_attribute_type_promotion(self):
+        """Surface attribute types are promoted across objects."""
+        cm = {
+            "type": "CityJSON",
+            "version": "2.0",
+            "CityObjects": {
+                "b1": {
+                    "type": "Building",
+                    "geometry": [
+                        {
+                            "type": "Solid",
+                            "semantics": {
+                                "surfaces": [
+                                    {"type": "RoofSurface", "flag": True, "ratio": 5}
+                                ]
+                            },
+                        }
+                    ],
+                },
+                "b2": {
+                    "type": "Building",
+                    "geometry": [
+                        {
+                            "type": "Solid",
+                            "semantics": {
+                                "surfaces": [
+                                    {"type": "RoofSurface", "flag": 3, "ratio": 0.5}
+                                ]
+                            },
+                        }
+                    ],
+                },
+            },
+            "vertices": [],
+        }
+        builder = SemanticSurfaceFieldsDecorator(NullFieldsBuilder(), cm)
+        field_map = {f.name(): f for f in builder.get_fields()}
+
+        assert field_map["surface.flag"].type() == FIELD_INT
+        assert field_map["surface.ratio"].type() == FIELD_DOUBLE
+
+    def test_surface_geom_level_attribute_types(self):
+        """Geom-level (``+key``) semantic attributes are typed from their values."""
+        cm = {
+            "type": "CityJSON",
+            "version": "2.0",
+            "CityObjects": {
+                "b1": {
+                    "type": "Building",
+                    "geometry": [
+                        {
+                            "type": "Solid",
+                            "semantics": {
+                                "surfaces": [
+                                    {"type": "RoofSurface"},
+                                    {"type": "WallSurface"},
+                                ],
+                                "values": [0, 1],
+                                "+rf_azimuth": [244.79, 180.0],
+                            },
+                        }
+                    ],
+                }
+            },
+            "vertices": [],
+        }
+        builder = SemanticSurfaceFieldsDecorator(NullFieldsBuilder(), cm)
+        field_map = {f.name(): f for f in builder.get_fields()}
+
+        assert field_map["surface.rf_azimuth"].type() == FIELD_DOUBLE
+
 
 # ============================================================================
 # NullFieldsBuilder test
@@ -491,7 +600,7 @@ class TestSimpleFeatureBuilder:
 
         co = {"type": "Building", "geometry": []}
         features = builder.create_features(fields, "b1", co, read_geometry=False)
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
 
         assert feature["uid"] == "b1"
         assert feature["type"] == "Building"
@@ -504,7 +613,7 @@ class TestSimpleFeatureBuilder:
 
         co = {"type": "BuildingPart", "parents": ["building-1"], "geometry": []}
         features = builder.create_features(fields, "p1", co, read_geometry=False)
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
 
         assert feature["parents"] == "building-1"
 
@@ -516,7 +625,7 @@ class TestSimpleFeatureBuilder:
 
         co = {"type": "BuildingPart", "parents": ["p1", "p2"], "geometry": []}
         features = builder.create_features(fields, "x", co, read_geometry=False)
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
 
         assert feature["parents"] == "['p1', 'p2']"
 
@@ -528,7 +637,7 @@ class TestSimpleFeatureBuilder:
 
         co = {"type": "Building", "children": ["part-1"], "geometry": []}
         features = builder.create_features(fields, "b1", co, read_geometry=False)
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
 
         assert feature["children"] == "['part-1']"
 
@@ -544,10 +653,39 @@ class TestSimpleFeatureBuilder:
             "geometry": [],
         }
         features = builder.create_features(fields, "b1", co, read_geometry=False)
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
 
         assert feature["attribute.roofType"] == "gable"
         assert feature["attribute.height"] == 22.3
+
+    def test_nested_attributes_are_serialized(self):
+        """Tests that nested attributes (e.g. address) are serialized to JSON."""
+        import json
+
+        address = [{"CountryName": "Germany", "LocalityName": "Schwaigen"}]
+        cm = {
+            "CityObjects": {
+                "b1": {
+                    "type": "Building",
+                    "attributes": {"address": address, "function": "residential"},
+                    "geometry": [],
+                }
+            },
+            "type": "CityJSON",
+            "version": "2.0",
+            "vertices": [],
+        }
+        fields = AttributeFieldsDecorator(BaseFieldsBuilder(), cm).get_fields()
+        reader = MagicMock()
+        builder = SimpleFeatureBuilder(reader)
+
+        features = builder.create_features(
+            fields, "b1", cm["CityObjects"]["b1"], read_geometry=False
+        )
+        feature = next(iter(features.keys()))
+
+        assert feature["attribute.address"] == json.dumps(address)
+        assert feature["attribute.function"] == "residential"
 
     def test_no_geometry_returns_empty_list(self):
         """Tests that a CityObject without geometry returns empty geom list"""
@@ -557,7 +695,7 @@ class TestSimpleFeatureBuilder:
 
         co = {"type": "Building"}
         features = builder.create_features(fields, "b1", co)
-        geom_list = list(features.values())[0]
+        geom_list = next(iter(features.values()))
 
         assert geom_list == []
 
@@ -570,7 +708,7 @@ class TestSimpleFeatureBuilder:
         geom = [{"type": "MultiSurface", "lod": "1", "boundaries": [[[0, 1, 2]]]}]
         co = {"type": "Building", "geometry": geom}
         features = builder.create_features(fields, "b1", co, read_geometry=False)
-        returned_geom = list(features.values())[0]
+        returned_geom = next(iter(features.values()))
 
         assert returned_geom == geom
 
@@ -601,7 +739,7 @@ class TestLodFeatureDecorator:
 
         features = decorator.create_features(fields, "id-1", co, read_geometry=False)
 
-        lods_found = {f["lod"] for f in features.keys()}
+        lods_found = {f["lod"] for f in features}
         assert "1" in lods_found
         assert "2" in lods_found
         assert len(features) == 2
@@ -641,7 +779,7 @@ class TestParentFeatureDecorator:
         fields = self._make_fields()
         co = PARENT_CHILD_CITYMODEL["CityObjects"]["part-1"]
         features = decorator.create_features(fields, "part-1", co, read_geometry=False)
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
 
         assert feature["attribute.roofType"] == "gable"
         assert feature["attribute.height"] == 22.3
@@ -657,7 +795,7 @@ class TestParentFeatureDecorator:
         features = decorator.create_features(
             fields, "building-1", co, read_geometry=False
         )
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
 
         assert feature["attribute.roofType"] == "gable"
 
@@ -802,7 +940,7 @@ class TestErrorHandlingAndEdgeCases:
         # Test with empty parents list
         co = {"type": "Building", "parents": []}
         features = builder.create_features(fields, "b1", co, read_geometry=False)
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
         # Empty parents list should set parents field to '[]'
         assert feature["parents"] == "[]"
 
@@ -826,7 +964,7 @@ class TestErrorHandlingAndEdgeCases:
         features = decorator.create_features(
             fields, "root-building", co, read_geometry=False
         )
-        feature = list(features.keys())[0]
+        feature = next(iter(features.keys()))
 
         # Should handle objects without parents gracefully
         assert feature["uid"] == "root-building"

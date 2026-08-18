@@ -1,14 +1,15 @@
 # Copyright © 2018–2026 3D geoinformation group, TU Delft, S. Vitalis and G. Stavropoulou.
 # Licensed under the Apache License, Version 2.0. See LICENSE file for details.
 
-import pytest
-import tempfile
 import json
 import os
 import shutil
+import tempfile
 
-from core.loading import load_cityjson_model, get_model_epsg, CityJSONLoader
-from qgis.core import QgsVectorLayer, QgsFeedback
+import pytest
+from qgis.core import QgsFeedback, QgsVectorLayer
+
+from core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
 
 
 class TestLoadCityJsonModel:
@@ -73,6 +74,87 @@ class TestLoadCityJsonModel:
         result = load_cityjson_model(bom_file_path)
         assert result["type"] == "CityJSON"
 
+    def test_load_single_cityjson_feature(self):
+        """Test loading a single CityJSONFeature object."""
+        feature = {
+            "type": "CityJSONFeature",
+            "id": "f1",
+            "CityObjects": {"b1": {"type": "Building", "geometry": []}},
+            "vertices": [[0, 0, 0], [1, 1, 1]],
+        }
+        path = os.path.join(self.temp_dir, "feature.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(feature, f)
+
+        result = load_cityjson_model(path)
+
+        assert result["type"] == "CityJSON"
+        assert "b1" in result["CityObjects"]
+        assert result["vertices"] == [[0, 0, 0], [1, 1, 1]]
+
+    def test_load_cityjson_feature_array_with_reindexing(self):
+        """Test loading an array of CityJSONFeature merges and reindexes vertices."""
+        features = [
+            {
+                "type": "CityJSONFeature",
+                "id": "f1",
+                "CityObjects": {
+                    "b1": {
+                        "type": "Building",
+                        "geometry": [{"type": "Solid", "boundaries": [[[0, 1, 2]]]}],
+                    }
+                },
+                "vertices": [[0, 0, 0], [1, 0, 0], [0, 1, 0]],
+            },
+            {
+                "type": "CityJSONFeature",
+                "id": "f2",
+                "CityObjects": {
+                    "b2": {
+                        "type": "Building",
+                        "geometry": [{"type": "Solid", "boundaries": [[[0, 1, 2]]]}],
+                    }
+                },
+                "vertices": [[10, 10, 0], [11, 10, 0], [10, 11, 0]],
+            },
+        ]
+        path = os.path.join(self.temp_dir, "features.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(features, f)
+
+        result = load_cityjson_model(path)
+
+        assert result["type"] == "CityJSON"
+        assert set(result["CityObjects"].keys()) == {"b1", "b2"}
+        assert len(result["vertices"]) == 6
+        # b2's vertex indices must be offset by b1's vertex count (3)
+        assert result["CityObjects"]["b2"]["geometry"][0]["boundaries"] == [[[3, 4, 5]]]
+
+    def test_load_cityjson_seq(self):
+        """Test loading a CityJSONSeq (newline-delimited JSON) stream."""
+        content = (
+            '{"type":"CityJSON","version":"2.0",'
+            '"transform":{"scale":[1.0,1.0,1.0],"translate":[0.0,0.0,0.0]},'
+            '"metadata":{"referenceSystem":"https://www.opengis.net/def/crs/EPSG/0/4326"},'
+            '"CityObjects":{},"vertices":[]}\n'
+            '{"type":"CityJSONFeature","id":"a","CityObjects":'
+            '{"a":{"type":"Building","geometry":[]}},"vertices":[[0,0,0]]}\n'
+            '{"type":"CityJSONFeature","id":"b","CityObjects":'
+            '{"b":{"type":"Building","geometry":[]}},"vertices":[[1,1,1]]}\n'
+        )
+        path = os.path.join(self.temp_dir, "seq.city.jsonl")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+        result = load_cityjson_model(path)
+
+        assert result["type"] == "CityJSON"
+        assert result["version"] == "2.0"
+        assert "transform" in result
+        assert set(result["CityObjects"].keys()) == {"a", "b"}
+        assert len(result["vertices"]) == 2
+        assert get_model_epsg(result) == "4326"
+
 
 class TestGetModelEpsg:
     """Test the get_model_epsg function"""
@@ -120,6 +202,16 @@ class TestGetModelEpsg:
         citymodel = {
             "metadata": {
                 "referenceSystem": "https://www.opengis.net/def/crs/EPSG/0/4326"
+            }
+        }
+        result = get_model_epsg(citymodel)
+        assert result == "4326"
+
+    def test_reference_system_with_http_url_pattern(self):
+        """Test referenceSystem with http:// URL pattern"""
+        citymodel = {
+            "metadata": {
+                "referenceSystem": "http://www.opengis.net/def/crs/EPSG/0/4326"
             }
         }
         result = get_model_epsg(citymodel)

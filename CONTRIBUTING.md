@@ -18,23 +18,29 @@ Thank you for your interest in contributing to CityJsonLoader! Contributions are
        python -m venv .venv
        source .venv/bin/activate  # On Windows use: venv\Scripts\activate
        ```
-    2. Install ruff and pre-commit:
-       ```sh
-       pip install ruff pre-commit
-       ```
+     2. Install the development tools (ruff, pre-commit and mypy):
+        ```sh
+        pip install -r requirements-dev.txt
+        ```
     3. Install the pre-commit hooks:
        ```sh
        pre-commit install
        ```
-    4. (Optional) Run all hooks on all files:
-       ```sh
-       pre-commit run --all-files
-       ```
-  - This will help ensure your code passes all style and quality checks automatically before each commit.
+     4. (Optional) Run all hooks on all files:
+        ```sh
+        pre-commit run --all-files
+        ```
+     5. Run the type checker before submitting:
+        ```sh
+        mypy
+        ```
+        This verifies the type hints introduced across the codebase. QGIS imports are not type-checked (no stubs), so `mypy` focuses on internal consistency.
+   - This will help ensure your code passes all style and quality checks automatically before each commit.
 
 - **Testing:**
   - Run all tests before submitting your PR to ensure nothing is broken.
   - Add new tests for any new features or bug fixes when possible.
+  - Type checking (`mypy`) is run separately from the test suite and is not part of the Docker/CI test jobs; run it locally as described above.
 
 - **Reporting Issues:**
   - If you find a bug or have a feature request, please open an issue on GitHub.

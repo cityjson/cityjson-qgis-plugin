@@ -26,7 +26,8 @@
 """This module contains functions that originate from cjio"""
 
 import copy
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
+
 from . import subset
 
 CITYJSON_VERSION = "2.0"
@@ -34,7 +35,7 @@ CITYJSON_TYPE = "CityJSON"
 COORDINATE_DIMENSIONS = 3
 
 
-def createCityJSON() -> Dict[str, Any]:
+def createCityJSON() -> dict[str, Any]:
     """Returns an empty CityJSON file"""
     return {
         "type": CITYJSON_TYPE,
@@ -44,10 +45,10 @@ def createCityJSON() -> Dict[str, Any]:
     }
 
 
-def get_centroid(cm: Dict[str, Any], coid: str) -> Optional[List[float]]:
+def get_centroid(cm: dict[str, Any], coid: str) -> Optional[list[float]]:
     """Calculate the 3D centroid of a city object"""
 
-    def collect_vertex_indices(boundaries: Any, vertex_indices: List[int]) -> None:
+    def collect_vertex_indices(boundaries: Any, vertex_indices: list[int]) -> None:
         for boundary in boundaries:
             if isinstance(boundary, list):
                 collect_vertex_indices(boundary, vertex_indices)
@@ -69,10 +70,10 @@ def get_centroid(cm: Dict[str, Any], coid: str) -> Optional[List[float]]:
         return None
 
     # Calculate centroid
-    centroid = [0, 0, 0]
+    centroid: list[float] = [0, 0, 0]
     vertex_count = 0
     for geometry in city_object["geometry"]:
-        vertex_indices: List[int] = []
+        vertex_indices: list[int] = []
         collect_vertex_indices(geometry["boundaries"], vertex_indices)
         for vertex_index in vertex_indices:
             vertex = cm["vertices"][vertex_index]
@@ -99,8 +100,8 @@ def get_centroid(cm: Dict[str, Any], coid: str) -> Optional[List[float]]:
 
 
 def get_subset_cotype(
-    cm: Dict[str, Any], cotype: Union[str, List[str]], invert: bool = False
-) -> Dict[str, Any]:
+    cm: dict[str, Any], cotype: Union[str, list[str]], invert: bool = False
+) -> dict[str, Any]:
     if isinstance(cotype, list):
         cityobject_types = cotype
     else:
@@ -150,8 +151,8 @@ def get_subset_cotype(
 
 
 def get_subset_bbox(
-    cm: Dict[str, Any], bbox: List[float], invert: bool = False
-) -> Dict[str, Any]:
+    cm: dict[str, Any], bbox: list[float], invert: bool = False
+) -> dict[str, Any]:
     """Returns a subset of the CityJSON file within the given bbox."""
     # -- new sliced CityJSON object
     subset_cm = createCityJSON()

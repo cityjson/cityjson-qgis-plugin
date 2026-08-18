@@ -24,16 +24,18 @@
 #
 # ******************************************************************************
 
-from qgis.PyQt.QtCore import QCoreApplication
+from typing import Any
+
 from qgis.core import (
     QgsProcessingAlgorithm,
     QgsProcessingException,
     QgsProcessingParameterBoolean,
     QgsProcessingParameterCrs,
     QgsProcessingParameterEnum,
-    QgsProcessingParameterFile,
     QgsProcessingParameterExtent,
+    QgsProcessingParameterFile,
 )
+from qgis.PyQt.QtCore import QCoreApplication
 
 try:
     # When running as QGIS plugin
@@ -103,19 +105,19 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
         "Tunnel",
     ]
 
-    def tr(self, string):
+    def tr(self, string: str) -> str:
         """
         Returns a translatable string with the self.tr() function.
         """
         return QCoreApplication.translate("Processing", string)
 
-    def createInstance(self):
+    def createInstance(self) -> "CityJsonLoadAlgorithm":
         """
         Returns an instance of the algorithm.
         """
         return CityJsonLoadAlgorithm()
 
-    def name(self):
+    def name(self) -> str:
         """
         Returns the algorithm name, used for identifying the algorithm. This
         string should be fixed for the algorithm, and must not be localised.
@@ -125,21 +127,21 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
         """
         return "loadcityjson"
 
-    def displayName(self):
+    def displayName(self) -> str:
         """
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
         return self.tr("Load CityJSON")
 
-    def group(self):
+    def group(self) -> str:
         """
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
         return self.tr("Import")
 
-    def groupId(self):
+    def groupId(self) -> str:
         """
         Returns the unique ID of the group this algorithm belongs to. This
         string should be fixed for the algorithm, and must not be localised.
@@ -149,7 +151,7 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
         """
         return "import"
 
-    def shortHelpString(self):
+    def shortHelpString(self) -> str:
         """
         Returns a localised short helper string for the algorithm. This string
         should provide a basic description about what the algorithm does and the
@@ -157,10 +159,10 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
         """
         return self.tr("Imports a CityJSON file to QGIS")
 
-    def flags(self):
+    def flags(self) -> Any:
         return super().flags() | QgsProcessingAlgorithm.Flag.FlagNoThreading
 
-    def initAlgorithm(self, config=None):
+    def initAlgorithm(self, config: dict[str, Any] | None = None) -> None:
         """
         Here we define the inputs and output of the algorithm, along
         with some other properties.
@@ -168,7 +170,7 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterFile(
-                self.INPUT, self.tr("CityJSON file"), extension="json"
+                self.INPUT, self.tr("CityJSON file"), extension="json,jsonl"
             )
         )
 
@@ -241,7 +243,9 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
             )
         )
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def processAlgorithm(
+        self, parameters: dict[str, Any], context: Any, feedback: Any
+    ) -> dict[str, Any]:
         """
         Here is where the processing itself takes place.
         """
@@ -267,12 +271,13 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
 
         lod_selection = self.parameterAsEnums(parameters, self.LOD_SELECTION, context)
 
+        lod: str | list[str]
         if len(lod_selection) == 0:
             lod = "All"
             feedback.pushInfo("Loading all LoDs")
         elif len(lod_selection) == 1:
             lod = self.LODSELECTIONTYPES[lod_selection[0]]
-            feedback.pushInfo("Loading LoD: {}".format(lod))
+            feedback.pushInfo(f"Loading LoD: {lod}")
         else:
             lod = [self.LODSELECTIONTYPES[idx] for idx in lod_selection]
             feedback.pushInfo("Loading multiple LoDs: {}".format(", ".join(lod)))
@@ -300,7 +305,7 @@ class CityJsonLoadAlgorithm(QgsProcessingAlgorithm):
             )
             epsg = get_model_epsg(cm)
             if epsg:
-                feedback.pushInfo("CRS found: {}.".format(epsg))
+                feedback.pushInfo(f"CRS found: {epsg}.")
             else:
                 feedback.pushInfo("No CRS found.")
 

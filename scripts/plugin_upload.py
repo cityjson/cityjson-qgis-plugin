@@ -24,17 +24,46 @@
 #
 # ******************************************************************************
 
-import sys
+import base64
 import getpass
+import sys
 import xmlrpc.client
 from optparse import OptionParser
 
+import defusedxml.xmlrpc
+
+defusedxml.xmlrpc.monkey_patch()
+
 # Configuration
-PROTOCOL = "http"
+PROTOCOL = "https"
 SERVER = "plugins.qgis.org"
-PORT = "80"
+PORT = "443"
 ENDPOINT = "/plugins/RPC2/"
 VERBOSE = False
+
+
+class BasicAuthTransport(xmlrpc.client.SafeTransport):
+    """Transport that adds an HTTP Basic Authentication header.
+
+    Credentials are sent via the ``Authorization`` header instead of being
+    embedded in the request URL.
+    """
+
+    def __init__(self, username: str, password: str) -> None:
+        super().__init__()
+        token = base64.b64encode(f"{username}:{password}".encode("utf-8")).decode(
+            "ascii"
+        )
+        self._authorization = f"Basic {token}"
+
+    def send_headers(self, connection, headers):
+        # `headers` is a dict on older Python (<3.12) and a list of
+        # (key, value) tuples on Python 3.12+.
+        if isinstance(headers, dict):
+            headers["Authorization"] = self._authorization
+        else:
+            headers.append(("Authorization", self._authorization))
+        super().send_headers(connection, headers)
 
 
 def main(parameters, arguments):
@@ -43,52 +72,28 @@ def main(parameters, arguments):
     :param parameters: Command line parameters.
     :param arguments: Command line arguments.
     """
-    address = "%s://%s:%s@%s:%s%s" % (
-        PROTOCOL,
-        parameters.username,
-        parameters.password,
-        parameters.server,
-        parameters.port,
-        ENDPOINT,
-    )
-    print("Connecting to: %s" % hide_password(address))
+    address = f"{PROTOCOL}://{parameters.server}:{parameters.port}{ENDPOINT}"
+    print(f"Connecting to: {address}")
 
-    server = xmlrpc.client.ServerProxy(address, verbose=VERBOSE)
+    transport = BasicAuthTransport(parameters.username, parameters.password)
+    server = xmlrpc.client.ServerProxy(address, transport=transport, verbose=VERBOSE)
 
     try:
         plugin_id, version_id = server.plugin.upload(
-            xmlrpc.client.Binary(open(arguments[0]).read())
+            xmlrpc.client.Binary(open(arguments[0], "rb").read())
         )
-        print("Plugin ID: %s" % plugin_id)
-        print("Version ID: %s" % version_id)
+        print(f"Plugin ID: {plugin_id}")
+        print(f"Version ID: {version_id}")
     except xmlrpc.client.ProtocolError as err:
         print("A protocol error occurred")
-        print("URL: %s" % hide_password(err.url, 0))
-        print("HTTP/HTTPS headers: %s" % err.headers)
+        print(f"URL: {err.url}")
+        print(f"HTTP/HTTPS headers: {err.headers}")
         print("Error code: %d" % err.errcode)
-        print("Error message: %s" % err.errmsg)
+        print(f"Error message: {err.errmsg}")
     except xmlrpc.client.Fault as err:
         print("A fault occurred")
         print("Fault code: %d" % err.faultCode)
-        print("Fault string: %s" % err.faultString)
-
-
-def hide_password(url, start=6):
-    """Returns the http url with password part replaced with '*'.
-
-    :param url: URL to upload the plugin to.
-    :type url: str
-
-    :param start: Position of start of password.
-    :type start: int
-    """
-    start_position = url.find(":", start) + 1
-    end_position = url.find("@")
-    return "%s%s%s" % (
-        url[:start_position],
-        "*" * (end_position - start_position),
-        url[end_position:],
-    )
+        print(f"Fault string: {err.faultString}")
 
 
 if __name__ == "__main__":
@@ -129,7 +134,7 @@ if __name__ == "__main__":
     if not options.username:
         # interactive mode
         username = getpass.getuser()
-        print("Please enter user name [%s] :" % username, end=" ")
+        print(f"Please enter user name [{username}] :", end=" ")
         res = input()
         if res != "":
             options.username = res

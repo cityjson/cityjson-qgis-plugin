@@ -25,27 +25,28 @@
 # ******************************************************************************
 """A module that provides the logic for loading CityJSON in QGIS"""
 
+import json
 import os
 import re
-import json
+from typing import Any
 
 from qgis.core import QgsProject
-from typing import Optional
 
+from . import get_logger
 from .geometry import GeometryReader, VerticesCache
 from .layers import (
-    DynamicLayerManager,
-    BaseFieldsBuilder,
-    TypeNamingIterator,
-    BaseNamingIterator,
     AttributeFieldsDecorator,
-    SimpleFeatureBuilder,
-    ParentFeatureDecorator,
-    LodNamingDecorator,
-    LodFieldsDecorator,
+    BaseFieldsBuilder,
+    BaseNamingIterator,
+    DynamicLayerManager,
     LodFeatureDecorator,
-    SemanticSurfaceFieldsDecorator,
+    LodFieldsDecorator,
+    LodNamingDecorator,
+    ParentFeatureDecorator,
     SemanticSurfaceFeatureDecorator,
+    SemanticSurfaceFieldsDecorator,
+    SimpleFeatureBuilder,
+    TypeNamingIterator,
 )
 from .styling import (
     Copy2dStyling,
@@ -54,7 +55,6 @@ from .styling import (
     is_3d_styling_available,
     is_rule_based_3d_styling_available,
 )
-from . import get_logger
 
 logger = get_logger("loading")
 
@@ -64,16 +64,16 @@ class CityJSONLoader:
 
     def __init__(
         self,
-        filepath,
-        citymodel,
-        epsg=None,
-        keep_parent_attributes=False,
-        divide_by_object=False,
-        lod_as="NONE",
-        lod="All",
-        load_semantic_surfaces=False,
-        style_semantic_surfaces=False,
-    ):
+        filepath: str,
+        citymodel: dict[str, Any],
+        epsg: str | None = None,
+        keep_parent_attributes: bool = False,
+        divide_by_object: bool = False,
+        lod_as: str = "NONE",
+        lod: str | list[str] = "All",
+        load_semantic_surfaces: bool = False,
+        style_semantic_surfaces: bool = False,
+    ) -> None:
         filename_with_ext = os.path.basename(filepath)
         filename, _ = os.path.splitext(filename_with_ext)
 
@@ -89,11 +89,13 @@ class CityJSONLoader:
         if "geometry-templates" in citymodel:
             geometry_templates = citymodel["geometry-templates"]
 
-        self.geometry_reader = GeometryReader(
+        self.geometry_reader: Any = GeometryReader(
             self.vertices_cache, geometry_templates, lod=self.lod
         )
-        self.fields_builder = AttributeFieldsDecorator(BaseFieldsBuilder(), citymodel)
-        self.feature_builder = SimpleFeatureBuilder(self.geometry_reader)
+        self.fields_builder: Any = AttributeFieldsDecorator(
+            BaseFieldsBuilder(), citymodel
+        )
+        self.feature_builder: Any = SimpleFeatureBuilder(self.geometry_reader)
 
         if keep_parent_attributes:
             self.feature_builder = ParentFeatureDecorator(
@@ -115,7 +117,7 @@ class CityJSONLoader:
             )
 
         if divide_by_object:
-            self.naming_iterator = TypeNamingIterator(filename, citymodel)
+            self.naming_iterator: Any = TypeNamingIterator(filename, citymodel)
         else:
             self.naming_iterator = BaseNamingIterator(filename)
 
@@ -138,7 +140,7 @@ class CityJSONLoader:
         self.layer_manager.prepare_attributes()
 
         if is_3d_styling_available():
-            self.styler = Copy2dStyling()
+            self.styler: Any = Copy2dStyling()
         else:
             self.styler = NullStyling()
 
@@ -149,7 +151,7 @@ class CityJSONLoader:
         ):
             self.styler = SemanticSurfacesStyling()
 
-    def init_vertices(self):
+    def init_vertices(self) -> None:
         """Initialises the vertices cache"""
         self.vertices_cache = VerticesCache()
 
@@ -170,7 +172,7 @@ class CityJSONLoader:
             for v in verts:
                 self.vertices_cache.add_vertex(v)
 
-    def load(self, feedback=None) -> int:
+    def load(self, feedback: Any | None = None) -> int:
         """Loads a specified CityJSON file and returns the number of skipped geometries"""
         city_objects = self.citymodel["CityObjects"]
 
@@ -205,14 +207,106 @@ class CityJSONLoader:
         return self.geometry_reader.skipped_geometries()
 
 
-def load_cityjson_model(filepath):
-    """Returns the citymodel for the given filepath"""
+def _is_cityjson_feature(obj: Any) -> bool:
+    """Return True if the object is a CityJSONFeature."""
+    return isinstance(obj, dict) and obj.get("type") == "CityJSONFeature"
+
+
+def _offset_boundaries(boundaries: Any, offset: int) -> Any:
+    """Recursively add ``offset`` to every vertex index in a boundaries array."""
+    if isinstance(boundaries, list):
+        return [_offset_boundaries(b, offset) for b in boundaries]
+    if boundaries is None:
+        return None
+    return boundaries + offset
+
+
+def _merge_cityjson_features(
+    features: list[dict[str, Any]], metadata: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Merge CityJSONFeature objects into a single CityJSON model.
+
+    Each feature has its own local vertex indices, so the vertices are
+    concatenated and the vertex indices inside each feature's boundaries are
+    shifted accordingly. Transform, CRS metadata and geometry-templates are
+    taken from the metadata object (or the first feature).
+    """
+    merged: dict[str, Any] = {
+        "type": "CityJSON",
+        "version": "1.1",
+        "CityObjects": {},
+        "vertices": [],
+    }
+
+    source = metadata if metadata is not None else (features[0] if features else None)
+    if source:
+        for key in ("version", "transform", "metadata", "geometry-templates"):
+            if key in source:
+                merged[key] = source[key]
+
+    vertex_offset = 0
+    for feature in features:
+        cityobjects = feature.get("CityObjects", {})
+        vertices = feature.get("vertices", [])
+
+        if vertex_offset:
+            for obj in cityobjects.values():
+                for geom in obj.get("geometry", []):
+                    if "boundaries" in geom:
+                        geom["boundaries"] = _offset_boundaries(
+                            geom["boundaries"], vertex_offset
+                        )
+
+        merged["vertices"].extend(vertices)
+        vertex_offset += len(vertices)
+        merged["CityObjects"].update(cityobjects)
+
+    return merged
+
+
+def _load_cityjson_seq(content: str) -> dict[str, Any]:
+    """Parse a CityJSONSeq stream (newline-delimited JSON) into a city model."""
+    metadata: dict[str, Any] | None = None
+    features: list[dict[str, Any]] = []
+    for line in content.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        obj = json.loads(line)
+        obj_type = obj.get("type")
+        if obj_type == "CityJSON":
+            metadata = obj
+        elif obj_type == "CityJSONFeature":
+            features.append(obj)
+    return _merge_cityjson_features(features, metadata=metadata)
+
+
+def load_cityjson_model(filepath: str) -> dict[str, Any]:
+    """Returns the city model for the given filepath.
+
+    Accepts standard CityJSON, a single CityJSONFeature, a JSON array of
+    CityJSONFeature objects, and CityJSONSeq (newline-delimited JSON).
+    CityJSONFeature objects are merged into a single CityJSON model.
+    """
     with open(filepath, encoding="utf-8-sig", buffering=8192) as fstream:
-        citymodel = json.load(fstream)
-    return citymodel
+        content = fstream.read()
+
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError:
+        return _load_cityjson_seq(content)
+
+    if isinstance(data, list):
+        features = [f for f in data if _is_cityjson_feature(f)]
+        return _merge_cityjson_features(features)
+
+    if _is_cityjson_feature(data):
+        return _merge_cityjson_features([data])
+
+    return data
 
 
-def get_model_epsg(citymodel) -> Optional[str]:
+def get_model_epsg(citymodel: dict[str, Any]) -> str | None:
     """Returns the EPSG of the city model as a string, or None if not found"""
 
     if "metadata" not in citymodel:
@@ -241,7 +335,7 @@ def get_model_epsg(citymodel) -> Optional[str]:
                 return ref_string.split("::")[1]
 
             # Match CRS URL starting with 'https://www.opengis.net/def/crs/' and extract the last number
-            p = re.compile(r"^https://www\.opengis\.net/def/crs/.*/([0-9]+)$")
+            p = re.compile(r"^https?://www\.opengis\.net/def/crs/.*/([0-9]+)$")
             m = p.match(ref_string)
 
             logger.debug(f"Regex match result: {ref_string}")
@@ -251,3 +345,5 @@ def get_model_epsg(citymodel) -> Optional[str]:
                 return m.group(1)
         except (KeyError, TypeError):
             return None
+
+    return None

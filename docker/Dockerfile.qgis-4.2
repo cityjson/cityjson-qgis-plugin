@@ -1,4 +1,4 @@
-FROM qgis/qgis:3.40-jammy
+FROM qgis/qgis:4.2-trixie
 
 # Set up environment variables for headless Qt/QGIS testing
 ENV QT_QPA_PLATFORM=offscreen
@@ -19,8 +19,10 @@ WORKDIR /app
 COPY . /app
 
 # Install Python dependencies
-RUN pip3 install --upgrade pip
-RUN pip3 install -r requirements.txt
+RUN pip3 install -r requirements.txt --break-system-packages
+
+# Install pre-commit (optional)
+RUN pip3 install pre-commit --break-system-packages
 
 # Default command: run tests with coverage
 CMD ["sh", "-c", "Xvfb :99 -screen 0 1024x768x24 & python3 -m pytest tests/ -v -s --cov=. --cov-report=term-missing --cov-report=html --color=yes"]

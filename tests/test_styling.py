@@ -3,19 +3,21 @@
 
 """A list of tests to check the styling classes functionality"""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from qgis.core import QgsVectorLayer
+from qgis.core import Qgis, QgsVectorLayer
 from qgis.PyQt.QtGui import QColor
+
+from core.settings import semantic_colors
 from core.styling import (
-    SemanticSurfacesStyling,
-    NullStyling,
     Copy2dStyling,
+    NullStyling,
+    SemanticSurfacesStyling,
     create_material,
     is_3d_styling_available,
     is_rule_based_3d_styling_available,
 )
-from core.settings import semantic_colors
 
 
 @pytest.fixture()
@@ -41,6 +43,19 @@ class TestSemanticSurfacesStyling:
         root_rule = renderer.rootRule()
 
         assert len(root_rule.children()) == len(semantic_colors) + 1
+
+    def test_sets_absolute_altitude_clamping(self, vectorlayer: QgsVectorLayer):
+        """Tests that symbols use absolute (not relative) altitude clamping."""
+        assert vectorlayer.isValid(), "Vector layer should be valid"
+
+        styling = SemanticSurfacesStyling(semantic_colors)
+        styling.apply(vectorlayer)
+
+        renderer = vectorlayer.renderer3D()
+        root_rule = renderer.rootRule()
+
+        for rule in root_rule.children():
+            assert rule.symbol().altitudeClamping() == Qgis.AltitudeClamping.Absolute
 
 
 class TestNullStyling:

@@ -5,7 +5,7 @@ to QGIS layers and features
 import logging
 
 
-def get_logger(name=None):
+def get_logger(name: str | None = None) -> logging.Logger:
     """Get a logger instance for the core module"""
     logger_name = "cityjson_loader"
     if name:

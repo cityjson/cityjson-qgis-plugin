@@ -1,14 +1,15 @@
 # Copyright © 2018–2026 3D geoinformation group, TU Delft, S. Vitalis and G. Stavropoulou.
 # Licensed under the Apache License, Version 2.0. See LICENSE file for details.
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from qgis.core import (
-    QgsProcessingContext,
-    QgsProcessingFeedback,
     QgsCoordinateReferenceSystem,
-    QgsRectangle,
+    QgsProcessingContext,
     QgsProcessingException,
+    QgsProcessingFeedback,
+    QgsRectangle,
 )
 
 from processing.cityjson_load_algorithm import CityJsonLoadAlgorithm

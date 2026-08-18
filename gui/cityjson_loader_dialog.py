@@ -28,21 +28,20 @@
 
 import os
 
-from qgis.PyQt import uic
-from qgis.PyQt import QtWidgets
+from qgis.PyQt import QtWidgets, uic
 
 FORM_CLASS, _ = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "cityjson_loader_dialog_base.ui")
 )
 
 
-class CityJsonLoaderDialog(QtWidgets.QDialog, FORM_CLASS):
-    def __init__(self, parent=None):
+class CityJsonLoaderDialog(QtWidgets.QDialog, FORM_CLASS):  # type: ignore[valid-type, misc]
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         """Initialize the dialog"""
-        super(CityJsonLoaderDialog, self).__init__(parent)
+        super().__init__(parent)
         self.setupUi(self)
 
-    def reset_fields(self):
+    def reset_fields(self) -> None:
         """Reset the fields in the dialog."""
         self.listWidget.clear()
         self.cityjsonVersionLineEdit.clear()

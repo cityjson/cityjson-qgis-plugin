@@ -2,7 +2,6 @@
 # Licensed under the Apache License, Version 2.0. See LICENSE file for details.
 from core import subset
 
-
 # ============================================================================
 # SELECT_CO_IDS TESTS
 # ============================================================================

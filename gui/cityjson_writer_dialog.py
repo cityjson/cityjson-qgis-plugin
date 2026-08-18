@@ -27,8 +27,9 @@ import os
 from PyQt5 import uic
 from PyQt5 import QtWidgets
 
-FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'cityjson_writer_dialog_base.ui'))
+FORM_CLASS, _ = uic.loadUiType(
+    os.path.join(os.path.dirname(__file__), "cityjson_writer_dialog_base.ui")
+)
 
 
 class CityJsonWriterDialog(QtWidgets.QDialog, FORM_CLASS):
@@ -36,7 +37,7 @@ class CityJsonWriterDialog(QtWidgets.QDialog, FORM_CLASS):
         """Constructor."""
         super(CityJsonWriterDialog, self).__init__(parent)
         self.setupUi(self)
-    
+
     def reset_fields(self):
         """Reset the fields in the dialog."""
         pass
@@ -47,7 +48,7 @@ class CityJsonWriterDialog(QtWidgets.QDialog, FORM_CLASS):
 
         # # Clear metadata box
         # self.metadataTreeView.setModel(None)
-        
+
         #  # Reset checkboxes and disable them
         # self.inheritParentAttributesCheckBox.setChecked(False)
         # self.splitByTypeCheckBox.setChecked(False)
@@ -57,7 +58,7 @@ class CityJsonWriterDialog(QtWidgets.QDialog, FORM_CLASS):
         # self.splitByTypeCheckBox.setEnabled(False)
         # self.semanticsLoadingCheckBox.setEnabled(False)
         # self.semanticSurfacesStylingCheckBox.setEnabled(False)
-        
+
         # # Reset Lod checkboxes
         # self.loDLoadingComboBox.setCurrentIndex(0)
         # self.loDSelectionComboBox.setCurrentIndex(0)
