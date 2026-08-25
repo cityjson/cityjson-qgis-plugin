@@ -380,6 +380,32 @@ class TestLodNamingDecorator:
         result = decorator.get_feature_layer(mock_feature)
         assert result == "f [LoD2]"
 
+    def test_all_layers_handles_non_numeric_lod(self):
+        """Tests that non-numeric LoDs (e.g. LoDe.0) do not crash the sort."""
+        citymodel = {
+            "type": "CityJSON",
+            "version": "2.0",
+            "CityObjects": {
+                "a": {"type": "Building", "geometry": [{"lod": "1"}]},
+                "b": {"type": "Building", "geometry": [{"lod": "2.2"}]},
+                "c": {"type": "Building", "geometry": [{"lod": "LoDe.0"}]},
+                "d": {"type": "Building", "geometry": [{"lod": "LoDe.1"}]},
+            },
+            "vertices": [],
+        }
+        base = BaseNamingIterator("f")
+        reader = MagicMock()
+        reader.get_lod = MagicMock(side_effect=["1", "2.2", "LoDe.0", "LoDe.1"])
+
+        decorator = LodNamingDecorator(base, "f", citymodel, reader)
+        layers = decorator.all_layers()
+
+        assert any("[LoD2.2]" in name for name in layers)
+        assert any("[LoD1]" in name for name in layers)
+        assert any("[LoDLoDe.0]" in name for name in layers)
+        assert any("[LoDLoDe.1]" in name for name in layers)
+        assert any("[LoDNone]" in name for name in layers)
+
 
 # ============================================================================
 # AttributeFieldsDecorator – type promotion tests

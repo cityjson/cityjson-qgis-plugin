@@ -74,6 +74,21 @@ def _stringify_attribute(value: Any) -> Any:
     return value
 
 
+def _lod_sort_key(lod: Any) -> tuple[int, Any]:
+    """Return a sort key for an LoD value.
+
+    Numeric LoDs (e.g. "1.2", "2") are sorted in descending numeric order,
+    non-numeric LoDs (e.g. "LoDe.0") are sorted alphabetically afterwards, and
+    ``None`` sorts last.
+    """
+    if lod is None:
+        return (2, "")
+    try:
+        return (0, -float(lod))
+    except (ValueError, TypeError):
+        return (1, str(lod))
+
+
 def _register_field_type(attribute_types: dict[str, Any], key: str, value: Any) -> None:
     """Register the type of ``value`` for ``key``, promoting when necessary.
 
@@ -257,9 +272,7 @@ class LodNamingDecorator:
 
     def all_layers(self) -> list[str]:
         """Returns all layer names with LoD sorted by LoD in descending order"""
-        sorted_lods = sorted(
-            self._lods, key=lambda x: float(x) if x is not None else -1, reverse=True
-        )
+        sorted_lods = sorted(self._lods, key=_lod_sort_key)
 
         layer_names = []
         for lod in sorted_lods:
