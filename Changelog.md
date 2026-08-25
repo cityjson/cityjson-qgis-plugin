@@ -1,3 +1,8 @@
+## 1.0.1 - 25/08/2026
+
+### Fixed
+- Non-standard/experimental LoD values (e.g. `LoDe.0`) no longer crash the loader when loading LoDs as separate layers.
+
 ## 1.0.0 - 17/08/2026
 
 ### Changed
