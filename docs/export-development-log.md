@@ -4,6 +4,32 @@ Decisions and dead ends, newest first. Not a release changelog (`Changelog.md` i
 gets one entry at PR time). Keep entries short — what changed, why, what's blocked.
 
 ---
+
+## X14 — export as a Processing algorithm (1 Nov)
+- new `processing/cityjson_export_algorithm.py`, registered in `provider.py`; toolbox: CityJSON Loader → Export → Export CityJSON
+- inputs: layers, original file, loaded LoD(s), keep unloaded, semantic surfaces, output file — user must repeat the load settings (provenance is X15)
+- exporter `ValueError`s re-raised as `QgsProcessingException`; nothing written on failure
+- refuses output path == source path (I overwrote the source tile once)
+- `test_provider_algorithm_properties` took `algorithms[0]`; QGIS doesn't keep insertion order → look up by name
+- tests: metadata, parameters, invalid file, kwargs to exporter, export error, overwrite guard, end-to-end headless run (real context/feedback, no mocks)
+
+**Real tile** — `10-282-560` (3D BAG v2025.09.03), LoD 2.2, no semantic surfaces, deleted one building
+- first run 1443 → 1442: only `NL.IMBAG.Pand.0503100000025720-0` (BuildingPart) removed; its parent `Building` (LoD0 only) kept, childless
+- cause: parent has no LoD 2.2 → "never loaded" → kept by `keep_unloaded`
+- fix (`cb22d9a`): a never-loaded parent is dropped when it has children and all were deleted by the user; kept if any child survives or was never loaded. One level only (enough for 3D BAG)
+- after fix 1443 → 1441, parent gone
+- other 1441 objects: attributes and resolved geometry identical; transform, metadata identical; no dangling parents/children
+
+**cjval v0.10.0** — original and export both "valid, with warnings", no errors
+- duplicate vertices 1424 → 1422 (already in the source; 2 left with the deleted part)
+- unused vertices 0 → 0 (compaction OK, 64153 → 64014)
+
+**Open for Gina**
+- parent-drop rule (`cb22d9a`): right behaviour, or keep the footprint?
+- old `Export CityJSON...` menu dialog is still the `cityjson-writter` stub — looks like export, does nothing (X15)
+- minor: `save_cityjson_model` writes with spaces → 6.8 MB vs 6.1 MB; `separators=(",", ":")` would fix it
+
+
 ## X10 — geometry edits detected and refused (1 Nov)
 - export rebuilds each row's geometry from the original model (same reader path as import) and compares corner by corner within scale/2
 - any difference → ValueError naming every edited uid, before anything is written
