@@ -121,7 +121,7 @@ class CityJSONExporter:
 
     def _count_faces(self, geom):
         """Number of faces (polygons) in one geometry."""
-        if geom["type"] == "GeometryInstace": # faces live in the template
+        if geom["type"] == "GeometryInstance": # faces live in the template
             geom = self.citymodel["geometry-templates"]["templates"][geom["template"]]
         polygons, _semantics = read_boundaries(geom["boundaries"], None, None) # none, none = dont look up semantics, only count
         return len(polygons)
