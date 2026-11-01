@@ -367,5 +367,5 @@ def read_provenance(layers):
 def save_cityjson_model(citymodel: dict, filepath: str) -> None:
     """Save a CityJSON model dictionary to a file."""
     with open(filepath, "w", encoding="utf-8", buffering=8192) as fstream:
-        content=(json.dumps(citymodel))
+        content = json.dumps(citymodel, separators=(",", ":"))
         fstream.write(content)
