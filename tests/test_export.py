@@ -731,3 +731,18 @@ def test_read_provenance_refuses_empty_layers(qgis_app):
 
     with pytest.raises(ValueError, match="empty"):
         read_provenance(layers)
+
+def test_bbox_keeps_only_objects_inside(qgis_app):
+    cm, layers = _load_two_cubes()  # cube1 x 0–1 m, cube2 x 1–2 m
+    out = CityJSONExporter(layers, citymodel=cm, bbox=[0, 0, 1, 1]).export()
+    assert set(out["CityObjects"]) == {"building1"}
+    assert len(out["vertices"]) == 8
+
+def test_bbox_brings_parent_and_prunes_children(qgis_app):
+    cm = _hierarchy_citymodel()  # b1 (0–1 m) has children b2 (1–2 m), b3 (2–3 m)
+    loader = CityJSONLoader(filepath="dummy", citymodel=cm)
+    loader.load()
+    layers = loader.layer_manager.get_all_layers()
+    out = CityJSONExporter(layers, citymodel=cm, bbox=[1, 0, 2, 1]).export()
+    assert set(out["CityObjects"]) == {"building1", "building2"}
+    assert out["CityObjects"]["building1"]["children"] == ["building2"]

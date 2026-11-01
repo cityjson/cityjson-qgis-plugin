@@ -6,17 +6,18 @@ from .utils import createCityJSON
 from . import subset
 from .layers import _stringify_attribute
 from .geometry import GeometryReader, VerticesCache, read_boundaries, DEFAULT_SCALE, DEFAULT_TRANSLATE
-
+from .utils import createCityJSON, get_centroid
 
 class CityJSONExporter:
     """Rebuilds a CityJSON model from QGIS layers."""
 
-    def __init__(self, layers, citymodel=None, loaded_lod="All", keep_unloaded=True, semantic_surfaces=False):
+    def __init__(self, layers, citymodel=None, loaded_lod="All", keep_unloaded=True, semantic_surfaces=False, bbox=None):
         self.layers = layers
         self.citymodel = citymodel
         self.loaded_lod = loaded_lod # tells the exporter which lod was loaded in qgis
         self.keep_unloaded = keep_unloaded  # what should happen to never loaded things, users decision (keep: default or False : drop)
         self.semantic_surfaces = semantic_surfaces # true if surfaces were loaded as separate rows (one row per face)
+        self.bbox = bbox  # [xmin, ymin, xmax, ymax] in the model's CRS; None = everything
 
     def export(self) -> dict: # returns a dictionary representing the CityJSON model
         """
@@ -35,6 +36,8 @@ class CityJSONExporter:
             new_cm["transform"] = self.citymodel["transform"]
 
         surviving_ids = self.get_surviving_ids()
+        if self.bbox is not None:  # crop to the box
+            surviving_ids = self._in_bbox(surviving_ids)
         counts = self._count_rows()
         if self.semantic_surfaces: # refuse partial surface deletes
             self._check_surface_rows(counts)
@@ -177,6 +180,23 @@ class CityJSONExporter:
                     uids.add(parent) # add the parent to the set of surviving ids
                 
         return uids
+
+    def _in_bbox(self, ids):
+        """Keep ids whose centroid lies in self.bbox (same rule as get_subset_bbox),
+        plus their parents and children."""
+        xmin, ymin, xmax, ymax = self.bbox
+        inside = set()
+        for uid in ids:
+            c = get_centroid(self.citymodel, uid)
+            if c is not None and xmin <= c[0] < xmax and ymin <= c[1] < ymax:
+                inside.add(uid)
+        for uid in list(inside):
+            obj = self.citymodel["CityObjects"][uid]
+            for rel in obj.get("parents", []) + obj.get("children", []):
+                if rel in ids:
+                    inside.add(rel)
+        return inside
+
 
     def prune_dangling_children(self, citymodel, surviving_ids):
         """Remove any CityObjects children from the parent parts"""
