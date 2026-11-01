@@ -686,3 +686,21 @@ def test_unloaded_parent_kept_when_a_child_survives(qgis_app):
     out = CityJSONExporter(layers, citymodel=cm, loaded_lod="1").export()
     assert set(out["CityObjects"]) == {"building1", "building3"}
     assert out["CityObjects"]["building1"]["children"] == ["building3"]
+
+def test_layers_are_stamped_with_provenance(qgis_app):
+    cm = _two_cubes_citymodel()
+    loader = CityJSONLoader(
+        filepath="dummy.city.json", citymodel=cm, lod="1",
+        load_semantic_surfaces=True,
+    )
+    for key, obj in cm["CityObjects"].items():
+        loader.layer_manager.add_object(key, obj)
+
+    layers = loader.layer_manager.get_all_layers()
+    assert layers
+    for layer in layers:
+        assert layer.customProperty("cityjson/source") == os.path.abspath("dummy.city.json")
+        assert json.loads(layer.customProperty("cityjson/lod")) == "1"
+        assert json.loads(layer.customProperty("cityjson/semantic_surfaces")) is True
+        assert json.loads(layer.customProperty("cityjson/keep_parent_attributes")) is False
+        assert len(layer.customProperty("cityjson/load_id")) == 32
