@@ -85,7 +85,7 @@ def process_templates(j: dict[str, Any], j2: dict[str, Any]) -> None:
     dOldNewIDs: dict[int, int] = {}
     newones: list[Any] = []
     for each in j2["CityObjects"]:
-        for geom in j2["CityObjects"][each].get("geometry", []): # fix for objects without geometry
+        for geom in j2["CityObjects"][each].get("geometry", []):
             if geom["type"] == "GeometryInstance":
                 t = geom["template"]
                 if t in dOldNewIDs:

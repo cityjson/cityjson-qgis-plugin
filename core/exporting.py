@@ -2,7 +2,6 @@
 
 import json
 import copy
-from .utils import createCityJSON
 from . import subset
 from .layers import _stringify_attribute
 from .geometry import GeometryReader, VerticesCache, read_boundaries, DEFAULT_SCALE, DEFAULT_TRANSLATE
