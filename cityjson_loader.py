@@ -52,7 +52,6 @@ from .core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
 from .core.styling import is_rule_based_3d_styling_available
 from .gui.cityjson_loader_dialog import CityJsonLoaderDialog
 from .gui.cityjson_writer_dialog import CityJsonWriterDialog
-# from .resources import *  # noqa: F403s
 from .processing.provider import Provider
 
 
