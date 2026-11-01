@@ -5,6 +5,16 @@ gets one entry at PR time). Keep entries short — what changed, why, what's blo
 
 ---
 
+## 2026-11-01 — X15 stamping
+
+- Layers stamped at load with `cityjson/source`, `load_id`, `lod`, `semantic_surfaces`,
+  `keep_parent_attributes` (`DynamicLayerManager`). 316 passed.
+- Measured: stamp survives project save/reopen, memory-layer rows don't (722 → 0,
+  tile `10-282-560`). Export works within one session only.
+- Open: refuse export when a `load_id` group has 0 rows (reopened project).
+- Next: helper that groups layers by `load_id`, reads stamps, applies the 0-rows check.
+
+
 ## X14 — export as a Processing algorithm (1 Nov)
 - new `processing/cityjson_export_algorithm.py`, registered in `provider.py`; toolbox: CityJSON Loader → Export → Export CityJSON
 - inputs: layers, original file, loaded LoD(s), keep unloaded, semantic surfaces, output file — user must repeat the load settings (provenance is X15)
