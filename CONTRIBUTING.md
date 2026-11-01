@@ -13,12 +13,12 @@ Thank you for your interest in contributing to CityJsonLoader! Contributions are
   - Ensure your code follows the existing style and conventions of the project.
   - We use [ruff](https://docs.astral.sh/ruff/) for linting/formatting and [pre-commit](https://pre-commit.com/) for automated code checks.
   - Before submitting your PR, make sure to:
-    1. Create and activate a virtual environment for develop (recommended):
+    1. Create and activate a virtual environment for development (recommended):
        ```sh
        python -m venv .venv
        source .venv/bin/activate  # On Windows use: venv\Scripts\activate
        ```
-     2. Install the develop tools (ruff, pre-commit and mypy):
+     2. Install the development tools (ruff, pre-commit and mypy):
         ```sh
         pip install -r requirements-dev.txt
         ```
