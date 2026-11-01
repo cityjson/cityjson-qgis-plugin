@@ -5,6 +5,7 @@ gets one entry at PR time). Keep entries short — what changed, why, what's blo
 
 ---
 
+markdown
 ## 2026-11-01 — X15 menu export
 
 - `read_provenance(layers)`: groups layers by `load_id`, reads stamps back, refuses a group
@@ -18,17 +19,14 @@ gets one entry at PR time). Keep entries short — what changed, why, what's blo
   (reloads with the same LoD/semantics), single Close button, label says "loaded file".
 - Tile `10-282-560`, LoD 2.2, one building deleted: keep 7.1 MB, drop 4.8 MB, cjval valid
   (source duplicate-vertex warnings only).
+- Export-side bbox: `CityJSONExporter(bbox=[xmin, ymin, xmax, ymax])` keeps objects whose
+  centroid is in the box (same rule as load-side `get_subset_bbox`) + their parents/children;
+  `prune_dangling_children` cleans the rest. Dialog: `QgsExtentWidget` (draw on canvas /
+  map extent / layer), box in the layer's CRS, empty = whole file. 321 passed.
+- Tile `10-282-560`, box drawn on canvas: 480 KB (vs 7.1 MB full), only boxed buildings
+  reloaded, cjval valid, parents/children clean.
 - Import-side bug for Gina: `CityJSONLoader.load()` divides by `len(city_objects)`, so it
   crashes on an empty model (all objects deleted + "Add saved file to map").
-
-## 2026-11-01 — X15 stamping
-
-- Layers stamped at load with `cityjson/source`, `load_id`, `lod`, `semantic_surfaces`,
-  `keep_parent_attributes` (`DynamicLayerManager`). 316 passed.
-- Measured: stamp survives project save/reopen, memory-layer rows don't (722 → 0,
-  tile `10-282-560`). Export works within one session only.
-- Open: refuse export when a `load_id` group has 0 rows (reopened project).
-- Next: helper that groups layers by `load_id`, reads stamps, applies the 0-rows check.
 
 
 ## X14 — export as a Processing algorithm (1 Nov)
