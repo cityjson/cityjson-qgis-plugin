@@ -492,7 +492,7 @@ class CityJsonLoader:
             ).export()
             save_cityjson_model(exported, output)
 
-            if self.dlg_wrt.reload.isChecked():     # "Add saved file to map"
+            if self.dlg_wrt.reload.isChecked() and exported["CityObjects"]:     # "Add saved file to map"
                 new_model = load_cityjson_model(output)
                 CityJSONLoader(
                     output,
