@@ -155,8 +155,16 @@ class CityJSONExporter:
 
         # Part 2: add objects that were never loaded
         reader = GeometryReader(VerticesCache(), self.citymodel.get("geometry-templates"), lod=self.loaded_lod)
-        for uid, obj in self.citymodel["CityObjects"].items(): # loops over the objects
-            if self.keep_unloaded and not reader.has_lod(obj.get("geometry", []), self.loaded_lod): # checks in the original file, if the loaded lod does not exist for the object, adds the uid to surviving
+        row_uids = set(uids)
+        deleted = {  # loaded in QGIS but row gone: the user deleted it
+            uid for uid, obj in self.citymodel["CityObjects"].items()
+            if uid not in row_uids and reader.has_lod(obj.get("geometry", []), self.loaded_lod)
+        }
+        for uid, obj in self.citymodel["CityObjects"].items():
+            if self.keep_unloaded and not reader.has_lod(obj.get("geometry", []), self.loaded_lod):
+                children = obj.get("children", [])
+                if children and all(c in deleted for c in children):
+                    continue  # never shown, and everything it contained was deleted: drop it too
                 uids.add(uid)
         
 

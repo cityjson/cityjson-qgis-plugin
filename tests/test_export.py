@@ -662,3 +662,27 @@ def test_lifted_vertex_raises_with_surface_rows(qgis_app):
     _edit_geometry(layers, "building1", lambda g: _lift_vertex(g, 0.01))
     with pytest.raises(ValueError, match="building1"):
         CityJSONExporter(layers, citymodel=cm, loaded_lod="2", semantic_surfaces=True).export()
+
+def _unloaded_parent_layers():
+    """Hierarchy where the parent only has LoD0, so loading LoD1 shows just the children."""
+    cm = _hierarchy_citymodel()
+    cm["CityObjects"]["building1"]["geometry"][0]["lod"] = "0"
+    loader = CityJSONLoader(filepath="dummy", citymodel=cm, lod="1")
+    loader.load()
+    return cm, loader.layer_manager.get_all_layers()
+
+
+def test_unloaded_parent_dropped_when_all_children_deleted(qgis_app):
+    cm, layers = _unloaded_parent_layers()
+    _delete_feature(layers, "building2")
+    _delete_feature(layers, "building3")
+    out = CityJSONExporter(layers, citymodel=cm, loaded_lod="1").export()
+    assert out["CityObjects"] == {}
+
+
+def test_unloaded_parent_kept_when_a_child_survives(qgis_app):
+    cm, layers = _unloaded_parent_layers()
+    _delete_feature(layers, "building2")
+    out = CityJSONExporter(layers, citymodel=cm, loaded_lod="1").export()
+    assert set(out["CityObjects"]) == {"building1", "building3"}
+    assert out["CityObjects"]["building1"]["children"] == ["building3"]
