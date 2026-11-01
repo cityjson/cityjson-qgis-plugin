@@ -5,7 +5,17 @@ import pytest
 
 from processing.cityjson_export_algorithm import CityJsonExportAlgorithm
 from unittest.mock import MagicMock, patch
-from qgis.core import QgsProcessingContext, QgsProcessingException, QgsProcessingFeedback
+from qgis.core import (
+    QgsProcessingContext,
+    QgsProcessingException,
+    QgsProcessingFeedback,
+    QgsProject,
+)
+
+from core.exporting import save_cityjson_model
+from core.loading import CityJSONLoader, load_cityjson_model
+from tests.test_export import _delete_feature, _two_cubes_citymodel
+
 
 @pytest.fixture
 def algorithm():
@@ -97,3 +107,44 @@ def test_process_algorithm_export_error(mock_load, mock_exporter, mock_save, alg
             algorithm.processAlgorithm({}, context, feedback)
 
     mock_save.assert_not_called()
+
+def test_export_algorithm_end_to_end(qgis_app, tmp_path, algorithm):
+    """Load, delete a building, run the real algorithm, reload the output."""
+    # 1. Write the fixture to a real file
+    src = tmp_path / "input.city.json"
+    out = tmp_path / "output.city.json"
+    save_cityjson_model(_two_cubes_citymodel(), str(src))
+
+    # 2. Load it like the plugin does (adds the layers to QgsProject)
+    citymodel = load_cityjson_model(str(src))
+    loader = CityJSONLoader(filepath=str(src), citymodel=citymodel)
+    loader.load()
+    layers = loader.layer_manager.get_all_layers()
+
+    # 3. The user's edit: delete building2
+    _delete_feature(layers, "building2")
+
+    # 4. Run the algorithm for real: real context, real feedback, no mocks
+    context = QgsProcessingContext()
+    context.setProject(QgsProject.instance())
+    algorithm.initAlgorithm()
+    result = algorithm.processAlgorithm(
+        {
+            "LAYERS": [layer.id() for layer in layers],
+            "INPUT": str(src),
+            "LOD_SELECTION": [],
+            "KEEP_UNLOADED": True,
+            "SEMANTIC_SURFACES": False,
+            "OUTPUT": str(out),
+        },
+        context,
+        QgsProcessingFeedback(),
+    )
+
+    # 5. Check the written file
+    assert result == {"OUTPUT": str(out)}
+    exported = load_cityjson_model(str(out))
+    assert set(exported["CityObjects"]) == {"building1"}
+    assert len(exported["vertices"]) == 8
+
+    QgsProject.instance().removeAllMapLayers()  # don't leak layers into other tests
