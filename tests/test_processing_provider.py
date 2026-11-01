@@ -37,9 +37,9 @@ def test_provider_algorithm_count():
     provider = Provider()
     provider.loadAlgorithms()
 
-    # Currently we only have one algorithm
+    # Currently we have two algorithms
     algorithms = provider.algorithms()
-    assert len(algorithms) == 1
+    assert len(algorithms) == 2
 
 
 def test_provider_algorithm_properties():
@@ -48,7 +48,7 @@ def test_provider_algorithm_properties():
     provider.loadAlgorithms()
 
     algorithms = provider.algorithms()
-    cityjson_alg = algorithms[0]
+    cityjson_alg = next(alg for alg in algorithms if alg.name() == "loadcityjson")
 
     # Test algorithm has required methods
     assert hasattr(cityjson_alg, "name")
