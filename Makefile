@@ -29,13 +29,15 @@ PY_FILES = \
 	cityjson_loader.py gui/cityjson_loader_dialog.py gui/cityjson_writer_dialog.py \
 	core/__init__.py core/layers.py core/geometry.py core/styling.py \
 	core/settings.py core/helpers/__init__.py core/helpers/treemodel.py core/loading.py \
+	core/exporting.py \
 	processing/__init__.py processing/cityjson_load_algorithm.py \
+	processing/cityjson_export_algorithm.py \
 	processing/provider.py core/subset.py core/utils.py
 
 UI_FILES = gui/cityjson_loader_dialog_base.ui \
-		   gui/cityjson_writer_dialog_base.ui \
+		   gui/cityjson_writer_dialog_base.ui
 
-EXTRAS = metadata.txt icon.png cityjson_logo_big.png cityjson_logo.svg Changelog.md LICENSE cityjson_logo_load.svg cityjson_logo_export.svg 
+EXTRAS = metadata.txt cityjson_logo.svg Changelog.md LICENSE cityjson_logo_load.svg cityjson_logo_export.svg
 
 EXTRA_DIRS = 
 
@@ -143,10 +145,6 @@ zip: deploy dclean
 	@echo "---------------------------"
 	@echo "Creating plugin zip bundle."
 	@echo "---------------------------"
-	# The zip target deploys the plugin and creates a zip file with the deployed
-	# content. You can then upload the zip file on http://plugins.qgis.org
-	rm -f $(PLUGINNAME).zip
-	cd "$(HOME)/$(QGISDIR)/python/plugins"; zip -9r $(CURDIR)/$(PLUGINNAME).zip $(PLUGINNAME) -x ".*" "__pycache__/*" "**/__pycache__/*"
 	@rm -f $(PLUGINNAME).zip
 	@cp  LICENSE "$(HOME)/$(QGISDIR)/python/plugins/$(PLUGINNAME)/LICENSE"
 	@cd "$(HOME)/$(QGISDIR)/python/plugins"; zip -9r $(CURDIR)/$(PLUGINNAME).zip $(PLUGINNAME) -x ".*" "__pycache__/*" "**/__pycache__/*"
