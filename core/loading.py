@@ -299,25 +299,19 @@ def load_cityjson_model(filepath: str) -> dict[str, Any]:
     with open(filepath, encoding="utf-8-sig", buffering=8192) as fstream:
         content = fstream.read()
 
-    # EXPECTED inputs it hahndles:
-    # type 1: plain Cityjson
-    # type 2: single CityJSONFeature
-    # type 3: array of CityJSONFeature objects
-    # type 4: CityJSONSeq (newline-delimited JSON)
-
     try:
-        data = json.loads(content) # for typoe 1, 2, 3
+        data = json.loads(content)
     except json.JSONDecodeError:
-        return _load_cityjson_seq(content) # for type 4
+        return _load_cityjson_seq(content)
 
-    if isinstance(data, list): # for type 3 - array of CityJSONFeature objects
-        features = [f for f in data if _is_cityjson_feature(f)] # Keep only the CityJSONFeature entries
-        return _merge_cityjson_features(features) # Join all vertex lists into one and shift each feature's indices to match.
+    if isinstance(data, list):
+        features = [f for f in data if _is_cityjson_feature(f)]
+        return _merge_cityjson_features(features)
 
-    if _is_cityjson_feature(data): # for type 2 - (checks type == "CityJSONFeature")
+    if _is_cityjson_feature(data):
         return _merge_cityjson_features([data])
 
-    return data # type 1 (already a plain CityJSON)
+    return data
 
 
 def get_model_epsg(citymodel: dict[str, Any]) -> str | None:
