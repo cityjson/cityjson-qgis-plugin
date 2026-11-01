@@ -148,3 +148,18 @@ def test_export_algorithm_end_to_end(qgis_app, tmp_path, algorithm):
     assert len(exported["vertices"]) == 8
 
     QgsProject.instance().removeAllMapLayers()  # don't leak layers into other tests
+
+
+def test_process_algorithm_refuses_overwriting_source(algorithm):
+    """Output path equal to the source path raises before anything is read or written."""
+    context = MagicMock(spec=QgsProcessingContext)
+    feedback = MagicMock(spec=QgsProcessingFeedback)
+    p = _patched(algorithm)
+    with (
+        p[0], p[1], p[2], p[3],
+        patch.object(algorithm, "parameterAsFileOutput", return_value="/in.json"),
+        patch("processing.cityjson_export_algorithm.load_cityjson_model") as mock_load,
+    ):
+        with pytest.raises(QgsProcessingException):
+            algorithm.processAlgorithm({}, context, feedback)
+    mock_load.assert_not_called()

@@ -24,6 +24,7 @@
 #
 # ******************************************************************************
 
+import os
 from typing import Any
 
 from qgis.core import (
@@ -207,6 +208,14 @@ class CityJsonExportAlgorithm(QgsProcessingAlgorithm):
             parameters, self.SEMANTIC_SURFACES, context
         )
         output = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
+
+        # Never overwrite the source: export reads it as the original model
+        if os.path.normcase(os.path.abspath(output)) == os.path.normcase(
+            os.path.abspath(filepath)
+        ):
+            raise QgsProcessingException(
+                "Output file is the same as the original CityJSON file. Choose another path."
+            )
 
         # Convert the LoD
         lod: str | list[str]
