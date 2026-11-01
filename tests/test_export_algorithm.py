@@ -4,7 +4,8 @@
 import pytest
 
 from processing.cityjson_export_algorithm import CityJsonExportAlgorithm
-
+from unittest.mock import MagicMock, patch
+from qgis.core import QgsProcessingContext, QgsProcessingException, QgsProcessingFeedback
 
 @pytest.fixture
 def algorithm():
@@ -33,3 +34,14 @@ def test_init_algorithm(algorithm):
     for name in ["LAYERS", "INPUT", "LOD_SELECTION", "KEEP_UNLOADED",
                  "SEMANTIC_SURFACES", "OUTPUT"]:
         assert name in param_names
+
+def test_process_algorithm_invalid_file(algorithm):
+    """Missing source file raises."""
+    context = MagicMock(spec=QgsProcessingContext)
+    feedback = MagicMock(spec=QgsProcessingFeedback)
+    with (
+        patch.object(algorithm, "parameterAsFile", return_value=""),
+        patch.object(algorithm, "invalidSourceError", return_value="Invalid source"),
+    ):
+        with pytest.raises(QgsProcessingException):
+            algorithm.processAlgorithm({"INPUT": None}, context, feedback)

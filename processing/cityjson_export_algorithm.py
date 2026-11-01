@@ -192,4 +192,32 @@ class CityJsonExportAlgorithm(QgsProcessingAlgorithm):
         """
         Here is where the processing itself takes place.
         """
-        return {}
+        # Read and validate the source file first
+        filepath = self.parameterAsFile(parameters, self.INPUT, context)
+        if not filepath:
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.INPUT)
+            )
+
+        # Read the other inputs
+        layers = self.parameterAsLayerList(parameters, self.LAYERS, context)
+        lod_selection = self.parameterAsEnums(parameters, self.LOD_SELECTION, context)
+        keep_unloaded = self.parameterAsBoolean(parameters, self.KEEP_UNLOADED, context)
+        semantic_surfaces = self.parameterAsBoolean(
+            parameters, self.SEMANTIC_SURFACES, context
+        )
+        output = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
+
+        # Convert the LoD
+        lod: str | list[str]
+        if len(lod_selection) == 0:
+            lod = "All"
+            feedback.pushInfo("Exporting all LoDs")
+        elif len(lod_selection) == 1:
+            lod = self.LODSELECTIONTYPES[lod_selection[0]]
+            feedback.pushInfo(f"Exporting LoD: {lod}")
+        else:
+            lod = [self.LODSELECTIONTYPES[idx] for idx in lod_selection]
+            feedback.pushInfo("Exporting multiple LoDs: {}".format(", ".join(lod)))
+
+        return {self.OUTPUT: output}
