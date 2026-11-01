@@ -220,4 +220,31 @@ class CityJsonExportAlgorithm(QgsProcessingAlgorithm):
             lod = [self.LODSELECTIONTYPES[idx] for idx in lod_selection]
             feedback.pushInfo("Exporting multiple LoDs: {}".format(", ".join(lod)))
 
+        
+        # Load the original model
+        feedback.setProgressText("Loading original CityJSON...")
+        citymodel = load_cityjson_model(filepath)
+        feedback.pushInfo("Original has {} objects.".format(len(citymodel["CityObjects"])))
+
+        # Export
+        feedback.setProgressText("Exporting...")
+        exporter = CityJSONExporter(
+            layers,
+            citymodel,
+            loaded_lod=lod,
+            keep_unloaded=keep_unloaded,
+            semantic_surfaces=semantic_surfaces,
+        )
+        try:
+            exported = exporter.export()
+        except ValueError as e:
+            raise QgsProcessingException(str(e))
+
+        # Save
+        feedback.setProgressText("Writing file...")
+        save_cityjson_model(exported, output)
+        feedback.pushInfo(
+            "Wrote {} objects to {}.".format(len(exported["CityObjects"]), output)
+        )
+
         return {self.OUTPUT: output}
