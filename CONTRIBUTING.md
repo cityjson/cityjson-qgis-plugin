@@ -5,7 +5,7 @@ Thank you for your interest in contributing to CityJsonLoader! Contributions are
 ## How to Contribute
 
 - **Pull Requests:**
-  - Please submit your changes as a Pull Request (PR) against the `development` branch.
+  - Please submit your changes as a Pull Request (PR) against the `develop` branch.
   - Make sure your PR clearly describes the changes and the motivation behind them.
   - We prefer small PR that are focused on improving one things rather than huge PR with changes in multiple files. 
 
@@ -13,12 +13,12 @@ Thank you for your interest in contributing to CityJsonLoader! Contributions are
   - Ensure your code follows the existing style and conventions of the project.
   - We use [ruff](https://docs.astral.sh/ruff/) for linting/formatting and [pre-commit](https://pre-commit.com/) for automated code checks.
   - Before submitting your PR, make sure to:
-    1. Create and activate a virtual environment for development (recommended):
+    1. Create and activate a virtual environment for develop (recommended):
        ```sh
        python -m venv .venv
        source .venv/bin/activate  # On Windows use: venv\Scripts\activate
        ```
-     2. Install the development tools (ruff, pre-commit and mypy):
+     2. Install the develop tools (ruff, pre-commit and mypy):
         ```sh
         pip install -r requirements-dev.txt
         ```
