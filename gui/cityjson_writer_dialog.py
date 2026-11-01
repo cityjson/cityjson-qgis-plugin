@@ -26,6 +26,7 @@ import os
 
 from PyQt5 import uic
 from PyQt5 import QtWidgets
+from qgis.gui import QgsFileWidget
 
 FORM_CLASS, _ = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "cityjson_writer_dialog_base.ui")
@@ -37,28 +38,9 @@ class CityJsonWriterDialog(QtWidgets.QDialog, FORM_CLASS):
         """Constructor."""
         super(CityJsonWriterDialog, self).__init__(parent)
         self.setupUi(self)
+        self.save_file_name.setStorageMode(QgsFileWidget.SaveFile)  # "save as", not "open"
 
     def reset_fields(self):
         """Reset the fields in the dialog."""
-        pass
-        # self.listWidget.clear()
-        # self.cityjsonVersionLineEdit.clear()
-        # self.compressedLineEdit.clear()
-        # self.crsLineEdit.clear()
-
-        # # Clear metadata box
-        # self.metadataTreeView.setModel(None)
-
-        #  # Reset checkboxes and disable them
-        # self.inheritParentAttributesCheckBox.setChecked(False)
-        # self.splitByTypeCheckBox.setChecked(False)
-        # self.semanticsLoadingCheckBox.setChecked(False)
-        # self.semanticSurfacesStylingCheckBox.setChecked(False)
-        # self.inheritParentAttributesCheckBox.setEnabled(False)
-        # self.splitByTypeCheckBox.setEnabled(False)
-        # self.semanticsLoadingCheckBox.setEnabled(False)
-        # self.semanticSurfacesStylingCheckBox.setEnabled(False)
-
-        # # Reset Lod checkboxes
-        # self.loDLoadingComboBox.setCurrentIndex(0)
-        # self.loDSelectionComboBox.setCurrentIndex(0)
+        self.layer_select.clear()
+        self.save_file_name.setFilePath("")

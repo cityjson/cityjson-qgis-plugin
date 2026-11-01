@@ -28,7 +28,7 @@ import json
 import os.path
 from typing import Any, Callable
 
-from qgis.core import QgsApplication, QgsCoordinateReferenceSystem
+from qgis.core import QgsApplication, QgsCoordinateReferenceSystem, QgsProject
 from qgis.gui import QgisInterface, QgsProjectionSelectionDialog
 from qgis.PyQt.QtCore import (
     QCoreApplication,
@@ -46,7 +46,8 @@ from qgis.PyQt.QtWidgets import (
     QShortcut,
 )
 
-from .core.helpers.treemodel import MetadataModel
+from .core.exporting import CityJSONExporter, read_provenance, save_cityjson_model
+from .core.helpers.treemodel import MetadataModel                            
 from .core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
 from .core.styling import is_rule_based_3d_styling_available
 from .gui.cityjson_loader_dialog import CityJsonLoaderDialog
@@ -83,6 +84,7 @@ class CityJsonLoader:
 
         # Create the dialog (after translation) and keep reference
         self.dlg_wrt = CityJsonWriterDialog()
+        self.dlg_wrt.convert.clicked.connect(self.export_cityjson)
 
         # Declare instance attributes
         self.actions: list[QAction] = []
@@ -442,8 +444,49 @@ class CityJsonLoader:
         QgsApplication.processingRegistry().removeProvider(self.provider)
 
     def write(self):
+        """Opens the export dialog, listing one entry per loaded CityJSON file."""
         self.dlg_wrt.reset_fields()
+        sources = {}
+        for layer in QgsProject.instance().mapLayers().values():
+            load_id = layer.customProperty("cityjson/load_id")
+            if load_id:
+                sources[load_id] = layer.customProperty("cityjson/source")
+        for load_id, source in sources.items():
+            self.dlg_wrt.layer_select.addItem(os.path.basename(source), load_id)
         self.dlg_wrt.show()
+
+    def export_cityjson(self):
+        """Exports all layers of the selected load back to CityJSON."""
+        load_id = self.dlg_wrt.layer_select.currentData()
+        output = self.dlg_wrt.save_file_name.filePath()
+        if not load_id or not output:
+            self.iface.messageBar().pushWarning("CityJSON export", "Pick a loaded file and a save path.")
+            return
+
+        layers = [
+            layer for layer in QgsProject.instance().mapLayers().values()
+            if layer.customProperty("cityjson/load_id") == load_id
+        ]
+        try:
+            group = next(iter(read_provenance(layers).values()))
+            if os.path.normcase(os.path.abspath(output)) == os.path.normcase(group["source"]):
+                raise ValueError("Choose a different file: this would overwrite the source.")
+            if group["keep_parent_attributes"]:
+                raise ValueError("Export doesn't support 'inherit parent attributes'. Load the file again without it.")
+            original = load_cityjson_model(group["source"])
+            exported = CityJSONExporter(
+                layers,
+                citymodel=original,
+                loaded_lod=group["lod"],
+                semantic_surfaces=group["semantic_surfaces"],
+            ).export()
+            save_cityjson_model(exported, output)
+        except (ValueError, OSError) as e:
+            self.iface.messageBar().pushCritical("CityJSON export", str(e))
+            return
+
+        self.iface.messageBar().pushSuccess("CityJSON export", f"Saved {output}")
+        self.dlg_wrt.close()
 
     def run(self) -> None:
         """Run method that performs all the real work"""
