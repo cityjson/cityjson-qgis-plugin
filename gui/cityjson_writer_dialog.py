@@ -38,13 +38,19 @@ class CityJsonWriterDialog(QtWidgets.QDialog, FORM_CLASS):
         """Constructor."""
         super(CityJsonWriterDialog, self).__init__(parent)
         self.setupUi(self)
-        self.save_file_name.setStorageMode(QgsFileWidget.SaveFile)  # "save as", not "open"
+        self.save_file_name.setStorageMode(
+            QgsFileWidget.SaveFile
+        )  # "save as", not "open"
         self.extent = QgsExtentWidget(self, QgsExtentWidget.CondensedStyle)
         self.extent.setNullValueAllowed(True, "Whole file")
-        self.extent.toggleDialogVisibility.connect(self.setVisible)  # hide dialog while drawing on map
-        self.verticalLayout_2.addWidget(QtWidgets.QLabel("Only export objects inside (optional):"))
+        self.extent.toggleDialogVisibility.connect(
+            self.setVisible
+        )  # hide dialog while drawing on map
+        self.verticalLayout_2.addWidget(
+            QtWidgets.QLabel("Only export objects inside (optional):")
+        )
         self.verticalLayout_2.addWidget(self.extent)
-    
+
     def reset_fields(self):
         """Reset the fields in the dialog."""
         self.layer_select.clear()

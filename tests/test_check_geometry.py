@@ -11,7 +11,12 @@ def test_flat_square_points_up():
 
 
 def test_rd_square_points_up():
-    ring = [(85000, 446000, 0), (85001, 446000, 0), (85001, 446001, 0), (85000, 446001, 0)]
+    ring = [
+        (85000, 446000, 0),
+        (85001, 446000, 0),
+        (85001, 446001, 0),
+        (85000, 446001, 0),
+    ]
     assert check_geometry.newell_normal(ring) == pytest.approx((0, 0, 2))
 
 
@@ -44,14 +49,18 @@ def test_wall_is_planar():
 
 
 def test_rd_square_is_planar():
-    face = [[(85000, 446000, 0), (85001, 446000, 0), (85001, 446001, 0), (85000, 446001, 0)]]
+    face = [
+        [(85000, 446000, 0), (85001, 446000, 0), (85001, 446001, 0), (85000, 446001, 0)]
+    ]
     assert check_geometry.planarity_deviation(face) == pytest.approx(0, abs=1e-9)
 
 
 def test_hole_off_plane_is_not_planar():
     outer = [(0, 0, 0), (4, 0, 0), (4, 4, 0), (0, 4, 0)]
     hole = [(1, 1, 0.05), (1, 3, 0.05), (3, 3, 0.05), (3, 1, 0.05)]
-    assert check_geometry.planarity_deviation([outer, hole]) == pytest.approx(0.05, abs=1e-4)
+    assert check_geometry.planarity_deviation([outer, hole]) == pytest.approx(
+        0.05, abs=1e-4
+    )
 
 
 def test_collinear_face_returns_none():
@@ -143,19 +152,35 @@ def _tiny_citymodel():
         "type": "CityJSON",
         "version": "2.0",
         "transform": {"scale": [0.001, 0.001, 0.001], "translate": [85000, 446000, 0]},
-        "vertices": [[0, 0, 0], [1000, 0, 0], [1000, 1000, 0], [0, 1000, 0], [0, 0, 1000]],
+        "vertices": [
+            [0, 0, 0],
+            [1000, 0, 0],
+            [1000, 1000, 0],
+            [0, 1000, 0],
+            [0, 0, 1000],
+        ],
         "CityObjects": {
             "flat": {
                 "type": "Building",
-                "geometry": [{"type": "MultiSurface", "lod": "1", "boundaries": [[[0, 1, 2, 3]]]}],
+                "geometry": [
+                    {"type": "MultiSurface", "lod": "1", "boundaries": [[[0, 1, 2, 3]]]}
+                ],
             },
             "box": {
                 "type": "Building",
-                "geometry": [{"type": "Solid", "lod": "2", "boundaries": [[[[0, 1, 2, 3]], [[0, 1, 4]]]]}],
+                "geometry": [
+                    {
+                        "type": "Solid",
+                        "lod": "2",
+                        "boundaries": [[[[0, 1, 2, 3]], [[0, 1, 4]]]],
+                    }
+                ],
             },
             "line": {
                 "type": "Road",
-                "geometry": [{"type": "MultiLineString", "lod": "1", "boundaries": [[0, 1]]}],
+                "geometry": [
+                    {"type": "MultiLineString", "lod": "1", "boundaries": [[0, 1]]}
+                ],
             },
         },
     }
@@ -163,7 +188,11 @@ def _tiny_citymodel():
 
 def test_faces_from_cityjson_finds_every_face():
     tagged = check_geometry.faces_from_cityjson(_tiny_citymodel())
-    assert [(t["id"], t["face"]) for t, _ in tagged] == [("flat", 0), ("box", 0), ("box", 1)]
+    assert [(t["id"], t["face"]) for t, _ in tagged] == [
+        ("flat", 0),
+        ("box", 0),
+        ("box", 1),
+    ]
 
 
 def test_faces_from_cityjson_decodes_coordinates():

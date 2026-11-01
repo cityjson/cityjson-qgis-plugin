@@ -10,7 +10,7 @@ each face flows through it like this:
    ring = list of (x, y, z) corners, first corner not repeated
    face = list of rings, outer ring first, then holes
 
-   
+
 # Context
 
 ## for multisurface
@@ -24,7 +24,7 @@ CityJSON file
                 │   └── ring 1       = hole (optional)
                 └── face 1
                     └── ring 0
-   
+
 ## a building wigth 2 faces
 "boundaries": [
   [ [0, 1, 2, 3], [4, 5, 6, 7] ],     ← face 0: outer ring + hole
@@ -68,10 +68,17 @@ TOUCH_TOL = 1e-6
 SWEEP_TOLS = (0.001, 0.01, 0.05)
 
 # Only these geometry types are made of faces.
-SURFACE_TYPES = {"MultiSurface", "CompositeSurface", "Solid", "MultiSolid", "CompositeSolid"}
+SURFACE_TYPES = {
+    "MultiSurface",
+    "CompositeSurface",
+    "Solid",
+    "MultiSolid",
+    "CompositeSolid",
+}
 
 
 # Plain maths
+
 
 def centroid(ring):
     """Average corner of a ring."""
@@ -149,7 +156,9 @@ def planarity_deviation(face):
     max_d = 0
     for ring in face:  # outer ring + any holes
         for p in ring:  # every corner of that ring
-            d = abs(ux * (p[0] - cx) + uy * (p[1] - cy) + uz * (p[2] - cz))  # dot product
+            d = abs(
+                ux * (p[0] - cx) + uy * (p[1] - cy) + uz * (p[2] - cz)
+            )  # dot product
             if d > max_d:
                 max_d = d  # keep the biggest distance
 
@@ -274,7 +283,12 @@ def _edges_touch(a, b, c, d):
     They touch when an end of one edge lies on the other edge.
     This also catches two edges meeting at one shared corner (a "pinch").
     """
-    return _point_on_edge(c, a, b) or _point_on_edge(d, a, b) or _point_on_edge(a, c, d) or _point_on_edge(b, c, d)
+    return (
+        _point_on_edge(c, a, b)
+        or _point_on_edge(d, a, b)
+        or _point_on_edge(a, c, d)
+        or _point_on_edge(b, c, d)
+    )
 
 
 def is_self_intersecting(face):
@@ -325,6 +339,7 @@ def is_self_intersecting(face):
 
 # Checker: runs the three tests on a face, or on many faces.
 
+
 def check_face(face, tol=PLANARITY_TOL):
     """Runs planarity_deviation(), is_degenerate(), is_self_intersecting().
 
@@ -368,7 +383,11 @@ def check_faces(tagged_faces, tol=PLANARITY_TOL):
 
 def print_report(results, tol=PLANARITY_TOL):
     """Prints every face with a problem, then a summary with counts."""
-    problems = [r for r in results if r["non_planar"] or r["degenerate"] or r["self_intersecting"]]
+    problems = [
+        r
+        for r in results
+        if r["non_planar"] or r["degenerate"] or r["self_intersecting"]
+    ]
 
     print(f"Checked {len(results)} faces, tolerance {tol * 100:g} cm")
     print()
@@ -397,7 +416,6 @@ def print_report(results, tol=PLANARITY_TOL):
     deviations = [r["deviation"] for r in results if r["deviation"] is not None]
     if deviations:
         print(f"  worst deviation:   {max(deviations) * 100:.3f} cm")
-
 
 
 # Feeders: turn a CityJSON file or a QGIS layer into tagged faces.
@@ -464,13 +482,20 @@ def faces_from_cityjson(citymodel):
             if geometry.get("type") not in SURFACE_TYPES:
                 continue
 
-            for f, index_face in enumerate(_faces_in_boundaries(geometry["boundaries"])):
+            for f, index_face in enumerate(
+                _faces_in_boundaries(geometry["boundaries"])
+            ):
                 # swap every vertex index for its real corner
                 face = []
                 for index_ring in index_face:
                     face.append([corners[i] for i in index_ring])
 
-                tags = {"id": obj_id, "lod": geometry.get("lod"), "geometry": g, "face": f}
+                tags = {
+                    "id": obj_id,
+                    "lod": geometry.get("lod"),
+                    "geometry": g,
+                    "face": f,
+                }
                 tagged_faces.append((tags, face))
 
     return tagged_faces
@@ -531,7 +556,9 @@ def faces_from_layer(layer):
 
 def main(argv=None):
     """CLI: python scripts/check_geometry.py file.city.json --tol 0.01, prints the report."""
-    parser = argparse.ArgumentParser(description="Report non-planar, degenerate and self-intersecting faces.")
+    parser = argparse.ArgumentParser(
+        description="Report non-planar, degenerate and self-intersecting faces."
+    )
     parser.add_argument("path", help="CityJSON file to check")
     parser.add_argument(
         "--tol",

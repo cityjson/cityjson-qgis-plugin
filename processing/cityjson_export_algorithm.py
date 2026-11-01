@@ -229,11 +229,12 @@ class CityJsonExportAlgorithm(QgsProcessingAlgorithm):
             lod = [self.LODSELECTIONTYPES[idx] for idx in lod_selection]
             feedback.pushInfo("Exporting multiple LoDs: {}".format(", ".join(lod)))
 
-        
         # Load the original model
         feedback.setProgressText("Loading original CityJSON...")
         citymodel = load_cityjson_model(filepath)
-        feedback.pushInfo("Original has {} objects.".format(len(citymodel["CityObjects"])))
+        feedback.pushInfo(
+            "Original has {} objects.".format(len(citymodel["CityObjects"]))
+        )
 
         # Export
         feedback.setProgressText("Exporting...")

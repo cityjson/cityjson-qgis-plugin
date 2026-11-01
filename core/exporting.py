@@ -4,21 +4,38 @@ import json
 import copy
 from . import subset
 from .layers import _stringify_attribute
-from .geometry import GeometryReader, VerticesCache, read_boundaries, DEFAULT_SCALE, DEFAULT_TRANSLATE
+from .geometry import (
+    GeometryReader,
+    VerticesCache,
+    read_boundaries,
+    DEFAULT_SCALE,
+    DEFAULT_TRANSLATE,
+)
 from .utils import createCityJSON, get_centroid
+
 
 class CityJSONExporter:
     """Rebuilds a CityJSON model from QGIS layers."""
 
-    def __init__(self, layers, citymodel=None, loaded_lod="All", keep_unloaded=True, semantic_surfaces=False, bbox=None):
+    def __init__(
+        self,
+        layers,
+        citymodel=None,
+        loaded_lod="All",
+        keep_unloaded=True,
+        semantic_surfaces=False,
+        bbox=None,
+    ):
         self.layers = layers
         self.citymodel = citymodel
-        self.loaded_lod = loaded_lod # tells the exporter which lod was loaded in qgis
+        self.loaded_lod = loaded_lod  # tells the exporter which lod was loaded in qgis
         self.keep_unloaded = keep_unloaded  # what should happen to never loaded things, users decision (keep: default or False : drop)
-        self.semantic_surfaces = semantic_surfaces # true if surfaces were loaded as separate rows (one row per face)
-        self.bbox = bbox  # [xmin, ymin, xmax, ymax] in the model's CRS; None = everything
+        self.semantic_surfaces = semantic_surfaces  # true if surfaces were loaded as separate rows (one row per face)
+        self.bbox = (
+            bbox  # [xmin, ymin, xmax, ymax] in the model's CRS; None = everything
+        )
 
-    def export(self) -> dict: # returns a dictionary representing the CityJSON model
+    def export(self) -> dict:  # returns a dictionary representing the CityJSON model
         """
         Export the configured layers as a CityJSON model dictionary.
         1. Create a new CityJSON model with the same version and transform as the original.
@@ -30,15 +47,15 @@ class CityJSONExporter:
         """
 
         new_cm = createCityJSON()
-        new_cm["version"] = self.citymodel["version"] # copy version
-        if "transform" in self.citymodel: # copy transform if it exists
+        new_cm["version"] = self.citymodel["version"]  # copy version
+        if "transform" in self.citymodel:  # copy transform if it exists
             new_cm["transform"] = self.citymodel["transform"]
 
         surviving_ids = self.get_surviving_ids()
         if self.bbox is not None:  # crop to the box
             surviving_ids = self._in_bbox(surviving_ids)
         counts = self._count_rows()
-        if self.semantic_surfaces: # refuse partial surface deletes
+        if self.semantic_surfaces:  # refuse partial surface deletes
             self._check_surface_rows(counts)
         # X10
         edited = self._edited_uids()  # refuse geometry edits (X10)
@@ -50,72 +67,96 @@ class CityJSONExporter:
             )
         # x10 end
 
-        has_lod_rows = False # assume no lod column
+        has_lod_rows = False  # assume no lod column
         for _uid, lod in counts:
             if lod is not None:
                 has_lod_rows = True
                 break
 
-
-        for uid in self.citymodel["CityObjects"]: # copy the CityObject to the new model, if it exists in the surviving IDs
+        for uid in self.citymodel[
+            "CityObjects"
+        ]:  # copy the CityObject to the new model, if it exists in the surviving IDs
             if uid in surviving_ids:
-                new_cm["CityObjects"][uid] = copy.deepcopy(self.citymodel["CityObjects"][uid]) # copy the CityObject to the new model
+                new_cm["CityObjects"][uid] = copy.deepcopy(
+                    self.citymodel["CityObjects"][uid]
+                )  # copy the CityObject to the new model
 
         # if the user decides to drop the unloaded lods get rid of them:
-        if not self.keep_unloaded: # if keep_unloaded is false then enters in this loop
-            reader = GeometryReader(VerticesCache(), self.citymodel.get("geometry-templates"), lod=self.loaded_lod) # builds the lod checker
-            
-            for obj in new_cm["CityObjects"].values(): # each object
-                kept=[]
-                for geom in obj.get("geometry", []): # each geometry of this object (g1,g2; g1 = {"type": "MultiSurface", "lod": "1", "boundaries": [...]},  # LoD1 cube)
-                    if reader.has_lod([geom], self.loaded_lod): # is this the loaded lod?
+        if not self.keep_unloaded:  # if keep_unloaded is false then enters in this loop
+            reader = GeometryReader(
+                VerticesCache(),
+                self.citymodel.get("geometry-templates"),
+                lod=self.loaded_lod,
+            )  # builds the lod checker
+
+            for obj in new_cm["CityObjects"].values():  # each object
+                kept = []
+                for geom in obj.get(
+                    "geometry", []
+                ):  # each geometry of this object (g1,g2; g1 = {"type": "MultiSurface", "lod": "1", "boundaries": [...]},  # LoD1 cube)
+                    if reader.has_lod(
+                        [geom], self.loaded_lod
+                    ):  # is this the loaded lod?
                         kept.append(geom)
-                if "geometry" in obj: # handles geometry less objects such as CityObjectGroup
-                    obj["geometry"] = kept # replace with only the loaded-LoD geometries
+                if (
+                    "geometry" in obj
+                ):  # handles geometry less objects such as CityObjectGroup
+                    obj["geometry"] = (
+                        kept  # replace with only the loaded-LoD geometries
+                    )
 
         # drop geometry entries whose lod row was deleted in qgis; the object survives if any row survives
         if has_lod_rows:
-            reader = GeometryReader(VerticesCache(), self.citymodel.get("geometry-templates"), lod=self.loaded_lod)
-            for uid, obj in new_cm["CityObjects"].items(): # each surviving object
+            reader = GeometryReader(
+                VerticesCache(),
+                self.citymodel.get("geometry-templates"),
+                lod=self.loaded_lod,
+            )
+            for uid, obj in new_cm["CityObjects"].items():  # each surviving object
                 kept = []
-                for geom in obj.get("geometry", []): # each geometry of this object
-                    was_loaded = reader.has_lod([geom], self.loaded_lod) # was it shown in qgis?
-                    lod = str(reader.get_lod(geom)) # e.g. "2"
+                for geom in obj.get("geometry", []):  # each geometry of this object
+                    was_loaded = reader.has_lod(
+                        [geom], self.loaded_lod
+                    )  # was it shown in qgis?
+                    lod = str(reader.get_lod(geom))  # e.g. "2"
                     if not was_loaded:
-                        kept.append(geom) # never loaded: keep
+                        kept.append(geom)  # never loaded: keep
                     elif (uid, lod) in counts:
-                        kept.append(geom) # row still exists: keep
+                        kept.append(geom)  # row still exists: keep
                     # else: row deleted, drop
                 if "geometry" in obj:
                     obj["geometry"] = kept
 
-
         # apply the attribute edits to the copied model, so that the new model has the same attributes as the original model, except for the edits made in QGIS
         self.apply_attribute_edits(new_cm)
 
-
         # rebuild the vertices array from the surviving CityObjects, and update array indices
         subset.process_geometry(self.citymodel, new_cm)
-        if "appearance" in self.citymodel: # copy appearance if it exists
+        if "appearance" in self.citymodel:  # copy appearance if it exists
             subset.process_appearance(self.citymodel, new_cm)
-        if "metadata" in self.citymodel: # copy metadata if it exists
+        if "metadata" in self.citymodel:  # copy metadata if it exists
             new_cm["metadata"] = self.citymodel["metadata"]
-        if "geometry-templates" in self.citymodel: # copy geometry-templates if it exists
+        if (
+            "geometry-templates" in self.citymodel
+        ):  # copy geometry-templates if it exists
             subset.process_templates(self.citymodel, new_cm)
         # prune dangling children from the new model
         self.prune_dangling_children(new_cm, surviving_ids)
         return new_cm
 
-
-    def _count_rows(self): # "_" at the start of function is python convention for this method is only used inside this class
-        counts = {} # {(uid, lod): number of rows}.
+    def _count_rows(
+        self,
+    ):  # "_" at the start of function is python convention for this method is only used inside this class
+        counts = {}  # {(uid, lod): number of rows}.
         for layer in self.layers:
-            has_lod = "lod" in layer.fields().names() # checks if lod column exists
+            has_lod = "lod" in layer.fields().names()  # checks if lod column exists
             for feature in layer.getFeatures():
-                uid = feature["uid"] # uid of this row
+                uid = feature["uid"]  # uid of this row
                 lod = feature["lod"] if has_lod else None
                 key = (uid, lod)
-                if key in counts: # count rows per (uid, lod); one object can have several rows
+                if (
+                    key in counts
+                ):  # count rows per (uid, lod); one object can have several rows
                     counts[key] = counts[key] + 1
                 else:
                     counts[key] = 1
@@ -123,25 +164,33 @@ class CityJSONExporter:
 
     def _count_faces(self, geom):
         """Number of faces (polygons) in one geometry."""
-        if geom["type"] == "GeometryInstance": # faces live in the template
+        if geom["type"] == "GeometryInstance":  # faces live in the template
             geom = self.citymodel["geometry-templates"]["templates"][geom["template"]]
-        polygons, _semantics = read_boundaries(geom["boundaries"], None, None) # none, none = dont look up semantics, only count
+        polygons, _semantics = read_boundaries(
+            geom["boundaries"], None, None
+        )  # none, none = dont look up semantics, only count
         return len(polygons)
 
     def _check_surface_rows(self, counts):
         """Raise if some, but not all, surface rows of an object were deleted."""
-        reader = GeometryReader(VerticesCache(), self.citymodel.get("geometry-templates"), lod=self.loaded_lod)
+        reader = GeometryReader(
+            VerticesCache(),
+            self.citymodel.get("geometry-templates"),
+            lod=self.loaded_lod,
+        )
         for (uid, lod), rows in counts.items():
             obj = self.citymodel["CityObjects"][uid]
             faces = 0
 
             for geom in obj.get("geometry", []):
                 if not reader.has_lod([geom], self.loaded_lod):
-                    continue # not loaded in qgis
+                    continue  # not loaded in qgis
                 if lod is not None and str(reader.get_lod(geom)) != lod:
-                    continue # belongs to another lod's rows
+                    continue  # belongs to another lod's rows
                 faces += self._count_faces(geom)
-            expected = faces if faces > 1 else 1 # loader makes one row when there's only one face
+            expected = (
+                faces if faces > 1 else 1
+            )  # loader makes one row when there's only one face
             if rows < expected:
                 raise ValueError(
                     f"{uid}: {rows} of {expected} surface rows left; deleting single surfaces is not supported"
@@ -149,26 +198,33 @@ class CityJSONExporter:
 
     def get_surviving_ids(self):
         """Ids that survive export: rows in QGIS, never-loaded objects (if kept), and their parents."""
-        uids = set() # set helps us avoid duplicates
+        uids = set()  # set helps us avoid duplicates
 
         # Part 1: collects objects that has row in qgis
         for uid, lod in self._count_rows():
             uids.add(uid)
 
         # Part 2: add objects that were never loaded
-        reader = GeometryReader(VerticesCache(), self.citymodel.get("geometry-templates"), lod=self.loaded_lod)
+        reader = GeometryReader(
+            VerticesCache(),
+            self.citymodel.get("geometry-templates"),
+            lod=self.loaded_lod,
+        )
         row_uids = set(uids)
         deleted = {  # loaded in QGIS but row gone: the user deleted it
-            uid for uid, obj in self.citymodel["CityObjects"].items()
-            if uid not in row_uids and reader.has_lod(obj.get("geometry", []), self.loaded_lod)
+            uid
+            for uid, obj in self.citymodel["CityObjects"].items()
+            if uid not in row_uids
+            and reader.has_lod(obj.get("geometry", []), self.loaded_lod)
         }
         for uid, obj in self.citymodel["CityObjects"].items():
-            if self.keep_unloaded and not reader.has_lod(obj.get("geometry", []), self.loaded_lod):
+            if self.keep_unloaded and not reader.has_lod(
+                obj.get("geometry", []), self.loaded_lod
+            ):
                 children = obj.get("children", [])
                 if children and all(c in deleted for c in children):
                     continue  # never shown, and everything it contained was deleted: drop it too
                 uids.add(uid)
-        
 
         # a surviving child with a deleted parent is a dangling reference; a deleted child creates no such problem, so it stays deleted.
         # walk up every level: a resurrected parent may have deleted parents of its own
@@ -198,12 +254,13 @@ class CityJSONExporter:
                     inside.add(rel)
         return inside
 
-
     def prune_dangling_children(self, citymodel, surviving_ids):
         """Remove any CityObjects children from the parent parts"""
         for obj in citymodel["CityObjects"].values():
             if "children" in obj:
-                obj["children"] = [child for child in obj["children"] if child in surviving_ids]
+                obj["children"] = [
+                    child for child in obj["children"] if child in surviving_ids
+                ]
                 if not obj["children"]:
                     del obj["children"]
 
@@ -212,12 +269,20 @@ class CityJSONExporter:
         for layer in self.layers:
             for feature in layer.getFeatures():
                 uid = feature["uid"]
-                if uid in new_cm["CityObjects"]:       # is the key there? True/False, never crashes
-                    obj = new_cm["CityObjects"][uid]   # only runs if it is, so it's safe
+                if (
+                    uid in new_cm["CityObjects"]
+                ):  # is the key there? True/False, never crashes
+                    obj = new_cm["CityObjects"][uid]  # only runs if it is, so it's safe
                     for i in layer.fields():
-                        if i.name().startswith("attribute."): # only consider fields that start with "attribute."
-                            old_attribute_value = obj.get("attributes", {}).get(i.name()[10:], None)
-                            expected_values_for_old_attribute = _stringify_attribute(old_attribute_value)
+                        if i.name().startswith(
+                            "attribute."
+                        ):  # only consider fields that start with "attribute."
+                            old_attribute_value = obj.get("attributes", {}).get(
+                                i.name()[10:], None
+                            )
+                            expected_values_for_old_attribute = _stringify_attribute(
+                                old_attribute_value
+                            )
                             new_attribute_value = feature[i.name()]
                             if new_attribute_value != expected_values_for_old_attribute:
                                 if isinstance(old_attribute_value, (dict, list)):
@@ -227,9 +292,13 @@ class CityJSONExporter:
                                         raise ValueError(
                                             f"{uid}: attribute '{i.name()[10:]}' is not valid JSON: {new_attribute_value}"
                                         ) from exc
-                                    obj.setdefault("attributes", {})[i.name()[10:]] = parsed
+                                    obj.setdefault("attributes", {})[i.name()[10:]] = (
+                                        parsed
+                                    )
                                 else:
-                                    obj.setdefault("attributes", {})[i.name()[10:]] = new_attribute_value
+                                    obj.setdefault("attributes", {})[i.name()[10:]] = (
+                                        new_attribute_value
+                                    )
 
     # X10
 
@@ -270,7 +339,9 @@ class CityJSONExporter:
 
             rings = []
             for r in qgis_rings:  # closing corner kept: both sides have it
-                rings.append([(r.xAt(j), r.yAt(j), r.zAt(j)) for j in range(r.numPoints())])
+                rings.append(
+                    [(r.xAt(j), r.yAt(j), r.zAt(j)) for j in range(r.numPoints())]
+                )
             parts.append(rings)
         return parts
 
@@ -292,7 +363,6 @@ class CityJSONExporter:
                         if not abs(pa[i] - pb[i]) <= self._scale[i] / 2:  # corner moved
                             return False
         return True
-
 
     def _group_rows(self):
         """QGIS rows per building: {(uid, lod): [geometry, ...]} in file order."""
@@ -340,6 +410,7 @@ class CityJSONExporter:
                     break
         return sorted(set(edited))  # one name per building, even with several LoD rows
 
+
 def read_provenance(layers):
     """Group stamped layers by load_id and read their load settings back."""
     groups = {}
@@ -347,13 +418,20 @@ def read_provenance(layers):
         load_id = layer.customProperty("cityjson/load_id")
         if not load_id:
             continue  # not loaded by this plugin
-        group = groups.setdefault(load_id, {
-            "source": layer.customProperty("cityjson/source"),
-            "lod": json.loads(layer.customProperty("cityjson/lod")),
-            "semantic_surfaces": json.loads(layer.customProperty("cityjson/semantic_surfaces")),
-            "keep_parent_attributes": json.loads(layer.customProperty("cityjson/keep_parent_attributes")),
-            "layers": [],
-        })
+        group = groups.setdefault(
+            load_id,
+            {
+                "source": layer.customProperty("cityjson/source"),
+                "lod": json.loads(layer.customProperty("cityjson/lod")),
+                "semantic_surfaces": json.loads(
+                    layer.customProperty("cityjson/semantic_surfaces")
+                ),
+                "keep_parent_attributes": json.loads(
+                    layer.customProperty("cityjson/keep_parent_attributes")
+                ),
+                "layers": [],
+            },
+        )
         group["layers"].append(layer)
 
     for group in groups.values():

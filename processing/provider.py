@@ -36,6 +36,7 @@ from qgis.PyQt.QtGui import QIcon
 from .cityjson_load_algorithm import CityJsonLoadAlgorithm
 from .cityjson_export_algorithm import CityJsonExportAlgorithm
 
+
 class Provider(QgsProcessingProvider):
     def loadAlgorithms(self, *args: Any, **kwargs: Any) -> None:
         self.addAlgorithm(CityJsonLoadAlgorithm())

@@ -37,13 +37,21 @@ def test_algorithm_creation():
     instance = algorithm.createInstance()
     assert isinstance(instance, CityJsonExportAlgorithm)
 
+
 def test_init_algorithm(algorithm):
     """Test parameter initialization."""
     algorithm.initAlgorithm()
     param_names = [p.name() for p in algorithm.parameterDefinitions()]
-    for name in ["LAYERS", "INPUT", "LOD_SELECTION", "KEEP_UNLOADED",
-                 "SEMANTIC_SURFACES", "OUTPUT"]:
+    for name in [
+        "LAYERS",
+        "INPUT",
+        "LOD_SELECTION",
+        "KEEP_UNLOADED",
+        "SEMANTIC_SURFACES",
+        "OUTPUT",
+    ]:
         assert name in param_names
+
 
 def test_process_algorithm_invalid_file(algorithm):
     """Missing source file raises."""
@@ -59,8 +67,10 @@ def test_process_algorithm_invalid_file(algorithm):
 
 def _patched(algorithm, lod=[], keep=True, semantic=False):
     """Patch every parameterAs... so processAlgorithm runs without real QGIS inputs."""
+
     def as_bool(params, key, ctx):
         return keep if key == "KEEP_UNLOADED" else semantic
+
     return (
         patch.object(algorithm, "parameterAsFile", return_value="/in.json"),
         patch.object(algorithm, "parameterAsLayerList", return_value=["layer"]),
@@ -73,7 +83,9 @@ def _patched(algorithm, lod=[], keep=True, semantic=False):
 @patch("processing.cityjson_export_algorithm.save_cityjson_model")
 @patch("processing.cityjson_export_algorithm.CityJSONExporter")
 @patch("processing.cityjson_export_algorithm.load_cityjson_model")
-def test_process_algorithm_passes_kwargs(mock_load, mock_exporter, mock_save, algorithm):
+def test_process_algorithm_passes_kwargs(
+    mock_load, mock_exporter, mock_save, algorithm
+):
     """Inputs reach CityJSONExporter and the result is saved."""
     mock_load.return_value = {"CityObjects": {"a": {}, "b": {}}}
     mock_exporter.return_value.export.return_value = {"CityObjects": {"a": {}}}
@@ -86,7 +98,11 @@ def test_process_algorithm_passes_kwargs(mock_load, mock_exporter, mock_save, al
 
     args, kwargs = mock_exporter.call_args
     assert args == (["layer"], mock_load.return_value)
-    assert kwargs == {"loaded_lod": "2.0", "keep_unloaded": False, "semantic_surfaces": True}
+    assert kwargs == {
+        "loaded_lod": "2.0",
+        "keep_unloaded": False,
+        "semantic_surfaces": True,
+    }
     mock_save.assert_called_once_with({"CityObjects": {"a": {}}}, "/out.json")
     assert result == {"OUTPUT": "/out.json"}
 
@@ -107,6 +123,7 @@ def test_process_algorithm_export_error(mock_load, mock_exporter, mock_save, alg
             algorithm.processAlgorithm({}, context, feedback)
 
     mock_save.assert_not_called()
+
 
 def test_export_algorithm_end_to_end(qgis_app, tmp_path, algorithm):
     """Load, delete a building, run the real algorithm, reload the output."""
@@ -156,7 +173,10 @@ def test_process_algorithm_refuses_overwriting_source(algorithm):
     feedback = MagicMock(spec=QgsProcessingFeedback)
     p = _patched(algorithm)
     with (
-        p[0], p[1], p[2], p[3],
+        p[0],
+        p[1],
+        p[2],
+        p[3],
         patch.object(algorithm, "parameterAsFileOutput", return_value="/in.json"),
         patch("processing.cityjson_export_algorithm.load_cityjson_model") as mock_load,
     ):

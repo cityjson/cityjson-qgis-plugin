@@ -462,19 +462,28 @@ class CityJsonLoader:
         load_id = self.dlg_wrt.layer_select.currentData()
         output = self.dlg_wrt.save_file_name.filePath()
         if not load_id or not output:
-            self.iface.messageBar().pushWarning("CityJSON export", "Pick a loaded file and a save path.")
+            self.iface.messageBar().pushWarning(
+                "CityJSON export", "Pick a loaded file and a save path."
+            )
             return
 
         layers = [
-            layer for layer in QgsProject.instance().mapLayers().values()
+            layer
+            for layer in QgsProject.instance().mapLayers().values()
             if layer.customProperty("cityjson/load_id") == load_id
         ]
         try:
             group = next(iter(read_provenance(layers).values()))
-            if os.path.normcase(os.path.abspath(output)) == os.path.normcase(group["source"]):
-                raise ValueError("Choose a different file: this would overwrite the source.")
+            if os.path.normcase(os.path.abspath(output)) == os.path.normcase(
+                group["source"]
+            ):
+                raise ValueError(
+                    "Choose a different file: this would overwrite the source."
+                )
             if group["keep_parent_attributes"]:
-                raise ValueError("Export doesn't support 'inherit parent attributes'. Load the file again without it.")
+                raise ValueError(
+                    "Export doesn't support 'inherit parent attributes'. Load the file again without it."
+                )
             bbox = None
             if self.dlg_wrt.extent.isValid():  # empty = whole file
                 self.dlg_wrt.extent.setOutputCrs(layers[0].crs())
@@ -485,13 +494,15 @@ class CityJsonLoader:
                 layers,
                 citymodel=original,
                 loaded_lod=group["lod"],
-                keep_unloaded=self.dlg_wrt.keep_unloaded.isChecked(),   # NEW
+                keep_unloaded=self.dlg_wrt.keep_unloaded.isChecked(),
                 semantic_surfaces=group["semantic_surfaces"],
                 bbox=bbox,
             ).export()
             save_cityjson_model(exported, output)
 
-            if self.dlg_wrt.reload.isChecked() and exported["CityObjects"]:     # "Add saved file to map"
+            if (
+                self.dlg_wrt.reload.isChecked() and exported["CityObjects"]
+            ):  # "Add saved file to map"
                 new_model = load_cityjson_model(output)
                 CityJSONLoader(
                     output,
