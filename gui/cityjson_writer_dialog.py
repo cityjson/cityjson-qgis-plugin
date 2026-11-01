@@ -44,3 +44,4 @@ class CityJsonWriterDialog(QtWidgets.QDialog, FORM_CLASS):
         """Reset the fields in the dialog."""
         self.layer_select.clear()
         self.save_file_name.setFilePath("")
+        self.keep_unloaded.setChecked(True)

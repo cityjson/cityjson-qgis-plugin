@@ -26,7 +26,7 @@
     <enum>Qt::Horizontal</enum>
    </property>
    <property name="standardButtons">
-    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+    <set>QDialogButtonBox::Close</set>
    </property>
   </widget>
   <widget class="QWidget" name="verticalLayoutWidget_2">
@@ -42,7 +42,7 @@
     <item>
      <widget class="QLabel" name="layer_label">
       <property name="text">
-       <string>Select layer to convert:</string>
+       <string>Select loaded CityJSON file to export:</string>
       </property>
      </widget>
     </item>
@@ -85,7 +85,7 @@
    <property name="geometry">
     <rect>
      <x>40</x>
-     <y>270</y>
+     <y>300</y>
      <width>75</width>
      <height>23</height>
     </rect>
@@ -105,11 +105,27 @@
    </property>
    <layout class="QVBoxLayout" name="iframe_holder"/>
   </widget>
-  <widget class="QCheckBox" name="reload">
+    <widget class="QCheckBox" name="keep_unloaded">
    <property name="geometry">
     <rect>
      <x>40</x>
      <y>250</y>
+     <width>300</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Keep LoDs and objects that weren't loaded</string>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="reload">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>275</y>
      <width>151</width>
      <height>17</height>
     </rect>

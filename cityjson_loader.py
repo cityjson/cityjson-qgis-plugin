@@ -47,7 +47,7 @@ from qgis.PyQt.QtWidgets import (
 )
 
 from .core.exporting import CityJSONExporter, read_provenance, save_cityjson_model
-from .core.helpers.treemodel import MetadataModel                            
+from .core.helpers.treemodel import MetadataModel
 from .core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
 from .core.styling import is_rule_based_3d_styling_available
 from .gui.cityjson_loader_dialog import CityJsonLoaderDialog
@@ -478,9 +478,20 @@ class CityJsonLoader:
                 layers,
                 citymodel=original,
                 loaded_lod=group["lod"],
+                keep_unloaded=self.dlg_wrt.keep_unloaded.isChecked(),   # NEW
                 semantic_surfaces=group["semantic_surfaces"],
             ).export()
             save_cityjson_model(exported, output)
+
+            if self.dlg_wrt.reload.isChecked():     # "Add saved file to map"
+                new_model = load_cityjson_model(output)
+                CityJSONLoader(
+                    output,
+                    new_model,
+                    epsg=get_model_epsg(new_model),
+                    lod=group["lod"],
+                    load_semantic_surfaces=group["semantic_surfaces"],
+                ).load()
         except (ValueError, OSError) as e:
             self.iface.messageBar().pushCritical("CityJSON export", str(e))
             return
