@@ -319,6 +319,31 @@ class CityJSONExporter:
                     break
         return sorted(set(edited))  # one name per building, even with several LoD rows
 
+def read_provenance(layers):
+    """Group stamped layers by load_id and read their load settings back."""
+    groups = {}
+    for layer in layers:
+        load_id = layer.customProperty("cityjson/load_id")
+        if not load_id:
+            continue  # not loaded by this plugin
+        group = groups.setdefault(load_id, {
+            "source": layer.customProperty("cityjson/source"),
+            "lod": json.loads(layer.customProperty("cityjson/lod")),
+            "semantic_surfaces": json.loads(layer.customProperty("cityjson/semantic_surfaces")),
+            "keep_parent_attributes": json.loads(layer.customProperty("cityjson/keep_parent_attributes")),
+            "layers": [],
+        })
+        group["layers"].append(layer)
+
+    for group in groups.values():
+        if sum(layer.featureCount() for layer in group["layers"]) == 0:
+            raise ValueError(
+                f"The layers loaded from {group['source']} are empty. Temporary layers "
+                "lose their contents when a project is reopened. Load the file again."
+            )
+    return groups
+
+
 def save_cityjson_model(citymodel: dict, filepath: str) -> None:
     """Save a CityJSON model dictionary to a file."""
     with open(filepath, "w", encoding="utf-8", buffering=8192) as fstream:

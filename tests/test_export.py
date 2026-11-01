@@ -6,7 +6,8 @@ import pytest
 import copy
 
 from core.loading import CityJSONLoader, load_cityjson_model
-from core.exporting import CityJSONExporter, save_cityjson_model
+from core.exporting import CityJSONExporter, read_provenance, save_cityjson_model
+
 
 def _cube_vertices(dx):
     """Eight cube corners, shifted dx along x"""
@@ -704,3 +705,29 @@ def test_layers_are_stamped_with_provenance(qgis_app):
         assert json.loads(layer.customProperty("cityjson/semantic_surfaces")) is True
         assert json.loads(layer.customProperty("cityjson/keep_parent_attributes")) is False
         assert len(layer.customProperty("cityjson/load_id")) == 32
+
+
+def test_read_provenance_groups_layers(qgis_app):
+    cm = _two_cubes_citymodel()
+    loader = CityJSONLoader(filepath="dummy.city.json", citymodel=cm, lod="1")
+    loader.load()
+    layers = loader.layer_manager.get_all_layers()
+
+    groups = read_provenance(layers)
+
+    assert len(groups) == 1
+    group = next(iter(groups.values()))
+    assert group["source"] == os.path.abspath("dummy.city.json")
+    assert group["lod"] == "1"
+    assert group["layers"] == layers
+
+def test_read_provenance_refuses_empty_layers(qgis_app):
+    cm = _two_cubes_citymodel()
+    loader = CityJSONLoader(filepath="dummy.city.json", citymodel=cm)
+    loader.load()
+    layers = loader.layer_manager.get_all_layers()
+    _delete_all_rows(layers, "building1")
+    _delete_all_rows(layers, "building2")
+
+    with pytest.raises(ValueError, match="empty"):
+        read_provenance(layers)
