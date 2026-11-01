@@ -5,7 +5,7 @@ import copy
 from .utils import createCityJSON
 from . import subset
 from .layers import _stringify_attribute
-from .geometry import GeometryReader, VerticesCache, read_boundaries
+from .geometry import GeometryReader, VerticesCache, read_boundaries, DEFAULT_SCALE, DEFAULT_TRANSLATE
 
 
 class CityJSONExporter:
@@ -38,6 +38,16 @@ class CityJSONExporter:
         counts = self._count_rows()
         if self.semantic_surfaces: # refuse partial surface deletes
             self._check_surface_rows(counts)
+        # X10
+        edited = self._edited_uids()  # refuse geometry edits (X10)
+        if edited:
+            raise ValueError(
+                "Geometry editing isn't supported. Edited in QGIS: "
+                + ", ".join(edited)
+                + ". Discard the geometry edits (Toggle Editing → Discard) and export again."
+            )
+        # x10 end
+
         has_lod_rows = False # assume no lod column
         for _uid, lod in counts:
             if lod is not None:
@@ -191,6 +201,115 @@ class CityJSONExporter:
                                     obj.setdefault("attributes", {})[i.name()[10:]] = parsed
                                 else:
                                     obj.setdefault("attributes", {})[i.name()[10:]] = new_attribute_value
+
+    # X10
+
+    def _reference_reader(self):
+        """Reader that rebuilds geometry with real coordinates, same as import."""
+        if "transform" in self.citymodel:
+            scale = self.citymodel["transform"]["scale"]
+            translate = self.citymodel["transform"]["translate"]
+        else:
+            scale = DEFAULT_SCALE
+            translate = DEFAULT_TRANSLATE
+
+        self._scale = scale  # step 2 needs it for the scale/2 tolerance
+
+        vertices_cache = VerticesCache(scale, translate, self.citymodel["vertices"])
+        return GeometryReader(
+            vertices_cache,
+            self.citymodel.get("geometry-templates"),
+            lod=self.loaded_lod,
+        )
+
+    def _corners(self, geom):
+        """QgsGeometry -> parts -> rings -> (x, y, z) corners, in QGIS order."""
+        if geom is None or geom.isNull() or geom.isEmpty():
+            return []
+
+        shape = geom.constGet()
+        if hasattr(shape, "numGeometries"):  # MultiPolygon: several parts
+            polygons = [shape.geometryN(i) for i in range(shape.numGeometries())]
+        else:  # plain Polygon: one part
+            polygons = [shape]
+
+        parts = []
+        for polygon in polygons:
+            qgis_rings = [polygon.exteriorRing()]
+            for k in range(polygon.numInteriorRings()):
+                qgis_rings.append(polygon.interiorRing(k))
+
+            rings = []
+            for r in qgis_rings:  # closing corner kept: both sides have it
+                rings.append([(r.xAt(j), r.yAt(j), r.zAt(j)) for j in range(r.numPoints())])
+            parts.append(rings)
+        return parts
+
+    def _same_geometry(self, a, b):
+        """True if a and b have the same structure and every corner is within scale/2."""
+        parts_a = self._corners(a)
+        parts_b = self._corners(b)
+
+        if len(parts_a) != len(parts_b):  # face added or deleted
+            return False
+        for rings_a, rings_b in zip(parts_a, parts_b):
+            if len(rings_a) != len(rings_b):  # hole added or deleted
+                return False
+            for ring_a, ring_b in zip(rings_a, rings_b):
+                if len(ring_a) != len(ring_b):  # corner added or deleted
+                    return False
+                for pa, pb in zip(ring_a, ring_b):
+                    for i in range(3):  # x, y, z
+                        if not abs(pa[i] - pb[i]) <= self._scale[i] / 2:  # corner moved
+                            return False
+        return True
+
+
+    def _group_rows(self):
+        """QGIS rows per building: {(uid, lod): [geometry, ...]} in file order."""
+        groups = {}  # {(uid, lod): [(fid, geometry), ...]}
+        for layer in self.layers:
+            has_lod = "lod" in layer.fields().names()  # lod column exists?
+            for feature in layer.getFeatures():
+                key = (feature["uid"], feature["lod"] if has_lod else None)
+                groups.setdefault(key, []).append((feature.id(), feature.geometry()))
+
+        # sort each building's rows by fid = file order, then keep only the geometries
+        return {
+            key: [geom for _fid, geom in sorted(rows, key=lambda row: row[0])]
+            for key, rows in groups.items()
+        }
+
+    def _reference_geoms(self, reader, uid, lod):
+        """File version of one building, same shape as its _group_rows list."""
+        geoms = self.citymodel["CityObjects"][uid].get("geometry", [])
+
+        if lod is not None:  # LoD rows: only this LoD's geometry entries, file order
+            geoms = [g for g in geoms if str(reader.get_lod(g)) == lod]
+
+        if self.semantic_surfaces:  # one row per face → one geometry per face
+            polygons, _semantics = reader.get_polygons(geoms)
+            return [reader.polygons_to_geometry([p]) for p in polygons]
+
+        return [reader.read_geometry(geoms)]  # one row → one geometry
+
+    def _edited_uids(self):
+        """uids whose geometry in QGIS differs from the original file."""
+        reader = self._reference_reader()  # also sets self._scale
+        edited = []
+        for (uid, lod), qgis_geoms in self._group_rows().items():
+            if uid not in self.citymodel["CityObjects"]:  # drawn in QGIS, not in file
+                edited.append(uid)
+                continue
+            file_geoms = self._reference_geoms(reader, uid, lod)
+            if len(qgis_geoms) != len(file_geoms):  # row count differs
+                edited.append(uid)
+                continue
+            for a, b in zip(qgis_geoms, file_geoms):
+                if not self._same_geometry(a, b):
+                    edited.append(uid)
+                    break
+        return sorted(set(edited))  # one name per building, even with several LoD rows
 
 def save_cityjson_model(citymodel: dict, filepath: str) -> None:
     """Save a CityJSON model dictionary to a file."""

@@ -203,6 +203,23 @@ def _delete_all_rows(layers, uid):
     if not found:
         raise AssertionError(f"{uid} not found in any layer")
 
+def _edit_geometry(layers, uid, edit):
+    """Simulate a geometry edit in QGIS: apply edit(geom) to uid's first row."""
+    for layer in layers:
+        for f in layer.getFeatures():
+            if f["uid"] == uid:
+                geom = f.geometry()
+                edit(geom)
+                layer.dataProvider().changeGeometryValues({f.id(): geom})
+                return
+    raise AssertionError(f"{uid} not found in any layer")
+
+def _lift_vertex(geom, dz):
+    """Move vertex 1 up by dz metres (X9 edit 2)."""
+    p = geom.vertexAt(1)
+    p.setZ(p.z() + dz)
+    geom.moveVertex(p, 1)
+
 
 
 def test_fixture_writes_and_reads_back():
@@ -590,3 +607,58 @@ def test_deleting_all_surface_rows_drops_object(qgis_app):
 
     assert "building2" not in out["CityObjects"]
     assert "building1" in out["CityObjects"]
+
+# x10
+def _load_two_cubes():
+    cm = _two_cubes_citymodel()
+    loader = CityJSONLoader(filepath="dummy", citymodel=cm)
+    loader.load()
+    return cm, loader.layer_manager.get_all_layers()
+
+def test_untouched_geometry_exports(qgis_app):
+    cm, layers = _load_two_cubes()
+    out = CityJSONExporter(layers, citymodel=cm).export()
+    assert set(out["CityObjects"]) == {"building1", "building2"}
+
+def test_moved_building_raises(qgis_app):  # X9 edit 1
+    cm, layers = _load_two_cubes()
+    _edit_geometry(layers, "building1", lambda g: g.translate(1, 0, 0))
+    with pytest.raises(ValueError, match="building1"):
+        CityJSONExporter(layers, citymodel=cm).export()
+
+def test_lifted_vertex_raises(qgis_app):  # X9 edit 2
+    cm, layers = _load_two_cubes()
+    _edit_geometry(layers, "building1", lambda g: _lift_vertex(g, 0.01))
+    with pytest.raises(ValueError, match="building1"):
+        CityJSONExporter(layers, citymodel=cm).export()
+
+def test_deleted_vertex_raises(qgis_app):  # X9 edit 3
+    cm, layers = _load_two_cubes()
+    _edit_geometry(layers, "building1", lambda g: g.deleteVertex(1))
+    with pytest.raises(ValueError, match="building1"):
+        CityJSONExporter(layers, citymodel=cm).export()
+
+def test_move_below_half_grid_step_exports(qgis_app):
+    """0.1 mm < scale/2 (0.5 mm): rounds back to the same integer, so not an edit."""
+    cm, layers = _load_two_cubes()
+    _edit_geometry(layers, "building1", lambda g: _lift_vertex(g, 0.0001))
+    out = CityJSONExporter(layers, citymodel=cm).export()
+    assert "building1" in out["CityObjects"]
+
+def test_lifted_vertex_raises_with_lod_rows(qgis_app):
+    cm = _unloaded_lod_citymodel()
+    loader = CityJSONLoader(filepath="dummy", citymodel=cm, lod_as="ATTRIBUTES")
+    loader.load()
+    layers = loader.layer_manager.get_all_layers()
+    _edit_geometry(layers, "house_a", lambda g: _lift_vertex(g, 0.01))
+    with pytest.raises(ValueError, match="house_a"):
+        CityJSONExporter(layers, citymodel=cm).export()
+
+def test_lifted_vertex_raises_with_surface_rows(qgis_app):
+    cm = _fidelity_citymodel()
+    loader = CityJSONLoader(filepath="dummy", citymodel=cm, lod="2", load_semantic_surfaces=True)
+    loader.load()
+    layers = loader.layer_manager.get_all_layers()
+    _edit_geometry(layers, "building1", lambda g: _lift_vertex(g, 0.01))
+    with pytest.raises(ValueError, match="building1"):
+        CityJSONExporter(layers, citymodel=cm, loaded_lod="2", semantic_surfaces=True).export()
