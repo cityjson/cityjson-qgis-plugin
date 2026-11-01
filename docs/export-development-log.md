@@ -1,354 +1,192 @@
-# Export Feature — Development Log
+# Export Feature - Development Log
 
-Decisions and dead ends, newest first. Not a release changelog (`Changelog.md` is that, and
-gets one entry at PR time). Keep entries short — what changed, why, what's blocked.
+Process documentation of CityJSON export feature for the cityjson-qgis-plugin. Newest entries first.
+
+How the feature works today: `docs/export.md`.
+
+**Branch:** `cityjson-export` on `damandogra/cityjson-qgis-plugin`, based on `develop` plus
+Gina's `cityjson-writter` dialog scaffold.
 
 ---
 
-markdown
-## 2026-11-01 — X15 menu export
+## Key decisions
 
-- `read_provenance(layers)`: groups layers by `load_id`, reads stamps back, refuses a group
-  with 0 rows (reopened project). Not in `export()`: a legit all-deleted export returns `{}`.
-- Menu dialog wired: one dropdown entry per loaded file, exports all layers of that
-  `load_id` together; no source/LoD/semantics inputs. Refuses overwriting the source and
-  `keep_parent_attributes` (exporter would copy parent attributes into children).
-- Real tile `10-282-560`, one building deleted: cjval valid, warnings only (duplicate
-  vertices, from the source; same as X14). 318 passed.
-- Dialog finished: keep/drop unloaded checkbox (default keep), "Add saved file to map"
-  (reloads with the same LoD/semantics), single Close button, label says "loaded file".
-- Tile `10-282-560`, LoD 2.2, one building deleted: keep 7.1 MB, drop 4.8 MB, cjval valid
-  (source duplicate-vertex warnings only).
-- Export-side bbox: `CityJSONExporter(bbox=[xmin, ymin, xmax, ymax])` keeps objects whose
-  centroid is in the box (same rule as load-side `get_subset_bbox`) + their parents/children;
-  `prune_dangling_children` cleans the rest. Dialog: `QgsExtentWidget` (draw on canvas /
-  map extent / layer), box in the layer's CRS, empty = whole file. 321 passed.
-- Tile `10-282-560`, box drawn on canvas: 480 KB (vs 7.1 MB full), only boxed buildings
-  reloaded, cjval valid, parents/children clean.
-- Import-side bug for Gina: `CityJSONLoader.load()` divides by `len(city_objects)`, so it
-  crashes on an empty model (all objects deleted + "Add saved file to map").
+| Decision | Why |
+|---|---|
+| **Patch the original instead of rebuilding from the layers** (proposal's Approach 2, without first building Approach 1) | QGIS layers are flat `MultiPolygonZ`. Rebuilding from them loses Solids, semantics, appearances, templates and unloaded LoDs. The import side already had subset code (`core/subset.py`) that copies objects and renumbers vertices, so patching was less work than writing a geometry writer. |
+| **Geometry is read-only**; any geometry edit refuses the export | Measured (28 Oct): every vertex edit in QGIS broke the building, because a shared corner is a separate copy per face. Only a whole-object move was safe, and that has little use for 3D BAG data. |
+| **Deleted vs never loaded** | Loading one LoD hides objects without it. No row means *deleted* only if the object had the loaded LoD; otherwise it was never loaded and is kept (optional drop). |
+| **One object, many rows** | With LoD or surface splitting, an object survives if any LoD row survives. Deleting only some surface rows is refused (it would change topology). |
+| **Stamp each layer with its source and load settings** | The exporter receives layers but needs the original file. Layer names can be renamed; custom properties can't be lost that way. |
+| **One session only** | Measured: stamps survive a project reopen, memory-layer rows don't. Export refuses empty layers. |
+| **Processing algorithm first, menu dialog second** | The algorithm is testable headlessly; the dialog is then a thin wrapper. |
+| **Area filter uses the load-side rule** | Keep whole objects by centroid, never clip polygons, so geometry can't break. |
 
+---
 
-## X14 — export as a Processing algorithm (1 Nov)
-- new `processing/cityjson_export_algorithm.py`, registered in `provider.py`; toolbox: CityJSON Loader → Export → Export CityJSON
-- inputs: layers, original file, loaded LoD(s), keep unloaded, semantic surfaces, output file — user must repeat the load settings (provenance is X15)
-- exporter `ValueError`s re-raised as `QgsProcessingException`; nothing written on failure
-- refuses output path == source path (I overwrote the source tile once)
-- `test_provider_algorithm_properties` took `algorithms[0]`; QGIS doesn't keep insertion order → look up by name
-- tests: metadata, parameters, invalid file, kwargs to exporter, export error, overwrite guard, end-to-end headless run (real context/feedback, no mocks)
+## 2026-11-01 : Minor edits
 
-**Real tile** — `10-282-560` (3D BAG v2025.09.03), LoD 2.2, no semantic surfaces, deleted one building
-- first run 1443 → 1442: only `NL.IMBAG.Pand.0503100000025720-0` (BuildingPart) removed; its parent `Building` (LoD0 only) kept, childless
-- cause: parent has no LoD 2.2 → "never loaded" → kept by `keep_unloaded`
-- fix (`cb22d9a`): a never-loaded parent is dropped when it has children and all were deleted by the user; kept if any child survives or was never loaded. One level only (enough for 3D BAG)
-- after fix 1443 → 1441, parent gone
-- other 1441 objects: attributes and resolved geometry identical; transform, metadata identical; no dangling parents/children
+- PR target is `develop`: upstream has no `development` branch. Fixed the typo in
+  `CONTRIBUTING.md`. CI runs on PRs to `develop`, so the PR will be tested.
+- Output written compactly (`separators=(",", ":")`); it was 10–15% larger than the source.
+- Parent resurrection now walks every level (Building → BuildingPart → Installation).
+- `process_templates` / `process_appearance` crashed on objects without `geometry` (e.g.
+  `CityObjectGroup`); now `.get("geometry", [])`.
+- "Add saved file to map" skips an empty export (the loader crashes on an empty model).
+- 323 passed.
 
-**cjval v0.10.0** — original and export both "valid, with warnings", no errors
-- duplicate vertices 1424 → 1422 (already in the source; 2 left with the deleted part)
-- unused vertices 0 → 0 (compaction OK, 64153 → 64014)
+## 2026-11-01 : Layer provenance and menu export
 
-**Open for Gina**
-- parent-drop rule (`cb22d9a`): right behaviour, or keep the footprint?
-- old `Export CityJSON...` menu dialog is still the `cityjson-writter` stub — looks like export, does nothing (X15)
-- minor: `save_cityjson_model` writes with spaces → 6.8 MB vs 6.1 MB; `separators=(",", ":")` would fix it
+- **Stamps:** `CityJSONLoader` passes a `provenance` dict to `DynamicLayerManager`, which sets
+  `cityjson/source`, `load_id`, `lod`, `semantic_surfaces`, `keep_parent_attributes` on every
+  layer (strings, `json.dumps`).
+- **Measured:** stamps survive a project save/reopen, memory-layer rows don't (722 → 0, tile
+  `10-282-560`; QGIS warns about scratch layers).
+- `read_provenance(layers)`: groups by `load_id`, reads stamps, refuses a group with 0 rows.
+  Not in `export()`, where an all-deleted export legitimately returns `{}`.
+- The plugin's model cache is not used: it isn't filled by the Processing load path, so export
+  re-reads the stamped source file.
+- **Menu dialog:** one entry per loaded file, exports all its layers together. Keep/drop
+  unloaded checkbox (default keep), "Add saved file to map", area filter (`QgsExtentWidget`,
+  box in the layer's CRS). Refuses overwriting the source and `keep_parent_attributes`
+  (`ParentFeatureDecorator` copies parent attributes into children; export would save them).
+- **Area filter:** `CityJSONExporter(bbox=...)` keeps objects whose centroid is inside, plus
+  their parents/children; `prune_dangling_children` cleans the rest.
+- **Tile `10-282-560`, LoD 2.2, one building deleted:** keep 7.1 MB, drop 4.8 MB, area 480 KB.
+  All cjval valid (warnings: duplicate vertices from the source).
+- 321 passed.
 
+## 2026-11-01 : Processing algorithm
 
-## X10 — geometry edits detected and refused (1 Nov)
-- export rebuilds each row's geometry from the original model (same reader path as import) and compares corner by corner within scale/2
-- any difference → ValueError naming every edited uid, before anything is written
-- covers all three load modes: no lod column, LoD rows, surface rows
-- tests: untouched, moved building, lifted vertex, deleted vertex, sub-half-step move, LoD rows, surface rows
-- open for Gina: objects with a single face never appear as surface rows (layers.py:547)
+- `processing/cityjson_export_algorithm.py`, registered in `provider.py`. Toolbox: CityJSON
+  Loader → Export → Export CityJSON. User enters the load settings by hand.
+- Exporter errors become `QgsProcessingException`; nothing written on failure. Refuses
+  output == source (after overwriting a source tile once).
+- `test_provider_algorithm_properties` used `algorithms[0]`; QGIS doesn't keep order → look up
+  by name.
+- **Tile `10-282-560`, one building deleted:** first run left its LoD0-only parent `Building`
+  as a childless footprint (never loaded → kept). Fix `cb22d9a`: drop a never-loaded parent
+  when all its children were deleted (one level). 1443 → 1441 objects; all others identical.
+- cjval: valid; duplicate vertices 1424 → 1422 (from the source), no unused vertices.
 
+## 2026-11-01 : Geometry edits refused
 
-## 2026-10-28 — X9: what QGIS editing does to CityJSON geometry
+- Each row's geometry is rebuilt from the original and compared corner by corner within
+  `scale / 2` (0.5 mm for 3D BAG): absorbs float noise, catches any real edit.
+- Any difference → `ValueError` naming every edited object, before writing.
+- Covers all load modes: no LoD field, LoD rows, surface rows. Doesn't rely on the edit buffer
+  (empty once edits are saved to the layer).
 
-**Setup**
-- Tile `10-284-560` (3D BAG v2025.09.03), loaded with the plugin: LoD 2.2,
-  no LoD field, no semantic surfaces, one layer. 12,204 faces.
-- Checked the unedited layer with `faces_from_layer`: identical to the file
-  (same 18 degenerate + 1 self-intersecting faces, **same face numbers**).
-  Confirms the plugin keeps faces in file order, which X12 depends on.
-- Test building: `NL.IMBAG.Pand.0503100000022502-0`, 15 faces, 70 corners,
-  worst deviation 0.33 mm, val3dity clean.
-- Each edit: snapshot → edit → snapshot → discard. Measured faces, corners,
-  worst deviation, broken faces, corners changed, split corners (copies of
-  one original corner that no longer agree).
+## 2026-10-28 : What QGIS editing does to geometry
 
-**Results**
+Question: can users edit geometry in QGIS and export it? Measured instead of assumed.
 
-| # | Edit | How | Corners | Changed / split | Worst dev. | What broke | Tier |
-|---|---|---|---|---|---|---|---|
-| 1 | Move building 2D (Move Feature) | mouse | 70 → 70 | all / 0 | 0.33 mm | nothing | 1, clean |
-| 2 | Lift corner +0.5 m, wall copy | typed (Vertex Editor) | 70 → 70 | 1 / 1 | 0.33 mm | crack between faces; checker blind | 1, broken |
-| 2a | Lift corner +0.5 m, roof copy | typed (Vertex Editor) | 70 → 70 | 1 / 1 | 22.6 cm | roof non-planar + crack | 1, broken |
-| 2b | Drag corner ≈1 m sideways | mouse (Vertex Tool) | 70 → 70 | 1 / 1 | 3.1 cm | sloped face non-planar + crack | 1, broken |
-| 3 | Delete a vertex | mouse + Delete | 70 → 69 | – | 0.33 mm | face 14 quad → triangle; gap to neighbours; checker blind | 2 |
-| 4 | Reshape across an edge | mouse, 2D line | 70 → 76 | – | 6.4 m | new corners at z = 0; floor and roof both reshaped, walls not | 2 |
-| 5 | Add vertex on an edge | mouse, double-click | 70 → 71 | – | 0.33 mm | z interpolated correctly (0.7); wall above doesn't get the corner | 2 |
+**Checker:** `scripts/check_geometry.py` flags non-planar, degenerate and self-intersecting
+faces. Planarity = max corner distance to the Newell plane; tolerance 1 cm (val3dity's
+`planarity_d2p_tol` default). 30 tests, no QGIS needed. Limit: per face only, blind to cracks.
+
+**Baseline:** tile `10-284-560` (23,156 faces) is clean at 1 cm (worst 3.5 mm); 18 degenerate
++ 1 self-intersecting face, all in buildings val3dity also flags. Loaded in QGIS: same results,
+same face order as the file.
+
+**Experiment** on `NL.IMBAG.Pand.0503100000022502-0` (15 faces, 70 corners), QGIS 3.44.13:
+
+| Edit | Corners | Worst dev. | What broke |
+|---|---|---|---|
+| Move whole building | 70 → 70 | 0.33 mm | nothing |
+| Lift corner +0.5 m (wall copy) | 70 → 70 | 0.33 mm | crack; checker blind |
+| Lift corner +0.5 m (roof copy) | 70 → 70 | 22.6 cm | roof bent + crack |
+| Drag corner ≈1 m | 70 → 70 | 3.1 cm | face bent + crack |
+| Delete vertex | 70 → 69 | 0.33 mm | quad → triangle, gap |
+| Reshape | 70 → 76 | 6.4 m | new corners at z = 0; floor and roof both hit |
+| Add vertex on edge | 70 → 71 | 0.33 mm | neighbouring face lacks the corner |
 
 **Findings**
-1. **Only moving a whole building is safe.** Every other edit broke the building.
-2. **A shared corner is several independent copies.** The plugin loads each face
-   as its own polygon in a flat `MultiPolygonZ`; a corner shared by 3 faces is
-   3 copies. Every vertex edit moved exactly 1 copy → a crack. Typed and mouse
-   edits behave the same, so this is structural, not a precision problem.
-3. **In 2D you can't choose the height you edit.** Copies at z 0.70, 7.20 and
-   9.11 sit on the same x, y spot; the Vertex Tool picked face 14 every time.
-4. **2D drawing tools invent heights.** Reshape puts new corners at the default
-   z (0) and interpolates toward it at the edge crossings (0.35, 4.55). Adding
-   a single vertex on an edge interpolates correctly.
-5. **Reshape and vertex tools hit every face under the cursor in 2D.** Floor
-   and roof overlap from above, so both changed while the walls did not.
-6. **Vertical walls hide z edits.** Lifting a wall corner keeps the wall
-   planar (its plane contains the up direction), so the checker sees nothing.
-7. **The per-face checker catches bent faces only.** Cracks, gaps and
-   mismatched topology are shell-level (val3dity 302-type) and invisible to it.
+- Only moving a whole building is safe.
+- A corner shared by n faces is n separate copies in the flat `MultiPolygonZ`; every vertex edit
+  moves one copy → crack. Structural, not precision.
+- In 2D you can't choose which stacked height you edit; Reshape invents z = 0.
 
-**Consequence for X10–X13**
-- "Tier 1 = face and corner counts unchanged" is not enough: edits 2, 2a and
-  2b keep the counts and still break the building.
-- X10 needs a third outcome besides Tier 1 / Tier 2: **split vertex**
-  (copies of one original vertex index now disagree). X12's lockstep walk
-  already maps every QGIS corner back to its index, so this is cheap to detect.
-- Options: (A) refuse split vertices with a clear error; (B) propagate:
-  if all moved copies agree, move `vertices[index]` once, then run the
-  checker on that object and warn. Proposal: A first, B later.
-- Export must also round edited coordinates to the file's 1 mm grid (X11);
-  edit 1 produced `84801.98421033…`.
+**Decision:** geometry is read-only. Dropped: vertex-move editing (planned before this
+measurement) and whole-object moves (low value for 3D BAG, 1–2 days of work).
 
-**questions for Gina**
-- Refuse or propagate split vertices (A vs B)?
-- Is vertex-move editing still worth shipping, given that only a whole-object
-  move is safe in practice? Alternative: support whole-object moves only.
+## 2026-10-25 : One object, many rows
 
-**Decision (28 Oct)**
-- Geometry is read-only: export detects any geometry edit made in QGIS and
-  refuses with a clear error (X10). Old X11–X13 (vertex-move editing) dropped.
-- Considered and dropped: refusing vs propagating split vertices (A/B), and
-  supporting whole-object moves (low value: 3D BAG footprints come from the
-  BAG register; would cost 1–2 days).
-- To confirm with Gina.
+- One object can be several rows (per LoD, per semantic surface). `_count_rows()` →
+  `{(uid, lod): n}`.
+- **LoD rows:** object survives if any row survives; geometry entries whose row was deleted are
+  dropped. LoD compared as `str()` (CityJSON 1.0 stores numbers).
+- **Surface rows:** caller passes `semantic_surfaces=True` (layers don't show it). All rows gone
+  → dropped; some gone → `ValueError`.
+- Faces counted with `read_boundaries(..., None, None)`, not `get_polygons` (which returns 0
+  with an empty `VerticesCache`).
+- Objects without a `geometry` key no longer get `"geometry": []`.
 
-**Limits of this experiment**
-- One building, one tile, QGIS 3.44.13, LoD 2.2 only.
-- Edit 2a's 22.6 cm was predicted by simulation and then measured identically.
-- No screenshots of the 3D view yet.
+## 2026-10-24 : Fidelity test
 
+- Fixture: LoD2 Solid with semantics + material, plus unloaded LoD1, appearance, metadata.
+- Delete one building, export: Solid, semantics and LoD1 kept; materials reduced and renumbered;
+  metadata unchanged. No exporter changes needed, which confirms the patch approach. cjval valid.
 
+## 2026-10-23 : Unloaded LoDs
 
+- **Problem:** loading one LoD skips objects without it; export read "no row" as deleted, so a
+  LoD2-only tree vanished when LoD1 was loaded.
+- **Fix:** `loaded_lod` + `keep_unloaded`. Using the loader's `has_lod()`: loaded + no row →
+  deleted; never loaded → kept (or dropped if `keep_unloaded=False`, along with unloaded
+  geometry entries).
+- **Gotcha:** `has_lod` matches exactly `"All"`; `"ALL"` resurrected every deleted object.
 
-## 2026-10-28 — X9: geometry checker and 3D BAG baseline
+## 2026-10-19 : cjval
 
-- `scripts/check_geometry.py`: flags non-planar, degenerate and self-intersecting
-  faces in a CityJSON file. 30 tests in `tests/test_check_geometry.py`, no QGIS needed.
-- Planarity: Newell normal + centroid, max corner distance to the plane.
-  Default tolerance 1 cm = val3dity `planarity_d2p_tol` default; report also
-  counts at 1 mm and 5 cm. Known limit: one corner lifted by h shows as ≈ h/4.
-- Baseline, unedited 3D BAG tile `10-284-560` (23,156 faces):
-  - non-planar: 0 > 1 cm, 16 > 1 mm, worst 0.35 cm
-  - degenerate (repeated corner): 18 faces in 5 buildings
-  - self-intersecting (touching edges): 1 face in 1 building
-- Cross-checked against the tile's own `b3_val3dity_lod22`: every flagged face
-  is in a building val3dity also flags (102 / 104), no false alarms.
-  Missed: 2 buildings with 102 (val3dity likely snaps corners within 1 mm; the
-  checker uses exact equality), and shell-level 302/303 (out of scope, the
-  checker works per face).
-- **Clean at 1 cm**, so any non-planar face after a QGIS edit is caused by the edit.
-- Next: the experiment. Load this tile in QGIS, do the 4 edits, check each.
+- Two-cube round trip: valid, no warnings, no unused vertices.
+- Exporter doesn't deduplicate vertices; it inherits the source's duplicates.
+- cjval checks structure, not geometry (that's val3dity).
 
+## 2026-10-19 : Copy bug and attribute edits
 
-## 2026-10-25 — X6: one object, many rows
+- **Copy bug:** `get_subset_cotype` copies by reference and `process_geometry` rewrites indices
+  in place, so export corrupted the model still loaded in QGIS. Fix: deepcopy each surviving
+  object. Test: export twice, outputs equal, original unchanged.
+- **Attributes:** written only when they differ from the stringified original, so untouched
+  values keep their type (int stays int, missing stays missing). Edited lists/dicts go through
+  `json.loads`; invalid JSON → `ValueError`.
+- Fixed two broken tests (one nested inside another, one `=` instead of `==`).
 
-- **Problem:** one CityObject can become several QGIS rows (per LoD via
-  `LodFeatureDecorator`, per face via `SemanticSurfaceFeatureDecorator`). Export only
-  collected uids, so it couldn't tell which LoD or how many faces were deleted.
-- `_count_rows()`: `{(uid, lod): n}`, `lod = None` when the layer has no `lod` field.
-  `get_surviving_ids()` now reads its uids from it.
-- **Rule 1 (LoD rows):** the object survives if any row survives; geometry entries whose
-  LoD was loaded but lost its row are dropped, before `process_geometry`. Skipped when
-  `lod_as="NONE"` (no `lod` field). LoD compared as `str()`, since the field is text and
-  CityJSON 1.0 stores numbers.
-- **Rule 2 (surface rows):** new `semantic_surfaces=False` flag; the layers don't show
-  whether surfaces were split into rows (no `surface.*` fields if the model has no
-  surface attributes), so the caller must say so. `_check_surface_rows()` compares rows
-  to faces in the original: all gone → dropped, none missing → kept, some missing →
-  `ValueError` naming the object. Runs before any copying.
-- Faces counted with `read_boundaries(boundaries, None, None)` (index-only), not
-  `get_polygons`: with the exporter's empty `VerticesCache`, `get_polygons` swallows the
-  `IndexError` and returns 0. `GeometryInstance` counted via its template. Expected is
-  at least 1, matching the loader's `len(polygons) > 1` split.
-- Objects without a `geometry` key no longer get `"geometry": []` added (fixed in the
-  X7b drop loop too).
-- **Known behaviour:** a parent whose row was deleted but whose child survives is kept,
-  with its loaded geometry dropped.
-- **Still open:** pass `semantic_surfaces` from the UI or Processing algorithm (X14, X15).
-- **Tests:** (a) delete house_a's LoD1 row → only LoD2 kept, house_b untouched;
-  (b) delete one surface row of building1 → raises; (c) delete all of building2's
-  surface rows → building2 dropped, building1 kept. Helpers `_delete_lod_row`,
-  `_delete_all_rows`.
-- 268 passed.
+## 2026-09-20 : Round trip green; branch repairs
 
+- **Approach changed:** instead of a geometry writer, `export()` reuses the import-side subset
+  code: copy surviving objects (found by `uid` in the layers), then `process_geometry`,
+  `process_templates`, `process_appearance`, metadata. Mirrors `get_subset_cotype`.
+- `prune_dangling_children` removes children that were deleted.
+- **Branch repairs:** the `cityjson-writter` merge brought back a dead `from .resources import *`
+  (31 tests errored) and Qt-resource icon paths (both icons blank). Fixed: import commented
+  out, icons loaded from disk. `test_initGui` updated for the second menu action. Unnoticed
+  because CI only runs on `develop`.
+- `core.autocrlf = input` (Windows line endings showed as 264-line diffs).
 
-## 2026-10-24 — X7: fidelity test
+## 2026-09-09 : Round-trip test first
 
-- `_cube_solid(first_vertex)` + `_fidelity_citymodel()`: building1 = LoD2 Solid with
-  semantics + material 1, plus LoD1 MultiSurface; building2 = same shape, material 0.
-  Two materials, metadata.
-- Test: load `lod="2"`, delete building2, export with `loaded_lod="2"`. Passed with no
-  exporter changes: Solid kept (1 shell, 6 faces), semantics unchanged, materials reduced
-  to the used one and renumbered 1 → 0, unloaded LoD1 kept, metadata unchanged.
-- Covers the appearance / metadata branches of `export()` flagged as unexercised on 19 Oct.
-- cjval: 100% valid.
-- Geometry not checked with val3dity: export copies it verbatim, so it would only test the
-  fixture. Use val3dity from X9 onward, when export changes coordinates.
-- Regression net for X10–X13.
-- 265 passed.
+- Merged `cityjson-writter` + `develop` (v1.0.1) into `cityjson-export`.
+- Round-trip test (load → delete one building → export → reload) written red first; it fixed
+  the API: `CityJSONExporter(layers, citymodel=...).export()` and
+  `save_cityjson_model(dict, path)`.
 
+## 2026-08-13 : Setup
 
-## 2026-10-23 — X7b: unloaded LoDs on export
-
-- **Problem:** loading at one LoD (e.g. `lod="1"`) skips objects with no geometry at that
-  LoD (`core/loading.py:182`), so they never get a QGIS row. Export treated "no row" as
-  "deleted", so a LoD2-only object (e.g. a tree) was silently dropped, while unloaded
-  LoDs of loaded objects were kept. Inconsistent, and the user never deleted it.
-- **Fix (export-side only):** `CityJSONExporter` takes `loaded_lod` (default `"All"`) and
-  `keep_unloaded` (default `True`). It re-checks each object with the loader's own
-  `GeometryReader.has_lod()`:
-  - has loaded LoD + no row → deleted by user → dropped
-  - no loaded LoD → never loaded → kept if `keep_unloaded`, else dropped
-- **Drop mode** also removes unloaded geometry entries from surviving objects, before
-  `process_geometry`, so their vertices are compacted out.
-- Commits: `719eb4c` (keep), `2849ddb` (drop).
-- **Tests:** fixture `_unloaded_lod_citymodel()` (house_a, house_b: LoD1+LoD2; tree:
-  LoD2 only). Keep test: tree kept, house_b gone, house_a has 2 LoDs. Drop test: tree
-  gone, house_a only LoD1. Load via `loader.load()`, not manual `add_object`, or the
-  skip at line 182 is bypassed.
-- **Gotcha:** `has_lod` matches exactly `"All"`; a default of `"ALL"` resurrected every
-  deleted object (3 tests failed).
-- 264 passed.
-- **Next:** `loaded_lod` / `keep_unloaded` need to be exposed in the UI (X14 parameter,
-  X15 dialog); run cjval on both outputs.
-
-
-
-## 2026-10-19 — X8: cjval validation
-
-- Validated round-trip output (two cubes, building2 deleted) at validator.cityjson.org (cjval WASM, schemas v2.0.2).
-- Output: 100% valid — no errors, no warnings. `unused vertices` clean → `process_geometry` compaction works.
-- Input fixture: valid, 4 `duplicate vertices` warnings — the cubes share a face at x=1000 and `_cube_vertices` writes each cube's corners separately. Fixture quirk, not exporter.
-- Exporter doesn't dedup; it inherits whatever the original had.
-- Limits: cjval checks schema/structure only, not geometry (planarity, solids → val3dity). Fixture has no Solids/semantics/appearance, so those checks weren't exercised.
-- Next: re-run on X7's fixture once it exists.
-
-
-## 2026-10-19 — X4 and X5 done, tests repaired
-
-- X4: export() deepcopies each surviving CityObject (`5e79164`, 23 Sept).
-  get_subset_cotype assigns by reference and process_geometry rewrites
-  indices in place, so without it export corrupts the live model.
-- X4 test: delete building1, export twice, assert both outputs equal and
-  the original unchanged. Verified red with the deepcopy removed.
-  Needed the delete — with both cubes surviving, indices 0-15 compact onto
-  0-15 and the bug is invisible.
-- X5: apply_attribute_edits only writes a field if it differs from the
-  stringified original, so untouched values keep their type (int stays int,
-  missing stays missing). Edited dicts/lists go through json.loads; invalid
-  JSON raises ValueError naming the object and field.
-- Fixed in exporting.py: uid lookup ran before its `in` guard.
-- Fixed in test_export.py: one test was nested inside another and never
-  ran; attribute test used `f["uid"] = ...` (assignment) instead of `==`.
-- 262 passed.
-
-Still open:
-- transform and metadata are copied by reference (harmless today).
-- Coverage: appearance / metadata / geometry-templates branches in export()
-  are never exercised. That's X7.
-- Parent resurrection one level deep, process_templates KeyError on
-  geometry-less objects (from 20 Sept) — unchanged.
-- Correction: the 2026-08-13 entry says `cityjson-writter-copy`; the branch
-  is `cityjson-export`.
-
-
-
-## 2026-09-20 — X3 done, round-trip green
-
-- export() builds the subset: createCityJSON, copy version/transform, copy
-  surviving CityObjects, then process_geometry / process_templates /
-  process_appearance, then metadata. Mirrors get_subset_cotype.
-- Guarded process_templates behind "geometry-templates" in citymodel, and
-  dropped the empty `subset_cm["appearance"] = {}` line — process_appearance
-  uses setdefault. Both are deliberate divergences from get_subset_cotype.
-- prune_dangling_children: filters each surviving object's "children" down to
-  surviving ids, deletes the key when empty. Only children — get_surviving_ids
-  already resurrects parents, so a parents filter is dead code today.
-- First round-trip assertion (only checked CityObjects keys) passed with
-  vertices == []. Added `len(output["vertices"]) == 8` to make the test
-  actually prove something.
-- 256 passed.
-
-Open gaps found while building this:
-- deepcopy (X4) is now more urgent: prune deletes keys from CityObject dicts
-  shared with self.citymodel, so export mutates the live model's structure,
-  not just its indices.
-- Parent resurrection in get_surviving_ids is one level deep — it loops a
-  snapshot (`list(uids)`), so a resurrected parent's own parents are never
-  walked. Building -> BuildingPart -> BuildingInstallation leaves a dangling
-  "parents" ref. Fix transitively, or add the parents filter as a net.
-- process_templates does j2["CityObjects"][each]["geometry"] with no .get() —
-  KeyError on a CityObject with no geometry, which the spec allows.
-
-
-## 2026-09-09 — Phase 1 done (C0.2, C1.1, C1.2, C1.3)
-
-- Synced with upstream (now at v1.0.1). Merged writter + develop into
-  cityjson-export, no conflicts.
-- Built the fixture in tests/test_export.py: two Buildings, MultiSurface
-  cubes, 16 quantized vertices, scale 0.001. Imports as 1 layer / 2 features.
-- Round-trip test written and failing on purpose:
-  ModuleNotFoundError: No module named 'core.exporting'. Committed red.
-- API now pinned by its first caller: CityJSONExporter(layers, citymodel=...)
-  .export() -> dict, and save_cityjson_model(dict, path).
-
-Next: C2.1, the vertices writer — inverse of VerticesCache.
-
-
-## 2026-08-13
-
-Branch: `cityjson-writter-copy`
-
-**Done**
-
-- Branch set up off `cityjson-writter`; fork + local synced with upstream.
-- Repo symlinked into the QGIS plugin dir — edits run live.
-- Confirmed the export dialog loads on the post-restructure codebase. Was untested.
-
-**Decided**
-
-- Build on `cityjson-writter`: Gina merged `develop` into it on 7 Aug (`98d21c2`), so it's
-  `develop` + 7 scaffold files. Verified — zero `develop` commits missing.
-- One branch for the whole feature. The work is sequential (serializer needs
-  `GeometryWriter`), so stacked branches would be overhead.
-- Don't touch `Changelog.md` until PR — it's a release log, edits conflict on every release.
-
-**Corrected**
-
-- Single-polygon features aren't dropped by `SemanticSurfaceFeatureDecorator` — they land
-  with **null geometry** (`setGeometry` never called).
-- The `# TODO: This is wrong!` is about the dict value being a bare polygon instead of a
-  geometry, not about the missing `semantic.values` index.
-
-**Open**
-
-- Is Gina still on `cityjson-writter`? Collision risk.
-- Processing algorithm as well as the menu action?
-- Are QGIS-authored new CityObjects in scope?
-- `resources.py` generated but missing from `.gitignore`. Left for now.
-
-**Next**
-
-- Round-trip test as spec: import → delete one CityObject → export → re-import → assert
-  only that object is gone.
+- Branch `cityjson-export` off `cityjson-writter` (Gina merged `develop` into it on 7 Aug,
+  `98d21c2`). Gina confirmed she is done with that branch.
+- Repo symlinked into the QGIS plugin folder; edits run live.
+- One branch for the whole feature. `Changelog.md` untouched until PR.
+- `resources.py` is generated but not in `.gitignore`. Left for now.
 
 ---
+
+## How to test
+
+```powershell
+docker build -f docker/Dockerfile.qgis-3.40 -t cityjson-qgis-plugin-test-340 .   # once
+docker run --rm -v "${PWD}:/app" cityjson-qgis-plugin-test-340
+```
+
+Validate exports at https://validator.cityjson.org (cjval).
