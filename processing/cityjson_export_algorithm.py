@@ -27,9 +27,14 @@
 from typing import Any
 
 from qgis.core import (
+    Qgis,
     QgsProcessingAlgorithm,
     QgsProcessingException,
+    QgsProcessingParameterBoolean,
+    QgsProcessingParameterEnum,
     QgsProcessingParameterFile,
+    QgsProcessingParameterFileDestination,
+    QgsProcessingParameterMultipleLayers,
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
@@ -53,6 +58,11 @@ class CityJsonExportAlgorithm(QgsProcessingAlgorithm):
     # calling from the QGIS console.
 
     INPUT = "INPUT"
+    LAYERS = "LAYERS"
+    OUTPUT = "OUTPUT"
+    LOD_SELECTION = "LOD_SELECTION"
+    KEEP_UNLOADED = "KEEP_UNLOADED"
+    SEMANTIC_SURFACES = "SEMANTIC_SURFACES"
 
     LODSELECTIONTYPES = [
         "0",
@@ -133,8 +143,46 @@ class CityJsonExportAlgorithm(QgsProcessingAlgorithm):
         """
 
         self.addParameter(
+            QgsProcessingParameterMultipleLayers(
+                self.LAYERS,
+                self.tr("Layers to export"),
+                Qgis.ProcessingSourceType.VectorAnyGeometry,
+            )
+        )
+
+        self.addParameter(
             QgsProcessingParameterFile(
-                self.INPUT, self.tr("CityJSON file"), extension="json,jsonl"
+                self.INPUT, self.tr("Original CityJSON file"), extension="json"
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterEnum(
+                self.LOD_SELECTION,
+                self.tr("LoD(s) loaded (leave empty for all)"),
+                self.LODSELECTIONTYPES,
+                allowMultiple=True,
+                optional=True,
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.KEEP_UNLOADED, self.tr("Keep unloaded LoDs and objects"), True
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.SEMANTIC_SURFACES,
+                self.tr("Semantic surfaces were loaded"),
+                False,
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterFileDestination(
+                self.OUTPUT, self.tr("Output CityJSON file"), "CityJSON (*.json)"
             )
         )
 

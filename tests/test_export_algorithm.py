@@ -25,3 +25,11 @@ def test_algorithm_creation():
     algorithm = CityJsonExportAlgorithm()
     instance = algorithm.createInstance()
     assert isinstance(instance, CityJsonExportAlgorithm)
+
+def test_init_algorithm(algorithm):
+    """Test parameter initialization."""
+    algorithm.initAlgorithm()
+    param_names = [p.name() for p in algorithm.parameterDefinitions()]
+    for name in ["LAYERS", "INPUT", "LOD_SELECTION", "KEEP_UNLOADED",
+                 "SEMANTIC_SURFACES", "OUTPUT"]:
+        assert name in param_names
