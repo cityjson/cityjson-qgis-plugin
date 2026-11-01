@@ -5,6 +5,18 @@ gets one entry at PR time). Keep entries short — what changed, why, what's blo
 
 ---
 
+## 2026-11-01 — X15 menu export
+
+- `read_provenance(layers)`: groups layers by `load_id`, reads stamps back, refuses a group
+  with 0 rows (reopened project). Not in `export()`: a legit all-deleted export returns `{}`.
+- Menu dialog wired: one dropdown entry per loaded file, exports all layers of that
+  `load_id` together; no source/LoD/semantics inputs. Refuses overwriting the source and
+  `keep_parent_attributes` (exporter would copy parent attributes into children).
+- Real tile `10-282-560`, one building deleted: cjval valid, warnings only (duplicate
+  vertices, from the source; same as X14). 318 passed.
+- Not wired yet: "Add saved file to map" checkbox; keep/drop unloaded LoDs (fixed to keep).
+- For Gina: refuse inherit-parent-attributes, or skip inherited values on export?
+
 ## 2026-11-01 — X15 stamping
 
 - Layers stamped at load with `cityjson/source`, `load_id`, `lod`, `semantic_surfaces`,
