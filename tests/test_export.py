@@ -767,3 +767,13 @@ def test_parents_resurrected_at_every_level(qgis_app):
     _delete_feature(layers, "building2")
     out = CityJSONExporter(layers, citymodel=cm).export()
     assert set(out["CityObjects"]) == {"building1", "building2", "building3"}
+
+def test_object_without_geometry_survives_with_appearance(qgis_app):
+    cm = _fidelity_citymodel()  # has appearance
+    cm["CityObjects"]["group1"] = {"type": "CityObjectGroup"}  # no geometry key
+    loader = CityJSONLoader(filepath="dummy", citymodel=cm, lod="2")
+    loader.load()
+    layers = loader.layer_manager.get_all_layers()
+    out = CityJSONExporter(layers, citymodel=cm, loaded_lod="2").export()
+    assert "group1" in out["CityObjects"]
+    assert "geometry" not in out["CityObjects"]["group1"]
