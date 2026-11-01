@@ -14,8 +14,12 @@ gets one entry at PR time). Keep entries short — what changed, why, what's blo
   `keep_parent_attributes` (exporter would copy parent attributes into children).
 - Real tile `10-282-560`, one building deleted: cjval valid, warnings only (duplicate
   vertices, from the source; same as X14). 318 passed.
-- Not wired yet: "Add saved file to map" checkbox; keep/drop unloaded LoDs (fixed to keep).
-- For Gina: refuse inherit-parent-attributes, or skip inherited values on export?
+- Dialog finished: keep/drop unloaded checkbox (default keep), "Add saved file to map"
+  (reloads with the same LoD/semantics), single Close button, label says "loaded file".
+- Tile `10-282-560`, LoD 2.2, one building deleted: keep 7.1 MB, drop 4.8 MB, cjval valid
+  (source duplicate-vertex warnings only).
+- Import-side bug for Gina: `CityJSONLoader.load()` divides by `len(city_objects)`, so it
+  crashes on an empty model (all objects deleted + "Add saved file to map").
 
 ## 2026-11-01 — X15 stamping
 
