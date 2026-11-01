@@ -746,3 +746,9 @@ def test_bbox_brings_parent_and_prunes_children(qgis_app):
     out = CityJSONExporter(layers, citymodel=cm, bbox=[1, 0, 2, 1]).export()
     assert set(out["CityObjects"]) == {"building1", "building2"}
     assert out["CityObjects"]["building1"]["children"] == ["building2"]
+
+def test_bbox_with_nothing_inside_exports_empty(qgis_app):
+    cm, layers = _load_two_cubes()
+    out = CityJSONExporter(layers, citymodel=cm, bbox=[10, 10, 11, 11]).export()
+    assert out["CityObjects"] == {}
+    assert out["vertices"] == []

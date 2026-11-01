@@ -445,6 +445,9 @@ class CityJsonLoader:
 
     def write(self):
         """Opens the export dialog, listing one entry per loaded CityJSON file."""
+        if not getattr(self, "_extent_canvas_set", False):
+            self.dlg_wrt.extent.setMapCanvas(self.iface.mapCanvas())
+            self._extent_canvas_set = True
         self.dlg_wrt.reset_fields()
         sources = {}
         for layer in QgsProject.instance().mapLayers().values():
@@ -473,6 +476,11 @@ class CityJsonLoader:
                 raise ValueError("Choose a different file: this would overwrite the source.")
             if group["keep_parent_attributes"]:
                 raise ValueError("Export doesn't support 'inherit parent attributes'. Load the file again without it.")
+            bbox = None
+            if self.dlg_wrt.extent.isValid():  # empty = whole file
+                self.dlg_wrt.extent.setOutputCrs(layers[0].crs())
+                e = self.dlg_wrt.extent.outputExtent()
+                bbox = [e.xMinimum(), e.yMinimum(), e.xMaximum(), e.yMaximum()]
             original = load_cityjson_model(group["source"])
             exported = CityJSONExporter(
                 layers,
@@ -480,6 +488,7 @@ class CityJsonLoader:
                 loaded_lod=group["lod"],
                 keep_unloaded=self.dlg_wrt.keep_unloaded.isChecked(),   # NEW
                 semantic_surfaces=group["semantic_surfaces"],
+                bbox=bbox,
             ).export()
             save_cityjson_model(exported, output)
 

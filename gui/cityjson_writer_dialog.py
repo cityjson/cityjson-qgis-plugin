@@ -26,7 +26,7 @@ import os
 
 from PyQt5 import uic
 from PyQt5 import QtWidgets
-from qgis.gui import QgsFileWidget
+from qgis.gui import QgsExtentWidget, QgsFileWidget
 
 FORM_CLASS, _ = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "cityjson_writer_dialog_base.ui")
@@ -39,9 +39,15 @@ class CityJsonWriterDialog(QtWidgets.QDialog, FORM_CLASS):
         super(CityJsonWriterDialog, self).__init__(parent)
         self.setupUi(self)
         self.save_file_name.setStorageMode(QgsFileWidget.SaveFile)  # "save as", not "open"
-
+        self.extent = QgsExtentWidget(self, QgsExtentWidget.CondensedStyle)
+        self.extent.setNullValueAllowed(True, "Whole file")
+        self.extent.toggleDialogVisibility.connect(self.setVisible)  # hide dialog while drawing on map
+        self.verticalLayout_2.addWidget(QtWidgets.QLabel("Only export objects inside (optional):"))
+        self.verticalLayout_2.addWidget(self.extent)
+    
     def reset_fields(self):
         """Reset the fields in the dialog."""
         self.layer_select.clear()
         self.save_file_name.setFilePath("")
         self.keep_unloaded.setChecked(True)
+        self.extent.clear()
