@@ -752,3 +752,18 @@ def test_bbox_with_nothing_inside_exports_empty(qgis_app):
     out = CityJSONExporter(layers, citymodel=cm, bbox=[10, 10, 11, 11]).export()
     assert out["CityObjects"] == {}
     assert out["vertices"] == []
+
+
+def test_parents_resurrected_at_every_level(qgis_app):
+    cm = _hierarchy_citymodel()
+    objs = cm["CityObjects"]  # make it a chain: building1 → building2 → building3
+    objs["building1"]["children"] = ["building2"]
+    objs["building2"]["children"] = ["building3"]
+    objs["building3"]["parents"] = ["building2"]
+    loader = CityJSONLoader(filepath="dummy", citymodel=cm)
+    loader.load()
+    layers = loader.layer_manager.get_all_layers()
+    _delete_feature(layers, "building1")
+    _delete_feature(layers, "building2")
+    out = CityJSONExporter(layers, citymodel=cm).export()
+    assert set(out["CityObjects"]) == {"building1", "building2", "building3"}

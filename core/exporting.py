@@ -172,13 +172,15 @@ class CityJSONExporter:
         
 
         # a surviving child with a deleted parent is a dangling reference; a deleted child creates no such problem, so it stays deleted.
-        for uid in list(uids):
-            obj = self.citymodel["CityObjects"][uid]
+        # walk up every level: a resurrected parent may have deleted parents of its own
+        todo = list(uids)
+        while todo:
+            obj = self.citymodel["CityObjects"][todo.pop()]
+            for parent in obj.get("parents", []):
+                if parent not in uids:
+                    uids.add(parent)
+                    todo.append(parent)
 
-            if "parents" in obj:
-                for parent in obj["parents"]: # iterate through the parents
-                    uids.add(parent) # add the parent to the set of surviving ids
-                
         return uids
 
     def _in_bbox(self, ids):
