@@ -4,6 +4,13 @@ Decisions and dead ends, newest first. Not a release changelog (`Changelog.md` i
 gets one entry at PR time). Keep entries short — what changed, why, what's blocked.
 
 ---
+## X10 — geometry edits detected and refused (1 Nov)
+- export rebuilds each row's geometry from the original model (same reader path as import) and compares corner by corner within scale/2
+- any difference → ValueError naming every edited uid, before anything is written
+- covers all three load modes: no lod column, LoD rows, surface rows
+- tests: untouched, moved building, lifted vertex, deleted vertex, sub-half-step move, LoD rows, surface rows
+- open for Gina: objects with a single face never appear as surface rows (layers.py:547)
+
 
 ## 2026-10-28 — X9: what QGIS editing does to CityJSON geometry
 
