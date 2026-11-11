@@ -24,8 +24,7 @@
 
 import os
 
-from PyQt5 import uic
-from PyQt5 import QtWidgets
+from qgis.PyQt import QtWidgets, uic
 from qgis.gui import QgsExtentWidget, QgsFileWidget
 
 FORM_CLASS, _ = uic.loadUiType(
@@ -39,9 +38,9 @@ class CityJsonWriterDialog(QtWidgets.QDialog, FORM_CLASS):
         super(CityJsonWriterDialog, self).__init__(parent)
         self.setupUi(self)
         self.save_file_name.setStorageMode(
-            QgsFileWidget.SaveFile
+            QgsFileWidget.StorageMode.SaveFile
         )  # "save as", not "open"
-        self.extent = QgsExtentWidget(self, QgsExtentWidget.CondensedStyle)
+        self.extent = QgsExtentWidget(self, QgsExtentWidget.WidgetStyle.CondensedStyle)
         self.extent.setNullValueAllowed(True, "Whole file")
         self.extent.toggleDialogVisibility.connect(
             self.setVisible
