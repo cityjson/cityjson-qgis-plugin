@@ -24,6 +24,19 @@ Gina's `cityjson-writter` dialog scaffold.
 
 ---
 
+## 2026-11-12 : Dialog tests
+
+- Review feedback: no tests for the interface. The menu dialog had been treated as a thin
+  wrapper checked by hand, but `export_cityjson()` grew its own checks.
+- `tests/test_cityjson_writer_dialog.py`: widgets, defaults, save mode, `reset_fields()`,
+  dialog hides while drawing an area, Close button.
+- `tests/test_cityjson_loader.py` `TestExportDialog`: `write()` lists one entry per loaded
+  file; Convert warns on missing input, refuses overwriting the source and inherited parent
+  attributes, shows exporter errors, passes options and the area (converted to the layer's
+  CRS), reloads only when asked and something was exported.
+- Not fixed: `reset_fields()` doesn't untick "Add saved file to map".
+- 344 passed (local QGIS 3.44).
+
 ## 2026-11-01 : Minor edits
 
 - PR target is `develop`: upstream has no `development` branch. Fixed the typo in

@@ -106,6 +106,7 @@ docker run --rm -v "${PWD}:/app" cityjson-qgis-plugin-test-340
 ```
 
 Export tests: `tests/test_export.py`, `tests/test_export_algorithm.py`,
-`tests/test_check_geometry.py`. The dialog has no unit tests; check it by hand in QGIS.
+`tests/test_check_geometry.py`. Dialog tests: `tests/test_cityjson_writer_dialog.py` (the
+window) and `TestExportDialog` in `tests/test_cityjson_loader.py` (the Convert button).
 
 Validate exported files with cjval: https://validator.cityjson.org
