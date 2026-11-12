@@ -43,7 +43,7 @@ class TestCityJsonWriterDialog:
     # checks the save as and file type in export dialog 
     def test_save_widget_is_save_mode(self, qgis_app):
         self.dialog = CityJsonWriterDialog()
-i
+
         widget = self.dialog.save_file_name
         assert widget.storageMode() == QgsFileWidget.StorageMode.SaveFile
         assert "*.city.json" in widget.filter()
