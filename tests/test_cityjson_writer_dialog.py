@@ -40,7 +40,7 @@ class TestCityJsonWriterDialog:
         assert self.dialog.keep_unloaded.isChecked()
         assert not self.dialog.reload.isChecked()
 
-    # checks the save as and file type in export dialog 
+    # checks the save as and file type in export dialog
     def test_save_widget_is_save_mode(self, qgis_app):
         self.dialog = CityJsonWriterDialog()
 

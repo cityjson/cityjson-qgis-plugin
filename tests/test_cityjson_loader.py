@@ -525,9 +525,7 @@ class TestCityJsonLoader:
 def _fake_layer(props):
     """A stand-in for a loaded layer: only custom properties and a CRS."""
     layer = MagicMock()
-    layer.customProperty.side_effect = lambda key, default=None: props.get(
-        key, default
-    )
+    layer.customProperty.side_effect = lambda key, default=None: props.get(key, default)
     layer.crs.return_value = QgsCoordinateReferenceSystem("EPSG:28992")
     return layer
 
