@@ -28,6 +28,7 @@
 import json
 import os
 import re
+import uuid
 from typing import Any
 
 from qgis.core import QgsProject
@@ -135,6 +136,13 @@ class CityJSONLoader:
             self.naming_iterator,
             self.fields_builder,
             self.srid,
+            provenance={
+                "source": os.path.abspath(filepath),
+                "load_id": uuid.uuid4().hex,
+                "lod": json.dumps(lod),  # "All", "2.2" or a list
+                "semantic_surfaces": json.dumps(load_semantic_surfaces),
+                "keep_parent_attributes": json.dumps(keep_parent_attributes),
+            },
         )
 
         self.layer_manager.prepare_attributes()

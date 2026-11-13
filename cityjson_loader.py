@@ -28,7 +28,7 @@ import json
 import os.path
 from typing import Any, Callable
 
-from qgis.core import QgsApplication, QgsCoordinateReferenceSystem
+from qgis.core import QgsApplication, QgsCoordinateReferenceSystem, QgsProject
 from qgis.gui import QgisInterface, QgsProjectionSelectionDialog
 from qgis.PyQt.QtCore import (
     QCoreApplication,
@@ -46,10 +46,12 @@ from qgis.PyQt.QtWidgets import (
     QShortcut,
 )
 
+from .core.exporting import CityJSONExporter, read_provenance, save_cityjson_model
 from .core.helpers.treemodel import MetadataModel
 from .core.loading import CityJSONLoader, get_model_epsg, load_cityjson_model
 from .core.styling import is_rule_based_3d_styling_available
 from .gui.cityjson_loader_dialog import CityJsonLoaderDialog
+from .gui.cityjson_writer_dialog import CityJsonWriterDialog
 from .processing.provider import Provider
 
 
@@ -78,6 +80,10 @@ class CityJsonLoader:
 
         # Create the dialog (after translation) and keep reference
         self.dlg = CityJsonLoaderDialog()
+
+        # Create the dialog (after translation) and keep reference
+        self.dlg_wrt = CityJsonWriterDialog()
+        self.dlg_wrt.convert.clicked.connect(self.export_cityjson)
 
         # Declare instance attributes
         self.actions: list[QAction] = []
@@ -403,11 +409,20 @@ class CityJsonLoader:
     def initGui(self) -> None:
         """Create the menu entries and toolbar icons inside the QGIS GUI"""
 
-        icon_path = os.path.join(self.plugin_dir, "cityjson_logo.svg")
+        load_icon_path = os.path.join(self.plugin_dir, "cityjson_logo_load.svg")
+        export_icon_path = os.path.join(self.plugin_dir, "cityjson_logo_export.svg")
+
         self.add_action(
-            icon_path,
+            load_icon_path,
             text=self.tr("Load CityJSON..."),
             callback=self.run,
+            parent=self.iface.mainWindow(),
+        )
+
+        self.add_action(
+            export_icon_path,
+            text=self.tr("Export CityJSON..."),
+            callback=self.write,
             parent=self.iface.mainWindow(),
         )
 
@@ -426,6 +441,82 @@ class CityJsonLoader:
         del self.toolbar
 
         QgsApplication.processingRegistry().removeProvider(self.provider)
+
+    def write(self):
+        """Opens the export dialog, listing one entry per loaded CityJSON file."""
+        if not getattr(self, "_extent_canvas_set", False):
+            self.dlg_wrt.extent.setMapCanvas(self.iface.mapCanvas())
+            self._extent_canvas_set = True
+        self.dlg_wrt.reset_fields()
+        sources = {}
+        for layer in QgsProject.instance().mapLayers().values():
+            load_id = layer.customProperty("cityjson/load_id")
+            if load_id:
+                sources[load_id] = layer.customProperty("cityjson/source")
+        for load_id, source in sources.items():
+            self.dlg_wrt.layer_select.addItem(os.path.basename(source), load_id)
+        self.dlg_wrt.show()
+
+    def export_cityjson(self):
+        """Exports all layers of the selected load back to CityJSON."""
+        load_id = self.dlg_wrt.layer_select.currentData()
+        output = self.dlg_wrt.save_file_name.filePath()
+        if not load_id or not output:
+            self.iface.messageBar().pushWarning(
+                "CityJSON export", "Pick a loaded file and a save path."
+            )
+            return
+
+        layers = [
+            layer
+            for layer in QgsProject.instance().mapLayers().values()
+            if layer.customProperty("cityjson/load_id") == load_id
+        ]
+        try:
+            group = next(iter(read_provenance(layers).values()))
+            if os.path.normcase(os.path.abspath(output)) == os.path.normcase(
+                group["source"]
+            ):
+                raise ValueError(
+                    "Choose a different file: this would overwrite the source."
+                )
+            if group["keep_parent_attributes"]:
+                raise ValueError(
+                    "Export doesn't support 'inherit parent attributes'. Load the file again without it."
+                )
+            bbox = None
+            if self.dlg_wrt.extent.isValid():  # empty = whole file
+                self.dlg_wrt.extent.setOutputCrs(layers[0].crs())
+                e = self.dlg_wrt.extent.outputExtent()
+                bbox = [e.xMinimum(), e.yMinimum(), e.xMaximum(), e.yMaximum()]
+            original = load_cityjson_model(group["source"])
+            exported = CityJSONExporter(
+                layers,
+                citymodel=original,
+                loaded_lod=group["lod"],
+                keep_unloaded=self.dlg_wrt.keep_unloaded.isChecked(),
+                semantic_surfaces=group["semantic_surfaces"],
+                bbox=bbox,
+            ).export()
+            save_cityjson_model(exported, output)
+
+            if (
+                self.dlg_wrt.reload.isChecked() and exported["CityObjects"]
+            ):  # "Add saved file to map"
+                new_model = load_cityjson_model(output)
+                CityJSONLoader(
+                    output,
+                    new_model,
+                    epsg=get_model_epsg(new_model),
+                    lod=group["lod"],
+                    load_semantic_surfaces=group["semantic_surfaces"],
+                ).load()
+        except (ValueError, OSError) as e:
+            self.iface.messageBar().pushCritical("CityJSON export", str(e))
+            return
+
+        self.iface.messageBar().pushSuccess("CityJSON export", f"Saved {output}")
+        self.dlg_wrt.close()
 
     def run(self) -> None:
         """Run method that performs all the real work"""

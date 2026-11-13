@@ -175,6 +175,7 @@ class DynamicLayerManager(BaseLayerManager):
         layer_iterator: Any,
         fields_builder: Any,
         srid: str | None = None,
+        provenance: dict[str, str] | None = None,
     ) -> None:
         super().__init__(citymodel, fields_builder, srid)
 
@@ -184,6 +185,8 @@ class DynamicLayerManager(BaseLayerManager):
 
         for name in self._layer_iterator.all_layers():
             vl = QgsVectorLayer(self._geom_type, name, "memory")
+            for key, value in (provenance or {}).items():
+                vl.setCustomProperty(f"cityjson/{key}", value)
             self._vectorlayers[name] = vl
 
     def add_object(self, object_key: str, cityobject: dict[str, Any]) -> None:

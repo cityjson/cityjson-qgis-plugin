@@ -5,7 +5,7 @@ Thank you for your interest in contributing to CityJsonLoader! Contributions are
 ## How to Contribute
 
 - **Pull Requests:**
-  - Please submit your changes as a Pull Request (PR) against the `development` branch.
+  - Please submit your changes as a Pull Request (PR) against the `develop` branch.
   - Make sure your PR clearly describes the changes and the motivation behind them.
   - We prefer small PR that are focused on improving one things rather than huge PR with changes in multiple files. 
 

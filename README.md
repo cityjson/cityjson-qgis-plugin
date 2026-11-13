@@ -20,6 +20,11 @@ After the installation, there must be a new submenu under the `Vector` menu. Sel
 
 You may enable the `Split layers according to object type` option in order to load different object types as different layers in QGIS.
 
+### File export
+Select `CityJSON Loader`->`Export CityJSON...` to save a loaded file back to CityJSON. Pick the loaded file, choose where to save, and click `Convert`. Deleted objects and attribute edits are written out; everything else (Solids, semantic surfaces, appearances, unloaded LoDs, metadata) is kept from the original file. Geometry edits are not supported.
+
+Export is also available as a Processing algorithm (`CityJSON Loader` -> `Export` -> `Export CityJSON`). See [docs/export.md](docs/export.md) for details.
+
 ### 3D view 
 CityJSON Loader automatically enables the 3D renderer. To see the 3D geometry, select `View` -> `New 3D Map View` in the QGIS menu.
 

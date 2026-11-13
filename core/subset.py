@@ -85,7 +85,7 @@ def process_templates(j: dict[str, Any], j2: dict[str, Any]) -> None:
     dOldNewIDs: dict[int, int] = {}
     newones: list[Any] = []
     for each in j2["CityObjects"]:
-        for geom in j2["CityObjects"][each]["geometry"]:
+        for geom in j2["CityObjects"][each].get("geometry", []):
             if geom["type"] == "GeometryInstance":
                 t = geom["template"]
                 if t in dOldNewIDs:
@@ -107,7 +107,7 @@ def process_appearance(j: dict[str, Any], j2: dict[str, Any]) -> None:
     dOldNewIDs: dict[int, int] = {}
     newmats: list[Any] = []
     for each in j2["CityObjects"]:
-        for geom in j2["CityObjects"][each]["geometry"]:
+        for geom in j2["CityObjects"][each].get("geometry", []):
             if "material" in geom:
                 for each in geom["material"]:
                     if "value" in geom["material"][each]:
@@ -133,7 +133,7 @@ def process_appearance(j: dict[str, Any], j2: dict[str, Any]) -> None:
     dOldNewIDs = {}
     newtextures: list[Any] = []
     for each in j2["CityObjects"]:
-        for geom in j2["CityObjects"][each]["geometry"]:
+        for geom in j2["CityObjects"][each].get("geometry", []):
             if "texture" in geom:
                 for each in geom["texture"]:
                     if "values" in geom["texture"][each]:
@@ -150,7 +150,7 @@ def process_appearance(j: dict[str, Any], j2: dict[str, Any]) -> None:
     dOldNewIDs = {}
     newtextures = []
     for each in j2["CityObjects"]:
-        for geom in j2["CityObjects"][each]["geometry"]:
+        for geom in j2["CityObjects"][each].get("geometry", []):
             if "texture" in geom:
                 for each in geom["texture"]:
                     if "values" in geom["texture"][each]:

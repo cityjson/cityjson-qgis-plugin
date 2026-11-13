@@ -8,9 +8,11 @@ import json
 import os
 import sys
 import types
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
+from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PACKAGE_NAME = "cityjson_loader_plugin"
@@ -489,9 +491,9 @@ class TestCityJsonLoader:
         with patch.object(loader, "initProcessing") as mock_init_processing:
             loader.initGui()
 
-        assert len(loader.actions) == 1
+        assert len(loader.actions) == 2
         mock_init_processing.assert_called_once()
-        mock_iface.addPluginToVectorMenu.assert_called_once()
+        mock_iface.addPluginToVectorMenu.assert_called()
 
     def test_run(self, plugin_module, mock_iface, qgis_app):
         loader = plugin_module.CityJsonLoader(mock_iface)
@@ -518,3 +520,189 @@ class TestCityJsonLoader:
 
         mock_raise.assert_called_once()
         mock_activate.assert_called_once()
+
+
+def _fake_layer(props):
+    """A stand-in for a loaded layer: only custom properties and a CRS."""
+    layer = MagicMock()
+    layer.customProperty.side_effect = lambda key, default=None: props.get(key, default)
+    layer.crs.return_value = QgsCoordinateReferenceSystem("EPSG:28992")
+    return layer
+
+
+@pytest.fixture
+def export_env(plugin_module, mock_iface, tmp_path, qgis_app):
+    """Plugin with one loaded file selected and a save path filled in.
+    File reading, exporting, saving and reloading are all replaced by mocks."""
+    mod = f"{PACKAGE_NAME}.cityjson_loader"
+    source = str(tmp_path / "in.city.json")
+    layer = _fake_layer({"cityjson/load_id": "load-1", "cityjson/source": source})
+    group = {
+        "source": source,
+        "lod": "All",
+        "semantic_surfaces": False,
+        "keep_parent_attributes": False,
+        "layers": [layer],
+    }
+    loader = plugin_module.CityJsonLoader(mock_iface)
+    with (
+        patch(f"{mod}.QgsProject") as project,
+        patch(f"{mod}.read_provenance", return_value={"load-1": group}),
+        patch(f"{mod}.load_cityjson_model"),
+        patch(f"{mod}.CityJSONExporter") as exporter,
+        patch(f"{mod}.save_cityjson_model") as save,
+        patch(f"{mod}.CityJSONLoader") as reloader,
+        patch(f"{mod}.get_model_epsg"),
+    ):
+        project.instance.return_value.mapLayers.return_value = {"l1": layer}
+        exporter.return_value.export.return_value = {"CityObjects": {"b1": {}}}
+        loader.dlg_wrt.layer_select.addItem("in.city.json", "load-1")
+        output = str(tmp_path / "out.city.json")
+        loader.dlg_wrt.save_file_name.setFilePath(output)
+        yield SimpleNamespace(
+            loader=loader,
+            dlg=loader.dlg_wrt,
+            bar=mock_iface.messageBar.return_value,
+            group=group,
+            output=output,
+            exporter=exporter,
+            save=save,
+            reloader=reloader,
+        )
+
+
+class TestExportDialog:
+    """write() opens the export dialog; export_cityjson() runs when Convert is clicked."""
+
+    def test_write_lists_one_entry_per_load(self, plugin_module, mock_iface, qgis_app):
+        loader = plugin_module.CityJsonLoader(mock_iface)
+        layers = {
+            "a": _fake_layer(
+                {"cityjson/load_id": "load-1", "cityjson/source": "/data/a.city.json"}
+            ),
+            "b": _fake_layer(
+                {"cityjson/load_id": "load-1", "cityjson/source": "/data/a.city.json"}
+            ),
+            "plain": _fake_layer({}),
+        }
+        with (
+            patch(f"{PACKAGE_NAME}.cityjson_loader.QgsProject") as project,
+            patch.object(loader.dlg_wrt.extent, "setMapCanvas"),
+            patch.object(loader.dlg_wrt, "show") as mock_show,
+        ):
+            project.instance.return_value.mapLayers.return_value = layers
+            loader.write()
+
+        combo = loader.dlg_wrt.layer_select
+        assert combo.count() == 1
+        assert combo.itemText(0) == "a.city.json"
+        assert combo.itemData(0) == "load-1"
+        mock_show.assert_called_once()
+
+    def test_write_sets_map_canvas_once(self, plugin_module, mock_iface, qgis_app):
+        loader = plugin_module.CityJsonLoader(mock_iface)
+        with (
+            patch(f"{PACKAGE_NAME}.cityjson_loader.QgsProject"),
+            patch.object(loader.dlg_wrt.extent, "setMapCanvas") as set_canvas,
+            patch.object(loader.dlg_wrt, "show"),
+        ):
+            loader.write()
+            loader.write()
+
+        set_canvas.assert_called_once_with(mock_iface.mapCanvas.return_value)
+
+    @pytest.mark.parametrize("missing", ["file", "path"])
+    def test_export_without_selection_warns(self, export_env, missing):
+        if missing == "file":
+            export_env.dlg.layer_select.clear()
+        else:
+            export_env.dlg.save_file_name.setFilePath("")
+
+        export_env.loader.export_cityjson()
+
+        export_env.bar.pushWarning.assert_called_once()
+        export_env.exporter.assert_not_called()
+
+    def test_export_refuses_overwriting_source(self, export_env):
+        export_env.dlg.save_file_name.setFilePath(export_env.group["source"])
+
+        export_env.loader.export_cityjson()
+
+        message = export_env.bar.pushCritical.call_args.args[1]
+        assert "overwrite the source" in message
+        export_env.save.assert_not_called()
+
+    def test_export_refuses_parent_attributes(self, export_env):
+        export_env.group["keep_parent_attributes"] = True
+
+        export_env.loader.export_cityjson()
+
+        message = export_env.bar.pushCritical.call_args.args[1]
+        assert "inherit parent attributes" in message
+        export_env.save.assert_not_called()
+
+    def test_export_error_shows_message(self, export_env):
+        export_env.exporter.return_value.export.side_effect = ValueError(
+            "Geometry was edited"
+        )
+
+        export_env.loader.export_cityjson()
+
+        export_env.bar.pushCritical.assert_called_once_with(
+            "CityJSON export", "Geometry was edited"
+        )
+        export_env.save.assert_not_called()
+
+    def test_export_passes_options(self, export_env):
+        export_env.group["lod"] = "2.2"
+        export_env.group["semantic_surfaces"] = True
+        export_env.dlg.keep_unloaded.setChecked(False)
+
+        export_env.loader.export_cityjson()
+
+        kwargs = export_env.exporter.call_args.kwargs
+        assert kwargs["loaded_lod"] == "2.2"
+        assert kwargs["semantic_surfaces"] is True
+        assert kwargs["keep_unloaded"] is False
+        assert kwargs["bbox"] is None  # "Whole file"
+        exported = export_env.exporter.return_value.export.return_value
+        export_env.save.assert_called_once_with(exported, export_env.output)
+
+    def test_export_with_extent_passes_bbox_in_layer_crs(self, export_env):
+        # Drawn in lon/lat around Delft; the layer is in EPSG:28992 (metres).
+        export_env.dlg.extent.setOutputExtentFromUser(
+            QgsRectangle(4.35, 52.00, 4.37, 52.01),
+            QgsCoordinateReferenceSystem("EPSG:4326"),
+        )
+
+        export_env.loader.export_cityjson()
+
+        xmin, ymin, xmax, ymax = export_env.exporter.call_args.kwargs["bbox"]
+        assert 80000 < xmin < xmax < 90000
+        assert 440000 < ymin < ymax < 455000
+
+    @pytest.mark.parametrize(
+        "reload, cityobjects, expected",
+        [
+            (True, {"b1": {}}, True),
+            (False, {"b1": {}}, False),
+            (True, {}, False),  # nothing exported, nothing to add
+        ],
+    )
+    def test_export_reload_adds_file(self, export_env, reload, cityobjects, expected):
+        export_env.dlg.reload.setChecked(reload)
+        export_env.exporter.return_value.export.return_value = {
+            "CityObjects": cityobjects
+        }
+
+        export_env.loader.export_cityjson()
+
+        assert export_env.reloader.return_value.load.called is expected
+
+    def test_export_success_closes_dialog(self, export_env):
+        with patch.object(export_env.dlg, "close") as mock_close:
+            export_env.loader.export_cityjson()
+
+        export_env.bar.pushSuccess.assert_called_once()
+        export_env.bar.pushCritical.assert_not_called()
+        mock_close.assert_called_once()

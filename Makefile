@@ -2,19 +2,42 @@
 # Edit the following to match your sources lists
 #################################################
 
+
+#Add iso code for any locales you want to support here (space separated)
+# default is no locales
+# LOCALES = af
+LOCALES =
+
+# If locales are enabled, set the name of the lrelease binary on your system. If
+# you have trouble compiling the translations, you may have to specify the full path to
+# lrelease
+#LRELEASE = lrelease
+#LRELEASE = lrelease-qt4
+
+
+# translation
+SOURCES = \
+	__init__.py \
+	cityjson_loader.py gui/cityjson_loader_dialog.py gui/cityjson_writer_dialog.py \
+	core/layers.py core/geometry.py core/styling.py core/settings.py \
+	core/subset.py core/utils.py
+
 PLUGINNAME = CityJSON-loader
 
 PY_FILES = \
 	__init__.py \
-	cityjson_loader.py gui/cityjson_loader_dialog.py \
+	cityjson_loader.py gui/cityjson_loader_dialog.py gui/cityjson_writer_dialog.py \
 	core/__init__.py core/layers.py core/geometry.py core/styling.py \
 	core/settings.py core/helpers/__init__.py core/helpers/treemodel.py core/loading.py \
+	core/exporting.py \
 	processing/__init__.py processing/cityjson_load_algorithm.py \
+	processing/cityjson_export_algorithm.py \
 	processing/provider.py core/subset.py core/utils.py
 
-UI_FILES = gui/cityjson_loader_dialog_base.ui
+UI_FILES = gui/cityjson_loader_dialog_base.ui \
+		   gui/cityjson_writer_dialog_base.ui
 
-EXTRAS = metadata.txt cityjson_logo.svg Changelog.md
+EXTRAS = metadata.txt cityjson_logo.svg Changelog.md LICENSE cityjson_logo_load.svg cityjson_logo_export.svg
 
 EXTRA_DIRS = 
 

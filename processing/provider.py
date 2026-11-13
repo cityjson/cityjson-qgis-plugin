@@ -34,11 +34,13 @@ from qgis.core import QgsProcessingProvider
 from qgis.PyQt.QtGui import QIcon
 
 from .cityjson_load_algorithm import CityJsonLoadAlgorithm
+from .cityjson_export_algorithm import CityJsonExportAlgorithm
 
 
 class Provider(QgsProcessingProvider):
     def loadAlgorithms(self, *args: Any, **kwargs: Any) -> None:
         self.addAlgorithm(CityJsonLoadAlgorithm())
+        self.addAlgorithm(CityJsonExportAlgorithm())
 
     def id(self, *args: Any, **kwargs: Any) -> str:
         """The ID of your plugin, used for identifying the provider.
