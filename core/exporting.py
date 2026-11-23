@@ -136,6 +136,14 @@ class CityJSONExporter:
             subset.process_appearance(self.citymodel, new_cm)
         if "metadata" in self.citymodel:  # copy metadata if it exists
             new_cm["metadata"] = self.citymodel["metadata"]
+        if "extensions" in self.citymodel:  # copy extensions if they exist
+            new_cm["extensions"] = self.citymodel["extensions"]
+        for (
+            key,
+            value,
+        ) in self.citymodel.items():  # copy extension data (+-prefixed keys)
+            if key.startswith("+"):
+                new_cm[key] = value
         if (
             "geometry-templates" in self.citymodel
         ):  # copy geometry-templates if it exists
