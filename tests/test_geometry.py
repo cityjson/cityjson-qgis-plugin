@@ -78,6 +78,46 @@ class TestGeometryReader:
         assert len(polygons) == 8
         assert len(semantics) == 8
 
+    def test_multisurface_with_geom_level_semantics(self):
+        """Geom-level (``+key``) semantic attributes are attached per face."""
+        geom = [
+            {
+                "type": "MultiSurface",
+                "lod": "2",
+                "boundaries": [
+                    [[0, 3, 2, 1]],
+                    [[4, 5, 6, 7]],
+                    [[0, 1, 5, 4]],
+                    [[0, 2, 3, 8]],
+                ],
+                "semantics": {
+                    "surfaces": [
+                        {"type": "RoofSurface"},
+                        {"type": "WallSurface"},
+                    ],
+                    "values": [0, 1, 1, 0],
+                    "+rf_azimuth": [244.79, 180.0, 90.0, 270.0],
+                },
+            }
+        ]
+        geometry_reader = GeometryReader(
+            VerticesCache(vertices=self.create_vertices(9))
+        )
+
+        polygons, semantics = geometry_reader.get_polygons(
+            geom, ["type", "on_footprint_edge", "rf_azimuth"]
+        )
+
+        assert len(polygons) == 4
+        assert len(semantics) == 4
+        assert [s["rf_azimuth"] for s in semantics] == [
+            "244.79",
+            "180.0",
+            "90.0",
+            "270.0",
+        ]
+        assert geometry_reader.skipped_geometries() == 0
+
     def test_simple_composite_solid(self):
         """Tests if the geometry reader parses the correct amount of polygons
         for a simple composite solid

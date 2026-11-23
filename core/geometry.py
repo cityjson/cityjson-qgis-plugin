@@ -209,16 +209,13 @@ class GeometryReader:
                 surfaces = temp_geom["semantics"]["surfaces"]
                 values = temp_geom["semantics"]["values"]
 
-                if len(attributes) > 2:
-                    for attr in attributes:
-                        attr = "+" + attr
-                        if (
-                            attr.lstrip("+") not in ["type", "on_footprint_edge"]
-                            and attr in temp_geom["semantics"]
-                        ):
-                            additional_semantics[attr.lstrip("+")] = temp_geom[
-                                "semantics"
-                            ][attr][0]
+                for attr in attributes:
+                    geom_key = "+" + attr
+                    if (
+                        attr not in ["type", "on_footprint_edge"]
+                        and geom_key in temp_geom["semantics"]
+                    ):
+                        additional_semantics[attr] = temp_geom["semantics"][geom_key]
             else:
                 surfaces = None
                 values = None
