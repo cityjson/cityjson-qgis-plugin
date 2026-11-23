@@ -184,6 +184,12 @@ class CityJSONLoader:
         """Loads a specified CityJSON file and returns the number of skipped geometries"""
         city_objects = self.citymodel["CityObjects"]
 
+        if not city_objects:
+            logger.debug("CityJSON file contains no CityObjects; nothing to load.")
+            if feedback is not None:
+                feedback.setProgress(100)
+            return 0
+
         current = 1
         step = 100.0 / len(city_objects)
         for key, obj in city_objects.items():
