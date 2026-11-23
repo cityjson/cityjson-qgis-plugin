@@ -548,7 +548,7 @@ class SemanticSurfaceFeatureDecorator:
                 feature_geom, self._attributes
             )
 
-            if len(polygons) > 1:
+            if len(polygons) > 0:
                 for polygon, semantic in zip(polygons, semantics):
                     new_feature = QgsFeature(feature)
 

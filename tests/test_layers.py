@@ -837,6 +837,61 @@ class TestParentFeatureDecorator:
 
 
 # ============================================================================
+# SemanticSurfaceFeatureDecorator tests
+# ============================================================================
+
+
+class TestSemanticSurfaceFeatureDecorator:
+    """Tests for SemanticSurfaceFeatureDecorator"""
+
+    def test_single_face_object_gets_geometry(self):
+        """A single-face object must produce a feature with geometry."""
+        from core.geometry import GeometryReader, VerticesCache
+        from core.layers import SemanticSurfaceFeatureDecorator
+
+        citymodel = {
+            "type": "CityJSON",
+            "version": "2.0",
+            "CityObjects": {
+                "id-1": {
+                    "type": "Building",
+                    "geometry": [
+                        {
+                            "type": "MultiSurface",
+                            "lod": "1",
+                            "boundaries": [[[0, 1, 2, 3]]],
+                            "semantics": {
+                                "surfaces": [{"type": "RoofSurface"}],
+                                "values": [0],
+                            },
+                        }
+                    ],
+                }
+            },
+            "vertices": [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]],
+            "transform": {"scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0]},
+        }
+
+        reader = GeometryReader(VerticesCache(vertices=citymodel["vertices"]), lod="1")
+        fields_builder = SemanticSurfaceFieldsDecorator(BaseFieldsBuilder(), citymodel)
+        decorator = SemanticSurfaceFeatureDecorator(
+            SimpleFeatureBuilder(reader), reader, fields_builder
+        )
+
+        features = decorator.create_features(
+            fields_builder.get_fields(),
+            "id-1",
+            citymodel["CityObjects"]["id-1"],
+        )
+
+        assert len(features) == 1
+        feature = next(iter(features))
+        assert feature.geometry() is not None
+        assert not feature.geometry().isEmpty()
+        assert feature["surface.type"] == "RoofSurface"
+
+
+# ============================================================================
 # DynamicLayerManager tests
 # ============================================================================
 
