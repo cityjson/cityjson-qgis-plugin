@@ -632,6 +632,24 @@ def test_export_preserves_fidelity(qgis_app):
     assert out["metadata"] == cm["metadata"]
 
 
+def test_export_preserves_extensions_and_extension_data(qgis_app):
+    """extensions and +-prefixed root keys survive export."""
+    cm = _two_cubes_citymodel()
+    cm["extensions"] = {
+        "Test": {"url": "https://example.com/test.ext.json", "version": "1.0"}
+    }
+    cm["+metadata-extended"] = {"custom": "value"}
+
+    loader = CityJSONLoader(filepath="dummy", citymodel=cm)
+    loader.load()
+    layers = loader.layer_manager.get_all_layers()
+
+    out = CityJSONExporter(layers, citymodel=cm).export()
+
+    assert out["extensions"] == cm["extensions"]
+    assert out["+metadata-extended"] == cm["+metadata-extended"]
+
+
 # x6
 def test_deleting_lod_row_drops_only_that_geometry(qgis_app):
     """Deleting one LoD row drops only that geometry entry; the object survives."""
