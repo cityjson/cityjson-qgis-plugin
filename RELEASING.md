@@ -59,7 +59,7 @@ make test
 On Apple Silicon, prefix the Docker targets with
 `DOCKER_DEFAULT_PLATFORM=linux/amd64`.
 
-### 4. Merge to main
+### 4. Merge to main and make a tag
 
 ```sh
 # Merge the release branch into develop
@@ -70,6 +70,13 @@ git push origin develop
 # Merge develop into main and tag the release there
 git checkout main
 git merge develop
+```
+
+On main create new tag and push it:
+
+```bash
+git tag v<version>
+git push origin main --tags
 ```
 
 ### 5. Build the package
@@ -94,15 +101,9 @@ Alternatively, upload `CityJSON-loader.zip` manually via
 
 And wait for approval.
 
-### 7. Tag and release
+### 7. Create release on github
 
-On main create new tag and push it:
-
-```bash
-git tag v<version>
-git push origin main --tags
-```
-Then go to the tag on the repo and create a release. Finally edit the release to upload the .zip file to it. 
+Go to the tag on the repo and create a release. Finally edit the release to upload the .zip file to it. 
 
 ### 8. Verify
 
