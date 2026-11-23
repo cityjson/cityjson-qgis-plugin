@@ -4,6 +4,7 @@
 - CityJSON export: delete objects and edit attributes in QGIS, then save back to CityJSON. Untouched parts (Solids, semantic surfaces, appearances, geometry templates, unloaded LoDs, metadata) are kept from the original file.
 - Export from the menu (`Export CityJSON...`) or the Processing toolbox; options to keep or drop unloaded LoDs, export only an area, and add the saved file to the map.
 - Layers remember their source file and load settings, so the export dialog needs no extra input.
+- Loading is blocked (with a warning) until a CRS is set for files that don't embed one.
 ### Fixed
 - Subset processing crashed on city objects without geometry (e.g. `CityObjectGroup`).
 - Makefile packaging listed missing files and left out the export modules.

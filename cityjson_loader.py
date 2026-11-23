@@ -150,6 +150,12 @@ class CityJsonLoader:
                 self.dlg.listWidget.addItem(filename)
                 epsg = self.load_file_crs(filename)
                 self.file_epsg_map[filename] = epsg
+                if not epsg:
+                    self.iface.messageBar().pushWarning(
+                        "CityJSON CRS",
+                        f"No CRS found for {os.path.basename(filename)}. "
+                        "Set one before loading.",
+                    )
 
         if self.dlg.listWidget.count() > 0:
             self.dlg.listWidget.setCurrentRow(0)
@@ -541,6 +547,19 @@ class CityJsonLoader:
         if not filepaths:
             QMessageBox.warning(self.dlg, "No files", "No CityJSON files selected.")
             self.dlg.progressBar.setValue(0)
+            return
+
+        # Require a CRS for every file before loading.
+        missing_crs = [
+            filepath for filepath in filepaths if not self.file_epsg_map.get(filepath)
+        ]
+        if missing_crs:
+            QMessageBox.warning(
+                self.dlg,
+                "Missing coordinate reference system",
+                "The following files have no CRS. Select each file and set a CRS "
+                "before loading:\n\n" + "\n".join(missing_crs),
+            )
             return
 
         # Initialize asynchronous processing

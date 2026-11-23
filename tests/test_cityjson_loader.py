@@ -179,6 +179,33 @@ class TestCityJsonLoader:
 
         mock_warning.assert_called_once()
 
+    def test_process_files_blocks_when_missing_crs(
+        self, plugin_module, mock_iface, qgis_app, tmp_path
+    ):
+        loader = plugin_module.CityJsonLoader(mock_iface)
+        model = {
+            "type": "CityJSON",
+            "version": "2.0",
+            "CityObjects": {"b1": {"type": "Building", "geometry": []}},
+            "vertices": [[0, 0, 0]],
+        }
+        path = tmp_path / "no_crs.json"
+        path.write_text(json.dumps(model), encoding="utf-8")
+        loader.add_cityjson_files([str(path)])
+
+        mock_timer = MagicMock()
+        with (
+            patch(
+                f"{PACKAGE_NAME}.cityjson_loader.QMessageBox.warning"
+            ) as mock_warning,
+            patch(f"{PACKAGE_NAME}.cityjson_loader.QTimer", return_value=mock_timer),
+        ):
+            loader.process_files()
+
+        mock_warning.assert_called_once()
+        assert loader.file_queue == []
+        mock_timer.start.assert_not_called()
+
     def test_finish_processing(self, plugin_module, mock_iface, qgis_app):
         loader = plugin_module.CityJsonLoader(mock_iface)
         mock_timer = MagicMock()
