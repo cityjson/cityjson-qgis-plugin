@@ -469,3 +469,58 @@ class TestCityJSONLoader:
             filepath=self.test_filepath, citymodel=self.basic_citymodel, lod=lod
         )
         assert loader.lod == expected
+
+
+def test_flat_layer_skips_3d_renderer(qgis_app):
+    """A flat (2D) layer is not given a 3D renderer, so QGIS drapes it."""
+    from core.styling import is_3d_styling_available
+
+    cm = {
+        "type": "CityJSON",
+        "version": "2.0",
+        "transform": {"scale": [1, 1, 1], "translate": [0, 0, 0]},
+        "vertices": [
+            [0, 0, 0],
+            [10, 0, 0],
+            [10, 10, 0],
+            [0, 10, 0],  # flat water
+            [0, 0, 0],
+            [10, 0, 0],
+            [10, 10, 0],
+            [0, 10, 0],  # building base
+            [0, 0, 5],
+            [10, 0, 5],
+            [10, 10, 5],
+            [0, 10, 5],  # building top
+        ],
+        "CityObjects": {
+            "water1": {
+                "type": "WaterBody",
+                "geometry": [
+                    {"type": "MultiSurface", "lod": "1", "boundaries": [[[0, 1, 2, 3]]]}
+                ],
+            },
+            "bldg1": {
+                "type": "Building",
+                "geometry": [
+                    {
+                        "type": "Solid",
+                        "lod": "1",
+                        "boundaries": [[[[4, 5, 6, 7]], [[8, 9, 10, 11]]]],
+                    }
+                ],
+            },
+        },
+    }
+
+    loader = CityJSONLoader("demo", cm, epsg="28992", divide_by_object=True, lod="All")
+    loader.load()
+
+    layers = {vl.name(): vl for vl in loader.layer_manager.get_all_layers()}
+
+    # A flat layer must never get a 3D renderer.
+    assert layers["demo - WaterBody"].renderer3D() is None
+
+    # A 3D layer gets a 3D renderer when 3D styling is available.
+    if is_3d_styling_available():
+        assert layers["demo - Building"].renderer3D() is not None

@@ -53,6 +53,7 @@ from .styling import (
     Copy2dStyling,
     NullStyling,
     SemanticSurfacesStyling,
+    is_3d_layer,
     is_3d_styling_available,
     is_rule_based_3d_styling_available,
 )
@@ -203,20 +204,23 @@ class CityJSONLoader:
             current += 1
 
         root = QgsProject.instance().layerTreeRoot()
+        layers = self.layer_manager.get_all_layers()
 
-        if len(self.layer_manager.get_all_layers()) > 1:
+        if len(layers) > 1:
             group = root.insertGroup(0, self.filename)
 
-            for vl in self.layer_manager.get_all_layers():
+            for vl in layers:
                 QgsProject.instance().addMapLayer(vl, False)
                 group.insertLayer(0, vl)
-                self.styler.apply(vl)
+                if is_3d_layer(vl):
+                    self.styler.apply(vl)
 
-        elif len(self.layer_manager.get_all_layers()) == 1:
-            for vl in self.layer_manager.get_all_layers():
+        elif len(layers) == 1:
+            for vl in layers:
                 QgsProject.instance().addMapLayer(vl, False)
                 root.insertLayer(0, vl)
-                self.styler.apply(vl)
+                if is_3d_layer(vl):
+                    self.styler.apply(vl)
 
         return self.geometry_reader.skipped_geometries()
 

@@ -6,7 +6,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from qgis.core import Qgis, QgsVectorLayer
+from qgis.core import Qgis, QgsFeature, QgsGeometry, QgsVectorLayer
 from qgis.PyQt.QtGui import QColor
 
 from core.settings import semantic_colors
@@ -15,6 +15,7 @@ from core.styling import (
     NullStyling,
     SemanticSurfacesStyling,
     create_material,
+    is_3d_layer,
     is_3d_styling_available,
     is_rule_based_3d_styling_available,
 )
@@ -239,6 +240,33 @@ class TestCreateMaterial:
         mock_material.setAmbient.assert_called_once_with(ambient_color)
         mock_material.setSpecular.assert_not_called()
         assert result == mock_material
+
+
+class TestIs3dLayer:
+    """Tests for the is_3d_layer helper"""
+
+    @staticmethod
+    def _layer_with_wkt(wkt: str) -> QgsVectorLayer:
+        layer = QgsVectorLayer("MultiPolygonZ?crs=EPSG:4326", "test", "memory")
+        feature = QgsFeature()
+        feature.setGeometry(QgsGeometry.fromWkt(wkt))
+        layer.dataProvider().addFeatures([feature])
+        return layer
+
+    def test_flat_layer_is_not_3d(self):
+        """A layer whose vertices all share the same Z is treated as 2D."""
+        layer = self._layer_with_wkt("MultiPolygonZ (((0 0 5, 1 0 5, 1 1 5, 0 0 5)))")
+        assert is_3d_layer(layer) is False
+
+    def test_layer_with_vertical_extent_is_3d(self):
+        """A layer with any vertical variation is treated as 3D."""
+        layer = self._layer_with_wkt("MultiPolygonZ (((0 0 0, 1 0 0, 1 1 10, 0 0 0)))")
+        assert is_3d_layer(layer) is True
+
+    def test_empty_layer_is_not_3d(self):
+        """An empty layer has no geometry and is treated as 2D."""
+        layer = QgsVectorLayer("MultiPolygonZ?crs=EPSG:4326", "test", "memory")
+        assert is_3d_layer(layer) is False
 
 
 class TestUtilityFunctions:

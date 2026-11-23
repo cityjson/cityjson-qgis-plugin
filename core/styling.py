@@ -171,6 +171,29 @@ def create_material(
     return material
 
 
+def is_3d_layer(vectorlayer: QgsVectorLayer) -> bool:
+    """Return True if the layer has any geometry with vertical extent.
+
+    Layers whose geometry is entirely flat (every vertex at the same Z) are
+    treated as 2D layers. QGIS then drapes them on the terrain surface instead
+    of rendering them as floating flat planes in the 3D view.
+    """
+    for feature in vectorlayer.getFeatures():
+        geom = feature.geometry()
+        if geom is None or geom.isEmpty():
+            continue
+        first_z = None
+        for vertex in geom.vertices():
+            z = vertex.z()
+            if z != z:  # NaN (no elevation information)
+                continue
+            if first_z is None:
+                first_z = z
+            elif z != first_z:
+                return True
+    return False
+
+
 def is_3d_styling_available() -> bool:
     """Returns True if 3D styling through Python is possible"""
     return has_3d
