@@ -7,6 +7,9 @@
 ### Fixed
 - Subset processing crashed on city objects without geometry (e.g. `CityObjectGroup`).
 - Makefile packaging listed missing files and left out the export modules.
+- Fixed crash when loading a CityJSON file with no CityObjects. Empty models now load cleanly, with progress set to 100% and a debug log.
+- Fixed single-face objects disappearing when semantic surfaces were loaded. Single-face objects now get their geometry and surface attributes instead of being dropped.
+- Fixed geom-level (`+key`) semantic attributes being silently dropped.
 
 
 ## 1.0.1 - 25/08/2026
