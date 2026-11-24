@@ -246,16 +246,27 @@ class CityJsonLoader:
             oldest_key = next(iter(self.citymodel_cache))
             del self.citymodel_cache[oldest_key]
 
+    def _get_cached_model(self, filepath):
+        """Return cached model if it exists and the file hasn't been modified, else None."""
+        if filepath in self.citymodel_cache:
+            cached_mtime, model = self.citymodel_cache[filepath]
+            if cached_mtime == os.path.getmtime(filepath):
+                return model
+            del self.citymodel_cache[filepath]
+        return None
+
+    def _cache_model(self, filepath, model):
+        """Store a model in the cache alongside its current mtime."""
+        self.citymodel_cache[filepath] = (os.path.getmtime(filepath), model)
+        self._manage_cache_size()
+
     def load_file_crs(self, filename: str) -> str | None:
         """Load the CRS for the CityJSON file"""
         try:
-            if filename in self.citymodel_cache:
-                model = self.citymodel_cache[filename]
-            else:
+            model = self._get_cached_model(filename)
+            if model is None:
                 model = load_cityjson_model(filename)
-                # Cache the model for reuse
-                self.citymodel_cache[filename] = model
-                self._manage_cache_size()
+                self._cache_model(filename, model)
 
             epsg = get_model_epsg(model)
             return epsg
@@ -337,13 +348,10 @@ class CityJsonLoader:
     def update_file_information(self, filename: str) -> None:
         """Update metadata fields according to the file provided"""
 
-        if filename in self.citymodel_cache:
-            model = self.citymodel_cache[filename]
-        else:
+        model = self._get_cached_model(filename)
+        if model is None:
             model = load_cityjson_model(filename)
-            # Cache the model for reuse
-            self.citymodel_cache[filename] = model
-            self._manage_cache_size()
+            self._cache_model(filename, model)
 
         lods = {
             geom["lod"]
@@ -650,13 +658,10 @@ class CityJsonLoader:
 
     def load_cityjson(self, filepath: str) -> int:
         """Loads the given CityJSON"""
-        if filepath in self.citymodel_cache:
-            citymodel = self.citymodel_cache[filepath]
-        else:
+        citymodel = self._get_cached_model(filepath)
+        if citymodel is None:
             citymodel = load_cityjson_model(filepath)
-            # Cache the model for potential reuse
-            self.citymodel_cache[filepath] = citymodel
-            self._manage_cache_size()
+            self._cache_model(filepath, citymodel)
 
         lod_as = "NONE"
         if self.dlg.loDLoadingComboBox.currentIndex() == 1:
