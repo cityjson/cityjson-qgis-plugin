@@ -96,7 +96,7 @@ class CityJsonLoader:
 
         self.file_epsg_map: dict[str, str | None] = {}
 
-        self.citymodel_cache: dict[str, dict[str, Any]] = {}
+        self.citymodel_cache: dict[str, tuple[float, dict[str, Any]]] = {}
         self.max_cache_size = 10  # Limit cache to prevent memory issues
 
         # Variables for asynchronous file processing
