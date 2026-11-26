@@ -11,8 +11,8 @@
 - Fixed crash when loading a CityJSON file with no CityObjects. Empty models now load cleanly, with progress set to 100% and a debug log.
 - Fixed single-face objects disappearing when semantic surfaces were loaded. Single-face objects now get their geometry and surface attributes instead of being dropped.
 - Fixed geom-level (`+key`) semantic attributes being silently dropped.
-- Fixed CityJSON `extensions` and `+`-prefixed extension data (e.g. `+metadata-extended`) being dropped on export.
 - Fixed flat (2D) layers being rendered as floating planes in the 3D view; they are now left for QGIS to drape on the terrain.
+- Fixed modified CityJSON files being loaded with stale cached data; the cache now checks file modification times and reloads when a file has changed.
 
 
 ## 1.0.1 - 25/08/2026
